@@ -52,8 +52,8 @@ export async function getTeamById(id: string): Promise<Team | null> {
 
 export async function createTeam(data: Partial<Team>): Promise<Team> {
   const result = await getOne<Team>(
-    `INSERT INTO teams (name, short_name, logo_url, primary_color, secondary_color, city, state, founded_year, contact_name, contact_phone, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `INSERT INTO teams (name, short_name, logo_url, primary_color, secondary_color, city, state, founded_year, contact_name, contact_phone, notes, instagram, bio)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING *`,
     [
       data.name, data.short_name || null, data.logo_url || null,
@@ -61,6 +61,7 @@ export async function createTeam(data: Partial<Team>): Promise<Team> {
       data.city || 'Itapecerica', data.state || 'MG',
       data.founded_year || null, data.contact_name || null,
       data.contact_phone || null, data.notes || null,
+      data.instagram || null, data.bio || null,
     ]
   );
   return result!;
@@ -80,7 +81,9 @@ export async function updateTeam(id: string, data: Partial<Team>): Promise<Team 
       contact_name = $10,
       contact_phone = $11,
       active = COALESCE($12, active),
-      notes = $13
+      notes = $13,
+      instagram = $14,
+      bio = $15
      WHERE id = $1 RETURNING *`,
     [
       id, data.name, data.short_name ?? null, data.logo_url,
@@ -88,6 +91,7 @@ export async function updateTeam(id: string, data: Partial<Team>): Promise<Team 
       data.city, data.state, data.founded_year ?? null,
       data.contact_name ?? null, data.contact_phone ?? null,
       data.active, data.notes ?? null,
+      data.instagram ?? null, data.bio ?? null,
     ]
   );
 }

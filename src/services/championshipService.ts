@@ -66,8 +66,8 @@ export async function getChampionshipById(id: string): Promise<Championship | nu
 
 export async function createChampionship(data: Partial<Championship>): Promise<Championship> {
   const result = await getOne<Championship>(
-    `INSERT INTO championships (name, short_name, year, season, category, format, description, rules, start_date, end_date, status, logo_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `INSERT INTO championships (name, short_name, year, season, category, format, description, rules, start_date, end_date, status, logo_url, banner_url, prize, location, sponsor)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING *`,
     [
       data.name, data.short_name || null, data.year, data.season || '1',
@@ -75,6 +75,8 @@ export async function createChampionship(data: Partial<Championship>): Promise<C
       data.description || null, data.rules || null,
       data.start_date || null, data.end_date || null,
       data.status || 'Planejado', data.logo_url || null,
+      data.banner_url || null, data.prize || null,
+      data.location || null, data.sponsor || null,
     ]
   );
   return result!;
@@ -95,7 +97,11 @@ export async function updateChampionship(id: string, data: Partial<Championship>
       end_date = $11,
       status = COALESCE($12, status),
       logo_url = COALESCE($13, logo_url),
-      active = COALESCE($14, active)
+      active = COALESCE($14, active),
+      banner_url = $15,
+      prize = $16,
+      location = $17,
+      sponsor = $18
      WHERE id = $1 RETURNING *`,
     [
       id, data.name, data.short_name ?? null, data.year,
@@ -103,6 +109,8 @@ export async function updateChampionship(id: string, data: Partial<Championship>
       data.description ?? null, data.rules ?? null,
       data.start_date ?? null, data.end_date ?? null,
       data.status, data.logo_url, data.active,
+      data.banner_url ?? null, data.prize ?? null,
+      data.location ?? null, data.sponsor ?? null,
     ]
   );
 }

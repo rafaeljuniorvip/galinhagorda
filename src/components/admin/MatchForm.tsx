@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Box, TextField, Button, Grid, MenuItem, Alert, Typography, Card, CardContent } from '@mui/material';
+import { Box, TextField, Button, Grid, MenuItem, Alert, Typography, Card, CardContent, FormControlLabel, Switch } from '@mui/material';
 import { Save, ArrowBack } from '@mui/icons-material';
 import { Match, Championship, Team } from '@/types';
 import { MATCH_STATUS } from '@/lib/utils';
@@ -30,6 +30,11 @@ export default function MatchForm({ match }: Props) {
     referee: match?.referee || '',
     status: match?.status || 'Agendada',
     observations: match?.observations || '',
+    streaming_url: match?.streaming_url || '',
+    highlights_url: match?.highlights_url || '',
+    is_featured: match?.is_featured ?? false,
+    voting_open: match?.voting_open ?? false,
+    voting_deadline: match?.voting_deadline ? new Date(match.voting_deadline).toISOString().slice(0, 16) : '',
   });
 
   useEffect(() => {
@@ -57,6 +62,11 @@ export default function MatchForm({ match }: Props) {
         venue: form.venue || null,
         referee: form.referee || null,
         observations: form.observations || null,
+        streaming_url: form.streaming_url || null,
+        highlights_url: form.highlights_url || null,
+        is_featured: form.is_featured,
+        voting_open: form.voting_open,
+        voting_deadline: form.voting_deadline || null,
       };
       const url = isEditing ? `/api/matches/${match.id}` : '/api/matches';
       const method = isEditing ? 'PUT' : 'POST';
@@ -106,6 +116,23 @@ export default function MatchForm({ match }: Props) {
               <Grid item xs={12} md={4}><TextField label="Data e Hora" type="datetime-local" fullWidth InputLabelProps={{ shrink: true }} value={form.match_date} onChange={handleChange('match_date')} /></Grid>
               <Grid item xs={12} md={4}><TextField label="Local" fullWidth value={form.venue} onChange={handleChange('venue')} /></Grid>
               <Grid item xs={12} md={4}><TextField label="Arbitro" fullWidth value={form.referee} onChange={handleChange('referee')} /></Grid>
+              <Grid item xs={12} md={4}><TextField label="URL Transmissao" fullWidth value={form.streaming_url} onChange={handleChange('streaming_url')} placeholder="https://..." /></Grid>
+              <Grid item xs={12} md={4}><TextField label="URL Melhores Momentos" fullWidth value={form.highlights_url} onChange={handleChange('highlights_url')} placeholder="https://..." /></Grid>
+              <Grid item xs={12} md={4}>
+                <TextField label="Prazo Votacao" type="datetime-local" fullWidth InputLabelProps={{ shrink: true }} value={form.voting_deadline} onChange={handleChange('voting_deadline')} />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Box sx={{ display: 'flex', gap: 2, pt: 1 }}>
+                  <FormControlLabel
+                    control={<Switch checked={form.is_featured} onChange={(e) => setForm(prev => ({ ...prev, is_featured: e.target.checked }))} />}
+                    label="Destaque"
+                  />
+                  <FormControlLabel
+                    control={<Switch checked={form.voting_open} onChange={(e) => setForm(prev => ({ ...prev, voting_open: e.target.checked }))} />}
+                    label="Votacao Aberta"
+                  />
+                </Box>
+              </Grid>
               <Grid item xs={12}><TextField label="Observacoes" multiline rows={2} fullWidth value={form.observations} onChange={handleChange('observations')} /></Grid>
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>

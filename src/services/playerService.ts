@@ -61,14 +61,15 @@ export async function getPlayerById(id: string): Promise<Player | null> {
 
 export async function createPlayer(data: Partial<Player>): Promise<Player> {
   const result = await getOne<Player>(
-    `INSERT INTO players (full_name, name, nickname, birth_date, cpf, rg, position, dominant_foot, height, weight, photo_url, city, state, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+    `INSERT INTO players (full_name, name, nickname, birth_date, cpf, rg, position, dominant_foot, height, weight, photo_url, city, state, notes, instagram, bio)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING *`,
     [
       data.full_name, data.name, data.nickname || null, data.birth_date || null,
       data.cpf || null, data.rg || null, data.position, data.dominant_foot || null,
       data.height || null, data.weight || null, data.photo_url || null,
       data.city || 'Itapecerica', data.state || 'MG', data.notes || null,
+      data.instagram || null, data.bio || null,
     ]
   );
   return result!;
@@ -91,13 +92,16 @@ export async function updatePlayer(id: string, data: Partial<Player>): Promise<P
       city = COALESCE($13, city),
       state = COALESCE($14, state),
       active = COALESCE($15, active),
-      notes = $16
+      notes = $16,
+      instagram = $17,
+      bio = $18
      WHERE id = $1 RETURNING *`,
     [
       id, data.full_name, data.name, data.nickname ?? null, data.birth_date ?? null,
       data.cpf ?? null, data.rg ?? null, data.position, data.dominant_foot ?? null,
       data.height ?? null, data.weight ?? null, data.photo_url,
       data.city, data.state, data.active, data.notes ?? null,
+      data.instagram ?? null, data.bio ?? null,
     ]
   );
 }

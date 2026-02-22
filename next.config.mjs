@@ -7,6 +7,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'galinhagorda.vip',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
     ],
   },
   compress: true,

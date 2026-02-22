@@ -32,6 +32,8 @@ export default function TeamForm({ team }: TeamFormProps) {
     contact_name: team?.contact_name || '',
     contact_phone: team?.contact_phone || '',
     notes: team?.notes || '',
+    instagram: team?.instagram || '',
+    bio: team?.bio || '',
   });
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +66,8 @@ export default function TeamForm({ team }: TeamFormProps) {
         contact_name: form.contact_name || null,
         contact_phone: form.contact_phone || null,
         notes: form.notes || null,
+        instagram: form.instagram || null,
+        bio: form.bio || null,
       };
 
       const url = isEditing ? `/api/teams/${team.id}` : '/api/teams';
@@ -107,6 +111,8 @@ export default function TeamForm({ team }: TeamFormProps) {
                   <Grid item xs={12} md={3}><TextField label="Estado" fullWidth value={form.state} onChange={handleChange('state')} /></Grid>
                   <Grid item xs={12} md={6}><TextField label="Nome Contato" fullWidth value={form.contact_name} onChange={handleChange('contact_name')} /></Grid>
                   <Grid item xs={12} md={6}><TextField label="Telefone Contato" fullWidth value={form.contact_phone} onChange={handleChange('contact_phone')} /></Grid>
+                  <Grid item xs={12} md={6}><TextField label="Instagram" fullWidth value={form.instagram} onChange={handleChange('instagram')} placeholder="@time" /></Grid>
+                  <Grid item xs={12} md={6}><TextField label="Bio" multiline rows={2} fullWidth value={form.bio} onChange={handleChange('bio')} /></Grid>
                   <Grid item xs={12}><TextField label="Observacoes" multiline rows={2} fullWidth value={form.notes} onChange={handleChange('notes')} /></Grid>
                 </Grid>
               </Grid>

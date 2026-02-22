@@ -5,11 +5,11 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Toolbar, Typography, Box, IconButton, useMediaQuery, useTheme,
+  Toolbar, Typography, Box, IconButton, useMediaQuery, useTheme, Divider,
 } from '@mui/material';
 import {
   Dashboard, People, Groups, EmojiEvents, SportsSoccer,
-  Menu as MenuIcon, ChevronLeft,
+  Menu as MenuIcon, ChevronLeft, Newspaper, PhotoLibrary, HowToVote, Forum,
 } from '@mui/icons-material';
 
 const DRAWER_WIDTH = 240;
@@ -20,6 +20,13 @@ const menuItems = [
   { text: 'Times', icon: <Groups />, href: '/admin/times' },
   { text: 'Campeonatos', icon: <EmojiEvents />, href: '/admin/campeonatos' },
   { text: 'Partidas', icon: <SportsSoccer />, href: '/admin/partidas' },
+];
+
+const secondaryMenuItems = [
+  { text: 'Noticias', icon: <Newspaper />, href: '/admin/noticias' },
+  { text: 'Fotos', icon: <PhotoLibrary />, href: '/admin/fotos' },
+  { text: 'Votacoes', icon: <HowToVote />, href: '/admin/votacoes' },
+  { text: 'Mensagens', icon: <Forum />, href: '/admin/mensagens' },
 ];
 
 export default function AdminSidebar() {
@@ -47,6 +54,31 @@ export default function AdminSidebar() {
       </Toolbar>
       <List sx={{ px: 1 }}>
         {menuItems.map((item) => (
+          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              component={Link}
+              href={item.href}
+              selected={isActive(item.href)}
+              onClick={() => isMobile && setMobileOpen(false)}
+              sx={{
+                borderRadius: 1,
+                '&.Mui-selected': {
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '& .MuiListItemIcon-root': { color: 'white' },
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider sx={{ mx: 2, my: 1 }} />
+      <List sx={{ px: 1 }}>
+        {secondaryMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
               component={Link}

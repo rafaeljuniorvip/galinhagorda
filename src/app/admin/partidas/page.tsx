@@ -7,7 +7,7 @@ import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton, Chip, TablePagination, TextField, MenuItem, Avatar,
 } from '@mui/material';
-import { Add, Edit, Delete, ListAlt } from '@mui/icons-material';
+import { Add, Edit, Delete, ListAlt, LiveTv, Group } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { Match, PaginatedResponse, Championship } from '@/types';
 import { formatDateTime } from '@/lib/utils';
@@ -98,7 +98,9 @@ export default function AdminPartidasPage() {
                 <TableCell><Chip label={m.status} size="small" color={statusColor(m.status) as any} /></TableCell>
                 <TableCell align="right">
                   <IconButton component={Link} href={`/admin/partidas/${m.id}/eventos`} size="small" title="Eventos"><ListAlt fontSize="small" /></IconButton>
-                  <IconButton component={Link} href={`/admin/partidas/${m.id}/editar`} size="small"><Edit fontSize="small" /></IconButton>
+                  <IconButton component={Link} href={`/admin/partidas/${m.id}/escalacao`} size="small" title="Escalacao"><Group fontSize="small" /></IconButton>
+                  <IconButton component={Link} href={`/admin/partidas/${m.id}/transmissoes`} size="small" title="Transmissoes"><LiveTv fontSize="small" /></IconButton>
+                  <IconButton component={Link} href={`/admin/partidas/${m.id}/editar`} size="small" title="Editar"><Edit fontSize="small" /></IconButton>
                   <IconButton onClick={() => handleDelete(m.id)} size="small" color="error"><Delete fontSize="small" /></IconButton>
                 </TableCell>
               </TableRow>

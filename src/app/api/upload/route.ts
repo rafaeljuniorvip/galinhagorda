@@ -17,8 +17,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Arquivo é obrigatório' }, { status: 400 });
     }
 
-    if (!['players', 'teams'].includes(type)) {
-      return NextResponse.json({ error: 'Tipo inválido (players ou teams)' }, { status: 400 });
+    const allowedTypes_upload = ['players', 'teams', 'news', 'photos', 'championships'];
+    if (!allowedTypes_upload.includes(type)) {
+      return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 });
     }
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];

@@ -27,6 +27,10 @@ export default function ChampionshipForm({ championship }: Props) {
     start_date: championship?.start_date ? new Date(championship.start_date).toISOString().split('T')[0] : '',
     end_date: championship?.end_date ? new Date(championship.end_date).toISOString().split('T')[0] : '',
     status: championship?.status || 'Planejado',
+    banner_url: championship?.banner_url || '',
+    prize: championship?.prize || '',
+    location: championship?.location || '',
+    sponsor: championship?.sponsor || '',
   });
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,7 +42,18 @@ export default function ChampionshipForm({ championship }: Props) {
     setError('');
     setSaving(true);
     try {
-      const body = { ...form, year: parseInt(form.year), short_name: form.short_name || null, description: form.description || null, start_date: form.start_date || null, end_date: form.end_date || null };
+      const body = {
+        ...form,
+        year: parseInt(form.year),
+        short_name: form.short_name || null,
+        description: form.description || null,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+        banner_url: form.banner_url || null,
+        prize: form.prize || null,
+        location: form.location || null,
+        sponsor: form.sponsor || null,
+      };
       const url = isEditing ? `/api/championships/${championship.id}` : '/api/championships';
       const method = isEditing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -88,6 +103,10 @@ export default function ChampionshipForm({ championship }: Props) {
               </TextField></Grid>
               <Grid item xs={12} md={6}><TextField label="Data Inicio" type="date" fullWidth InputLabelProps={{ shrink: true }} value={form.start_date} onChange={handleChange('start_date')} /></Grid>
               <Grid item xs={12} md={6}><TextField label="Data Fim" type="date" fullWidth InputLabelProps={{ shrink: true }} value={form.end_date} onChange={handleChange('end_date')} /></Grid>
+              <Grid item xs={12} md={6}><TextField label="Local" fullWidth value={form.location} onChange={handleChange('location')} placeholder="Ex: Estadio Municipal" /></Grid>
+              <Grid item xs={12} md={6}><TextField label="Patrocinador" fullWidth value={form.sponsor} onChange={handleChange('sponsor')} /></Grid>
+              <Grid item xs={12} md={6}><TextField label="Premiacao" fullWidth value={form.prize} onChange={handleChange('prize')} placeholder="Ex: R$ 5.000,00" /></Grid>
+              <Grid item xs={12} md={6}><TextField label="URL do Banner" fullWidth value={form.banner_url} onChange={handleChange('banner_url')} placeholder="https://..." /></Grid>
               <Grid item xs={12}><TextField label="Descricao" multiline rows={3} fullWidth value={form.description} onChange={handleChange('description')} /></Grid>
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>

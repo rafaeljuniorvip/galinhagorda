@@ -15,6 +15,9 @@ export interface Player {
   state: string;
   active: boolean;
   notes: string | null;
+  instagram: string | null;
+  social_links: Record<string, string>;
+  bio: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +36,9 @@ export interface Team {
   contact_phone: string | null;
   active: boolean;
   notes: string | null;
+  instagram: string | null;
+  social_links: Record<string, string>;
+  bio: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +58,11 @@ export interface Championship {
   status: string;
   logo_url: string | null;
   active: boolean;
+  banner_url: string | null;
+  rules_url: string | null;
+  prize: string | null;
+  location: string | null;
+  sponsor: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -103,6 +114,11 @@ export interface Match {
   assistant_referee_2: string | null;
   status: string;
   observations: string | null;
+  voting_open: boolean;
+  voting_deadline: string | null;
+  streaming_url: string | null;
+  highlights_url: string | null;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
   // Joined fields
@@ -173,4 +189,131 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+// ============================================================
+// NEW: Enhanced Features
+// ============================================================
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url: string | null;
+  provider: string;
+  provider_id: string | null;
+  role: 'admin' | 'team_owner' | 'player' | 'fan';
+  linked_player_id: string | null;
+  linked_team_id: string | null;
+  bio: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StreamingLink {
+  id: string;
+  match_id: string;
+  platform: string;
+  url: string;
+  label: string | null;
+  is_live: boolean;
+  created_at: string;
+}
+
+export interface MatchLineup {
+  id: string;
+  match_id: string;
+  team_id: string;
+  player_id: string;
+  player_name?: string;
+  player_photo?: string;
+  position: string | null;
+  shirt_number: number | null;
+  is_starter: boolean;
+  created_at: string;
+}
+
+export interface MatchVote {
+  id: string;
+  match_id: string;
+  player_id: string;
+  player_name?: string;
+  player_photo?: string;
+  team_name?: string;
+  team_logo?: string;
+  user_id: string | null;
+  voter_name: string | null;
+  created_at: string;
+}
+
+export interface VoteResult {
+  player_id: string;
+  player_name: string;
+  player_photo: string | null;
+  team_name: string;
+  team_logo: string | null;
+  votes: number;
+  percentage: number;
+}
+
+export interface FanMessage {
+  id: string;
+  user_id: string | null;
+  author_name: string;
+  author_avatar: string | null;
+  target_type: 'match' | 'player' | 'team' | 'championship';
+  target_id: string;
+  message: string;
+  is_approved: boolean;
+  is_pinned: boolean;
+  likes_count: number;
+  created_at: string;
+}
+
+export interface Photo {
+  id: string;
+  uploaded_by: string | null;
+  uploaded_by_admin: string | null;
+  target_type: 'match' | 'player' | 'team' | 'championship' | 'news';
+  target_id: string;
+  url: string;
+  thumbnail_url: string | null;
+  caption: string | null;
+  is_cover: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface NewsArticle {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  content: string;
+  cover_image: string | null;
+  author_id: string | null;
+  author_name?: string;
+  championship_id: string | null;
+  championship_name?: string;
+  is_published: boolean;
+  is_featured: boolean;
+  views_count: number;
+  published_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'match' | 'vote' | 'message' | 'news';
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
 }

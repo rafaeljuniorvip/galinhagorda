@@ -131,7 +131,12 @@ export async function updateMatch(id: string, data: Partial<Match>): Promise<Mat
       assistant_referee_1 = $11,
       assistant_referee_2 = $12,
       status = COALESCE($13, status),
-      observations = $14
+      observations = $14,
+      streaming_url = $15,
+      highlights_url = $16,
+      is_featured = COALESCE($17, is_featured),
+      voting_open = COALESCE($18, voting_open),
+      voting_deadline = $19
      WHERE id = $1 RETURNING *`,
     [
       id, data.championship_id, data.home_team_id, data.away_team_id,
@@ -140,6 +145,9 @@ export async function updateMatch(id: string, data: Partial<Match>): Promise<Mat
       data.referee ?? null, data.assistant_referee_1 ?? null,
       data.assistant_referee_2 ?? null, data.status,
       data.observations ?? null,
+      data.streaming_url ?? null, data.highlights_url ?? null,
+      data.is_featured, data.voting_open,
+      data.voting_deadline ?? null,
     ]
   );
 }

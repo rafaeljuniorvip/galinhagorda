@@ -36,6 +36,8 @@ export default function PlayerForm({ player }: PlayerFormProps) {
     city: player?.city || 'Itapecerica',
     state: player?.state || 'MG',
     notes: player?.notes || '',
+    instagram: player?.instagram || '',
+    bio: player?.bio || '',
   });
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +82,8 @@ export default function PlayerForm({ player }: PlayerFormProps) {
         rg: form.rg || null,
         dominant_foot: form.dominant_foot || null,
         notes: form.notes || null,
+        instagram: form.instagram || null,
+        bio: form.bio || null,
       };
 
       const url = isEditing ? `/api/players/${player.id}` : '/api/players';
@@ -175,6 +179,12 @@ export default function PlayerForm({ player }: PlayerFormProps) {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField label="Estado" fullWidth value={form.state} onChange={handleChange('state')} />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField label="Instagram" fullWidth value={form.instagram} onChange={handleChange('instagram')} placeholder="@usuario" />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField label="Bio" multiline rows={2} fullWidth value={form.bio} onChange={handleChange('bio')} />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField label="Observacoes" multiline rows={3} fullWidth value={form.notes} onChange={handleChange('notes')} />

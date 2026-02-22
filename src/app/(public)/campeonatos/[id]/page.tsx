@@ -3,12 +3,23 @@ import type { Metadata } from 'next';
 import { getChampionshipById } from '@/services/championshipService';
 import { getChampionshipStandings, getTopScorers } from '@/services/statsService';
 import { getEnrolledTeams } from '@/services/registrationService';
+import { getNewsByChampionship } from '@/services/newsPublicService';
+import { getPublicPhotos } from '@/services/photoPublicService';
 import {
   Container, Typography, Box, Card, CardContent, Chip, Avatar,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Grid,
+  Button, Divider,
 } from '@mui/material';
-import { EmojiEvents } from '@mui/icons-material';
+import {
+  EmojiEvents, LocationOn, CardGiftcard, Business, Description,
+  Category, SportsSoccer, Newspaper, ArrowForward, OpenInNew, Forum,
+} from '@mui/icons-material';
+import Link from 'next/link';
 import ChampionshipMatchesClient from '@/components/public/ChampionshipMatchesClient';
+import NewsCard from '@/components/public/NewsCard';
+import PhotoGallery from '@/components/public/PhotoGallery';
+
+export const dynamic = 'force-dynamic';
 
 interface Props { params: { id: string }; }
 
@@ -22,15 +33,28 @@ export default async function ChampionshipDetailPage({ params }: Props) {
   const championship = await getChampionshipById(params.id);
   if (!championship) notFound();
 
-  const [standings, topScorers, enrolledTeams] = await Promise.all([
+  const [standings, topScorers, enrolledTeams, relatedNews, photos] = await Promise.all([
     getChampionshipStandings(params.id),
     getTopScorers(params.id),
     getEnrolledTeams(params.id),
+    getNewsByChampionship(params.id, 4),
+    getPublicPhotos('championship', params.id),
   ]);
+
+  const hasInfoCards = championship.prize || championship.location || championship.sponsor || championship.format || championship.category;
 
   return (
     <Box>
-      <Box sx={{ background: 'linear-gradient(135deg, #e65100 0%, #f57c00 100%)', color: 'white', py: 5 }}>
+      {/* Hero Banner */}
+      <Box
+        sx={{
+          background: championship.banner_url
+            ? `linear-gradient(to bottom, rgba(230, 81, 0, 0.85) 0%, rgba(245, 124, 0, 0.9) 100%), url(${championship.banner_url}) center/cover no-repeat`
+            : 'linear-gradient(135deg, #e65100 0%, #f57c00 100%)',
+          color: 'white',
+          py: 5,
+        }}
+      >
         <Container maxWidth="lg">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <EmojiEvents sx={{ fontSize: 48 }} />
@@ -39,12 +63,97 @@ export default async function ChampionshipDetailPage({ params }: Props) {
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
                 {championship.category} | {championship.format} | {championship.year}
               </Typography>
+              {championship.description && (
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
+                  {championship.description}
+                </Typography>
+              )}
             </Box>
           </Box>
         </Container>
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
+        {/* Info Cards */}
+        {hasInfoCards && (
+          <Box sx={{ mb: 4 }}>
+            <Grid container spacing={2}>
+              {championship.location && (
+                <Grid item xs={6} sm={4} md={2}>
+                  <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
+                    <CardContent sx={{ py: 2 }}>
+                      <LocationOn sx={{ color: '#1976d2', mb: 0.5 }} />
+                      <Typography variant="caption" color="text.secondary" display="block">Local</Typography>
+                      <Typography variant="body2" fontWeight={600}>{championship.location}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
+              {championship.prize && (
+                <Grid item xs={6} sm={4} md={2}>
+                  <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
+                    <CardContent sx={{ py: 2 }}>
+                      <CardGiftcard sx={{ color: '#ffd600', mb: 0.5 }} />
+                      <Typography variant="caption" color="text.secondary" display="block">Premiacao</Typography>
+                      <Typography variant="body2" fontWeight={600}>{championship.prize}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
+              {championship.sponsor && (
+                <Grid item xs={6} sm={4} md={2}>
+                  <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
+                    <CardContent sx={{ py: 2 }}>
+                      <Business sx={{ color: '#2e7d32', mb: 0.5 }} />
+                      <Typography variant="caption" color="text.secondary" display="block">Patrocinador</Typography>
+                      <Typography variant="body2" fontWeight={600}>{championship.sponsor}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
+              <Grid item xs={6} sm={4} md={2}>
+                <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
+                  <CardContent sx={{ py: 2 }}>
+                    <SportsSoccer sx={{ color: '#ed6c02', mb: 0.5 }} />
+                    <Typography variant="caption" color="text.secondary" display="block">Formato</Typography>
+                    <Typography variant="body2" fontWeight={600}>{championship.format}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={6} sm={4} md={2}>
+                <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
+                  <CardContent sx={{ py: 2 }}>
+                    <Category sx={{ color: '#7b1fa2', mb: 0.5 }} />
+                    <Typography variant="caption" color="text.secondary" display="block">Categoria</Typography>
+                    <Typography variant="body2" fontWeight={600}>{championship.category}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              {championship.rules_url && (
+                <Grid item xs={6} sm={4} md={2}>
+                  <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
+                    <CardContent sx={{ py: 2 }}>
+                      <Description sx={{ color: '#0288d1', mb: 0.5 }} />
+                      <Typography variant="caption" color="text.secondary" display="block">Regulamento</Typography>
+                      <Button
+                        component="a"
+                        href={championship.rules_url}
+                        target="_blank"
+                        rel="noopener"
+                        size="small"
+                        startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                        sx={{ fontSize: '0.75rem' }}
+                      >
+                        Abrir PDF
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        )}
+
         {/* Classificacao */}
         {standings.length > 0 && (
           <Box sx={{ mb: 4 }}>
@@ -121,6 +230,59 @@ export default async function ChampionshipDetailPage({ params }: Props) {
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>PARTIDAS</Typography>
           <ChampionshipMatchesClient championshipId={params.id} />
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        {/* Photo Gallery */}
+        {photos.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <PhotoGallery photos={photos} title="FOTOS DO CAMPEONATO" />
+          </Box>
+        )}
+
+        {/* Related News */}
+        {relatedNews.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
+                <Newspaper sx={{ mr: 1, verticalAlign: 'middle' }} />
+                NOTICIAS
+              </Typography>
+              <Button
+                component={Link}
+                href={`/noticias?campeonato=${params.id}`}
+                endIcon={<ArrowForward />}
+                size="small"
+                sx={{ color: '#1976d2' }}
+              >
+                Ver todas
+              </Button>
+            </Box>
+            <Grid container spacing={2}>
+              {relatedNews.map((article) => (
+                <Grid item xs={12} sm={6} md={3} key={article.id}>
+                  <NewsCard article={article} />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+
+        {/* Fan Wall Placeholder */}
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Forum sx={{ color: '#1a237e' }} />
+            <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
+              MURAL DO TORCEDOR
+            </Typography>
+          </Box>
+          <Card variant="outlined" sx={{ textAlign: 'center', py: 4, bgcolor: '#fafafa' }}>
+            <Forum sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
+            <Typography variant="body2" color="text.secondary">
+              Em breve voce podera deixar sua mensagem aqui!
+            </Typography>
+          </Card>
         </Box>
       </Container>
     </Box>
