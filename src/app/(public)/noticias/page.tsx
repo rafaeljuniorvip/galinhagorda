@@ -16,12 +16,13 @@ export const metadata: Metadata = {
 };
 
 interface Props {
-  searchParams: { page?: string; campeonato?: string };
+  searchParams: Promise<{ page?: string; campeonato?: string }>;
 }
 
 export default async function NoticiasPage({ searchParams }: Props) {
-  const page = parseInt(searchParams.page || '1');
-  const championshipId = searchParams.campeonato || undefined;
+  const params = await searchParams;
+  const page = parseInt(params.page || '1');
+  const championshipId = params.campeonato || undefined;
   const limit = 9;
 
   const [{ news, total }, featured, championships] = await Promise.all([
@@ -69,12 +70,6 @@ export default async function NoticiasPage({ searchParams }: Props) {
               <Select
                 value={championshipId || ''}
                 label="Filtrar por campeonato"
-                // Using a simple link approach for SSR
-                renderValue={(value) => {
-                  if (!value) return 'Todos os campeonatos';
-                  const c = championships.find(ch => ch.id === value);
-                  return c ? `${c.name} ${c.year}` : '';
-                }}
               >
                 <MenuItem value="" component={'a' as any} href="/noticias">
                   Todos os campeonatos
