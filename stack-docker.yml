@@ -30,6 +30,13 @@ services:
           - node.role == manager
       labels:
         - "traefik.enable=true"
+        # HTTP router (redirect to HTTPS + ACME challenge)
+        - "traefik.http.routers.galinhagorda-http.rule=Host(`galinhagorda.vip`) || Host(`www.galinhagorda.vip`)"
+        - "traefik.http.routers.galinhagorda-http.entrypoints=web"
+        - "traefik.http.routers.galinhagorda-http.middlewares=galinhagorda-https-redirect"
+        - "traefik.http.middlewares.galinhagorda-https-redirect.redirectscheme.scheme=https"
+        - "traefik.http.middlewares.galinhagorda-https-redirect.redirectscheme.permanent=true"
+        # HTTPS router
         - "traefik.http.routers.galinhagorda.rule=Host(`galinhagorda.vip`) || Host(`www.galinhagorda.vip`)"
         - "traefik.http.routers.galinhagorda.entrypoints=websecure"
         - "traefik.http.routers.galinhagorda.tls.certresolver=letsencryptresolver"
