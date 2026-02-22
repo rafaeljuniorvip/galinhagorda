@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import { getAllTeams } from '@/services/teamService';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = { title: 'Times' };
 
 export default async function TimesPage() {

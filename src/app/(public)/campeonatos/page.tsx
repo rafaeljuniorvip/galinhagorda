@@ -4,6 +4,8 @@ import { getAllChampionships } from '@/services/championshipService';
 import { EmojiEvents } from '@mui/icons-material';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = { title: 'Campeonatos' };
 
 const statusColor = (s: string) => {
