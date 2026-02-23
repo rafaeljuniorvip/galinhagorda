@@ -22,7 +22,7 @@ interface MatchWithVoting extends Match {
 }
 
 export default function AdminVotacoesPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [matches, setMatches] = useState<MatchWithVoting[]>([]);
   const [championships, setChampionships] = useState<Championship[]>([]);
@@ -34,8 +34,8 @@ export default function AdminVotacoesPage() {
   const [deadline, setDeadline] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) router.push('/admin/login');
-  }, [user, loading, router]);
+    if (!loading && !isAdmin) router.push('/admin/login');
+  }, [isAdmin, loading, router]);
 
   useEffect(() => {
     fetch('/api/championships?all=true')
@@ -141,7 +141,7 @@ export default function AdminVotacoesPage() {
     }
   };
 
-  if (loading || !user) return null;
+  if (loading || !isAdmin) return null;
 
   return (
     <Box>

@@ -13,7 +13,7 @@ import { NewsArticle, PaginatedResponse } from '@/types';
 import { formatDateTime } from '@/lib/utils';
 
 export default function AdminNoticiasPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<PaginatedResponse<NewsArticle> | null>(null);
   const [search, setSearch] = useState('');
@@ -21,8 +21,8 @@ export default function AdminNoticiasPage() {
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    if (!loading && !user) router.push('/admin/login');
-  }, [user, loading, router]);
+    if (!loading && !isAdmin) router.push('/admin/login');
+  }, [isAdmin, loading, router]);
 
   const loadData = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page + 1), limit: '15' });
@@ -44,7 +44,7 @@ export default function AdminNoticiasPage() {
     loadData();
   };
 
-  if (loading || !user) return null;
+  if (loading || !isAdmin) return null;
 
   return (
     <Box>

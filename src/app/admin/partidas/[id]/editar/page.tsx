@@ -9,11 +9,11 @@ import { Match } from '@/types';
 export default function EditarPartidaPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (!authLoading && !user) router.push('/admin/login'); }, [user, authLoading, router]);
+  useEffect(() => { if (!authLoading && !isAdmin) router.push('/admin/login'); }, [isAdmin, authLoading, router]);
   useEffect(() => {
     async function load() { const res = await fetch(`/api/matches/${params.id}`); if (res.ok) setMatch(await res.json()); setLoading(false); }
     if (user) load();

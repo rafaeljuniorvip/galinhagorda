@@ -13,15 +13,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Player, PaginatedResponse } from '@/types';
 
 export default function AdminJogadoresPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [players, setPlayers] = useState<PaginatedResponse<Player> | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    if (!loading && !user) router.push('/admin/login');
-  }, [user, loading, router]);
+    if (!loading && !isAdmin) router.push('/admin/login');
+  }, [isAdmin, loading, router]);
 
   const loadPlayers = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page + 1), limit: '15' });
@@ -40,7 +40,7 @@ export default function AdminJogadoresPage() {
     loadPlayers();
   };
 
-  if (loading || !user) return null;
+  if (loading || !isAdmin) return null;
 
   return (
     <Box>

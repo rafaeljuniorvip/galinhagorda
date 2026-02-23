@@ -12,13 +12,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Team, PaginatedResponse } from '@/types';
 
 export default function AdminTimesPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [teams, setTeams] = useState<PaginatedResponse<Team> | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
 
-  useEffect(() => { if (!loading && !user) router.push('/admin/login'); }, [user, loading, router]);
+  useEffect(() => { if (!loading && !isAdmin) router.push('/admin/login'); }, [isAdmin, loading, router]);
 
   const loadTeams = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page + 1), limit: '15' });
@@ -35,7 +35,7 @@ export default function AdminTimesPage() {
     loadTeams();
   };
 
-  if (loading || !user) return null;
+  if (loading || !isAdmin) return null;
 
   return (
     <Box>

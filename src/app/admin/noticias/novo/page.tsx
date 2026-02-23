@@ -6,14 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import NewsForm from '@/components/admin/NewsForm';
 
 export default function NovaNoticiaPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) router.push('/admin/login');
-  }, [user, loading, router]);
+    if (!loading && !isAdmin) router.push('/admin/login');
+  }, [isAdmin, loading, router]);
 
-  if (loading || !user) return null;
+  if (loading || !isAdmin) return null;
 
   return <NewsForm />;
 }

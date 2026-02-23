@@ -17,7 +17,7 @@ const PLATFORMS = ['YouTube', 'Facebook', 'Instagram', 'TikTok', 'Outro'];
 export default function TransmissoesPartidaPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
   const [links, setLinks] = useState<StreamingLink[]>([]);
   const [error, setError] = useState('');
@@ -36,8 +36,8 @@ export default function TransmissoesPartidaPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) router.push('/admin/login');
-  }, [user, authLoading, router]);
+    if (!authLoading && !isAdmin) router.push('/admin/login');
+  }, [isAdmin, authLoading, router]);
 
   const loadData = useCallback(async () => {
     const [matchRes, linksRes] = await Promise.all([
@@ -116,7 +116,7 @@ export default function TransmissoesPartidaPage() {
     }
   };
 
-  if (authLoading || !user || !match) return null;
+  if (authLoading || !isAdmin || !match) return null;
 
   return (
     <Box>

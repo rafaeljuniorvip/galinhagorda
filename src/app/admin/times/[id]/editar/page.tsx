@@ -9,11 +9,11 @@ import { Team } from '@/types';
 export default function EditarTimePage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (!authLoading && !user) router.push('/admin/login'); }, [user, authLoading, router]);
+  useEffect(() => { if (!authLoading && !isAdmin) router.push('/admin/login'); }, [isAdmin, authLoading, router]);
   useEffect(() => {
     async function load() { const res = await fetch(`/api/teams/${params.id}`); if (res.ok) setTeam(await res.json()); setLoading(false); }
     if (user) load();

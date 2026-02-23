@@ -10,7 +10,9 @@ import {
 import {
   Dashboard, People, Groups, EmojiEvents, SportsSoccer,
   Menu as MenuIcon, ChevronLeft, Newspaper, PhotoLibrary, HowToVote, Forum,
+  SupervisorAccount,
 } from '@mui/icons-material';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DRAWER_WIDTH = 240;
 
@@ -34,11 +36,37 @@ export default function AdminSidebar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isSuperAdmin } = useAuth();
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin';
     return pathname.startsWith(href);
   };
+
+  const itemSx = {
+    borderRadius: 1,
+    '&.Mui-selected': {
+      backgroundColor: 'primary.main',
+      color: 'white',
+      '& .MuiListItemIcon-root': { color: 'white' },
+      '&:hover': { backgroundColor: 'primary.dark' },
+    },
+  };
+
+  const renderItem = (item: { text: string; icon: React.ReactNode; href: string }) => (
+    <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+      <ListItemButton
+        component={Link}
+        href={item.href}
+        selected={isActive(item.href)}
+        onClick={() => isMobile && setMobileOpen(false)}
+        sx={itemSx}
+      >
+        <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+        <ListItemText primary={item.text} />
+      </ListItemButton>
+    </ListItem>
+  );
 
   const drawerContent = (
     <>
@@ -53,54 +81,20 @@ export default function AdminSidebar() {
         )}
       </Toolbar>
       <List sx={{ px: 1 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              component={Link}
-              href={item.href}
-              selected={isActive(item.href)}
-              onClick={() => isMobile && setMobileOpen(false)}
-              sx={{
-                borderRadius: 1,
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  '& .MuiListItemIcon-root': { color: 'white' },
-                  '&:hover': { backgroundColor: 'primary.dark' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {menuItems.map(renderItem)}
       </List>
       <Divider sx={{ mx: 2, my: 1 }} />
       <List sx={{ px: 1 }}>
-        {secondaryMenuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              component={Link}
-              href={item.href}
-              selected={isActive(item.href)}
-              onClick={() => isMobile && setMobileOpen(false)}
-              sx={{
-                borderRadius: 1,
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  '& .MuiListItemIcon-root': { color: 'white' },
-                  '&:hover': { backgroundColor: 'primary.dark' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {secondaryMenuItems.map(renderItem)}
       </List>
+      {isSuperAdmin && (
+        <>
+          <Divider sx={{ mx: 2, my: 1 }} />
+          <List sx={{ px: 1 }}>
+            {renderItem({ text: 'Usuarios', icon: <SupervisorAccount />, href: '/admin/usuarios' })}
+          </List>
+        </>
+      )}
     </>
   );
 

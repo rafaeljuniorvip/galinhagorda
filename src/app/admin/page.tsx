@@ -20,15 +20,15 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({ players: 0, teams: 0, championships: 0, matches: 0, news: 0, photos: 0, pendingMessages: 0, activeVotings: 0 });
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !isAdmin) {
       router.push('/admin/login');
     }
-  }, [user, loading, router]);
+  }, [isAdmin, loading, router]);
 
   useEffect(() => {
     async function loadStats() {

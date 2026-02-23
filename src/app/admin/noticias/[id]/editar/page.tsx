@@ -10,13 +10,13 @@ import { NewsArticle } from '@/types';
 export default function EditarNoticiaPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [news, setNews] = useState<NewsArticle | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !user) router.push('/admin/login');
-  }, [user, authLoading, router]);
+    if (!authLoading && !isAdmin) router.push('/admin/login');
+  }, [isAdmin, authLoading, router]);
 
   useEffect(() => {
     async function load() {

@@ -14,8 +14,6 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^5.18.0",
     "@mui/material": "^5.18.0",
-    "bcryptjs": "^3.0.3",
-    "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
     "next": "14.2.35",
     "next-auth": "^5.0.0-beta.30",
@@ -26,8 +24,6 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",

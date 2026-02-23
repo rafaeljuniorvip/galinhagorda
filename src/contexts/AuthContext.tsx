@@ -1,77 +1,57 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  login: async () => false,
+  isAdmin: false,
+  isSuperAdmin: false,
   logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
+  const loading = status === 'loading';
 
-  const checkAuth = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-      } else {
-        setUser(null);
+  const sessionUser = session?.user as any;
+  const user: User | null = sessionUser
+    ? {
+        id: sessionUser.id || '',
+        name: sessionUser.name || '',
+        email: sessionUser.email || '',
+        role: sessionUser.role || 'fan',
+        avatar_url: sessionUser.avatar_url || sessionUser.image,
       }
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    : null;
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  };
+  const role = user?.role || '';
+  const isAdmin = role === 'admin' || role === 'superadmin';
+  const isSuperAdmin = role === 'superadmin';
 
   const logout = async () => {
-    await fetch('/api/auth/me', { method: 'DELETE' });
-    setUser(null);
+    await signOut({ callbackUrl: '/admin/login' });
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, isSuperAdmin, logout }}>
       {children}
     </AuthContext.Provider>
   );

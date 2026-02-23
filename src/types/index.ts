@@ -202,7 +202,7 @@ export interface User {
   avatar_url: string | null;
   provider: string;
   provider_id: string | null;
-  role: 'admin' | 'team_owner' | 'player' | 'fan';
+  role: 'superadmin' | 'admin' | 'team_owner' | 'player' | 'fan';
   linked_player_id: string | null;
   linked_team_id: string | null;
   bio: string | null;

@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function InscricoesPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [championship, setChampionship] = useState<any>(null);
   const [enrolledTeams, setEnrolledTeams] = useState<any[]>([]);
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -31,7 +31,7 @@ export default function InscricoesPage() {
   const [selectedPlayerTeam, setSelectedPlayerTeam] = useState('');
   const [shirtNumber, setShirtNumber] = useState('');
 
-  useEffect(() => { if (!authLoading && !user) router.push('/admin/login'); }, [user, authLoading, router]);
+  useEffect(() => { if (!authLoading && !isAdmin) router.push('/admin/login'); }, [isAdmin, authLoading, router]);
 
   const loadData = useCallback(async () => {
     const [champRes, teamsRes, regsRes, allTeamsRes, allPlayersRes] = await Promise.all([
@@ -83,7 +83,7 @@ export default function InscricoesPage() {
     loadData();
   };
 
-  if (authLoading || !user || !championship) return null;
+  if (authLoading || !isAdmin || !championship) return null;
 
   // Group registrations by team
   const regsByTeam: Record<string, any[]> = {};

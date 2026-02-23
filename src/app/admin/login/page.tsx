@@ -1,34 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import {
-  Box, Card, CardContent, TextField, Button, Typography, Alert,
+  Box, Card, CardContent, Button, Typography, Alert, CircularProgress,
 } from '@mui/material';
-import { SportsSoccer } from '@mui/icons-material';
+import { SportsSoccer, Google as GoogleIcon } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    const success = await login(email, password);
-    if (success) {
+  useEffect(() => {
+    if (!loading && user && isAdmin) {
       router.push('/admin');
-    } else {
-      setError('Email ou senha inválidos');
     }
-    setLoading(false);
+  }, [loading, user, isAdmin, router]);
+
+  const handleGoogleLogin = () => {
+    signIn('google', { callbackUrl: '/admin' });
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a237e' }}>
+        <CircularProgress sx={{ color: 'white' }} />
+      </Box>
+    );
+  }
+
+  const accessDenied = user && !isAdmin;
 
   return (
     <Box
@@ -53,37 +56,34 @@ export default function AdminLoginPage() {
             </Typography>
           </Box>
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {accessDenied && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              Acesso negado. Sua conta ({user.email}) nao possui permissao de administrador.
+            </Alert>
+          )}
 
-          <form onSubmit={handleSubmit}>
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              label="Senha"
-              type="password"
-              fullWidth
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              sx={{ mb: 3 }}
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              size="large"
-              disabled={loading}
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </Button>
-          </form>
+          <Button
+            variant="contained"
+            fullWidth
+            size="large"
+            startIcon={<GoogleIcon />}
+            onClick={handleGoogleLogin}
+            sx={{
+              textTransform: 'none',
+              fontSize: '1rem',
+              py: 1.5,
+              backgroundColor: '#4285F4',
+              '&:hover': { backgroundColor: '#3367D6' },
+            }}
+          >
+            Entrar com Google
+          </Button>
+
+          {accessDenied && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+              Solicite acesso ao administrador do sistema.
+            </Typography>
+          )}
         </CardContent>
       </Card>
     </Box>

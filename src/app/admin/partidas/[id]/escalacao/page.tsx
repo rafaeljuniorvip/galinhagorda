@@ -35,7 +35,7 @@ interface LineupEntry {
 export default function EscalacaoPartidaPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
   const [players, setPlayers] = useState<PlayerReg[]>([]);
   const [homeLineup, setHomeLineup] = useState<LineupEntry[]>([]);
@@ -45,8 +45,8 @@ export default function EscalacaoPartidaPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) router.push('/admin/login');
-  }, [user, authLoading, router]);
+    if (!authLoading && !isAdmin) router.push('/admin/login');
+  }, [isAdmin, authLoading, router]);
 
   const loadData = useCallback(async () => {
     const matchRes = await fetch(`/api/matches/${params.id}`);
@@ -287,7 +287,7 @@ export default function EscalacaoPartidaPage() {
     );
   };
 
-  if (authLoading || !user || !match) return null;
+  if (authLoading || !isAdmin || !match) return null;
 
   return (
     <Box>

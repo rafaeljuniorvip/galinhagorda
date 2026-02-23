@@ -1,7 +1,7 @@
 'use client';
 
-import { AppBar, Toolbar, Button, Box, Chip } from '@mui/material';
-import { Logout, Person } from '@mui/icons-material';
+import { AppBar, Toolbar, Button, Box, Chip, Avatar } from '@mui/material';
+import { Logout } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -11,7 +11,6 @@ export default function AdminHeader() {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/admin/login');
   };
 
   return (
@@ -28,7 +27,11 @@ export default function AdminHeader() {
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Chip
-              icon={<Person />}
+              avatar={
+                user.avatar_url
+                  ? <Avatar src={user.avatar_url} alt={user.name} />
+                  : undefined
+              }
               label={user.name}
               variant="outlined"
               size="small"

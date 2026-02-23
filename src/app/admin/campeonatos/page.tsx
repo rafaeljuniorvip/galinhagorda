@@ -12,13 +12,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Championship, PaginatedResponse } from '@/types';
 
 export default function AdminCampeonatosPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<PaginatedResponse<Championship> | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
 
-  useEffect(() => { if (!loading && !user) router.push('/admin/login'); }, [user, loading, router]);
+  useEffect(() => { if (!loading && !isAdmin) router.push('/admin/login'); }, [isAdmin, loading, router]);
 
   const loadData = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page + 1), limit: '15' });
@@ -42,7 +42,7 @@ export default function AdminCampeonatosPage() {
     return 'default';
   };
 
-  if (loading || !user) return null;
+  if (loading || !isAdmin) return null;
 
   return (
     <Box>

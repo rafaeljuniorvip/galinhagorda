@@ -15,7 +15,7 @@ import { EVENT_TYPES } from '@/lib/utils';
 export default function EventosPartidaPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [match, setMatch] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
@@ -26,7 +26,7 @@ export default function EventosPartidaPage() {
     player_id: '', team_id: '', event_type: '', minute: '', half: '1T',
   });
 
-  useEffect(() => { if (!authLoading && !user) router.push('/admin/login'); }, [user, authLoading, router]);
+  useEffect(() => { if (!authLoading && !isAdmin) router.push('/admin/login'); }, [isAdmin, authLoading, router]);
 
   const loadData = useCallback(async () => {
     const [matchRes, eventsRes] = await Promise.all([
@@ -93,7 +93,7 @@ export default function EventosPartidaPage() {
     return 'default';
   };
 
-  if (authLoading || !user || !match) return null;
+  if (authLoading || !isAdmin || !match) return null;
 
   return (
     <Box>

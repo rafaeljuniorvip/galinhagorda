@@ -22,7 +22,7 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function AdminMensagensPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [messages, setMessages] = useState<FanMessage[]>([]);
   const [total, setTotal] = useState(0);
@@ -32,8 +32,8 @@ export default function AdminMensagensPage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) router.push('/admin/login');
-  }, [user, loading, router]);
+    if (!loading && !isAdmin) router.push('/admin/login');
+  }, [isAdmin, loading, router]);
 
   const loadMessages = useCallback(async () => {
     const params = new URLSearchParams({ all: 'true', page: String(page + 1), limit: '20' });
@@ -94,7 +94,7 @@ export default function AdminMensagensPage() {
     }
   };
 
-  if (loading || !user) return null;
+  if (loading || !isAdmin) return null;
 
   return (
     <Box>

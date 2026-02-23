@@ -13,14 +13,14 @@ import { Match, PaginatedResponse, Championship } from '@/types';
 import { formatDateTime } from '@/lib/utils';
 
 export default function AdminPartidasPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<PaginatedResponse<Match> | null>(null);
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [championshipFilter, setChampionshipFilter] = useState('');
   const [page, setPage] = useState(0);
 
-  useEffect(() => { if (!loading && !user) router.push('/admin/login'); }, [user, loading, router]);
+  useEffect(() => { if (!loading && !isAdmin) router.push('/admin/login'); }, [isAdmin, loading, router]);
 
   useEffect(() => {
     fetch('/api/championships?all=true').then(r => r.json()).then(setChampionships).catch(() => {});
@@ -48,7 +48,7 @@ export default function AdminPartidasPage() {
     return 'default';
   };
 
-  if (loading || !user) return null;
+  if (loading || !isAdmin) return null;
 
   return (
     <Box>
