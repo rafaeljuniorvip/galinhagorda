@@ -45,6 +45,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = (user as any).role;
         token.linked_player_id = (user as any).linked_player_id;
         token.linked_team_id = (user as any).linked_team_id;
+        token.roleRefreshedAt = Date.now();
       }
 
       // When session update is triggered, refresh from DB
@@ -56,7 +57,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.role = dbUser.role;
           token.linked_player_id = dbUser.linked_player_id;
           token.linked_team_id = dbUser.linked_team_id;
+          token.roleRefreshedAt = Date.now();
         }
+      }
+
+      // Refresh role from DB every 5 minutes to catch role changes
+      const refreshInterval = 5 * 60 * 1000;
+      const lastRefresh = (token.roleRefreshedAt as number) || 0;
+      if (token.dbId && Date.now() - lastRefresh > refreshInterval) {
+        const dbUser = await getUserById(token.dbId as string);
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.linked_player_id = dbUser.linked_player_id;
+          token.linked_team_id = dbUser.linked_team_id;
+        }
+        token.roleRefreshedAt = Date.now();
       }
 
       return token;

@@ -109,14 +109,20 @@ export async function updateUserProfile(id: string, data: UpdateProfileData): Pr
 
 export async function linkPlayerToUser(userId: string, playerId: string): Promise<User | null> {
   return getOne<User>(
-    `UPDATE users SET linked_player_id = $1, role = 'player', updated_at = NOW() WHERE id = $2 RETURNING *`,
+    `UPDATE users SET linked_player_id = $1,
+       role = CASE WHEN role IN ('superadmin', 'admin') THEN role ELSE 'player' END,
+       updated_at = NOW()
+     WHERE id = $2 RETURNING *`,
     [playerId, userId]
   );
 }
 
 export async function linkTeamToUser(userId: string, teamId: string): Promise<User | null> {
   return getOne<User>(
-    `UPDATE users SET linked_team_id = $1, role = 'team_owner', updated_at = NOW() WHERE id = $2 RETURNING *`,
+    `UPDATE users SET linked_team_id = $1,
+       role = CASE WHEN role IN ('superadmin', 'admin') THEN role ELSE 'team_owner' END,
+       updated_at = NOW()
+     WHERE id = $2 RETURNING *`,
     [teamId, userId]
   );
 }
