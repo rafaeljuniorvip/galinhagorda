@@ -7,7 +7,7 @@ import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton, TextField, Chip, TablePagination,
 } from '@mui/material';
-import { Add, Edit, Delete, Search, People } from '@mui/icons-material';
+import { Add, Edit, Delete, Search, People, Assessment } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { Championship, PaginatedResponse } from '@/types';
 
@@ -78,6 +78,7 @@ export default function AdminCampeonatosPage() {
                 <TableCell><Chip label={c.status} size="small" color={statusColor(c.status) as any} /></TableCell>
                 <TableCell align="right">
                   <IconButton component={Link} href={`/admin/campeonatos/${c.id}/inscricoes`} size="small" title="Inscricoes"><People fontSize="small" /></IconButton>
+                  <IconButton component={Link} href={`/admin/campeonatos/${c.id}/relatorios`} size="small" title="Relatorios"><Assessment fontSize="small" /></IconButton>
                   <IconButton component={Link} href={`/admin/campeonatos/${c.id}/editar`} size="small"><Edit fontSize="small" /></IconButton>
                   <IconButton onClick={() => handleDelete(c.id, c.name)} size="small" color="error"><Delete fontSize="small" /></IconButton>
                 </TableCell>

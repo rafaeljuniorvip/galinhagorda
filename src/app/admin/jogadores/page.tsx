@@ -6,9 +6,9 @@ import Link from 'next/link';
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton, TextField, Chip, TablePagination,
-  Avatar,
+  Avatar, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert,
 } from '@mui/material';
-import { Add, Edit, Delete, Search } from '@mui/icons-material';
+import { Add, Edit, Delete, Search, Link as LinkIcon, ContentCopy } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { Player, PaginatedResponse } from '@/types';
 
@@ -18,6 +18,9 @@ export default function AdminJogadoresPage() {
   const [players, setPlayers] = useState<PaginatedResponse<Player> | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [linkDialog, setLinkDialog] = useState<{ open: boolean; link: string; playerName: string }>({ open: false, link: '', playerName: '' });
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     if (!loading && !isAdmin) router.push('/admin/login');
@@ -38,6 +41,32 @@ export default function AdminJogadoresPage() {
     if (!confirm(`Excluir jogador "${name}"?`)) return;
     await fetch(`/api/players/${id}`, { method: 'DELETE' });
     loadPlayers();
+  };
+
+  const handleGenerateLink = async (id: string, name: string) => {
+    setLinkLoading(true);
+    try {
+      const res = await fetch(`/api/players/${id}/generate-link`, { method: 'POST' });
+      if (res.ok) {
+        const { link } = await res.json();
+        setLinkDialog({ open: true, link, playerName: name });
+      } else {
+        setSnackbar({ open: true, message: 'Erro ao gerar link', severity: 'error' });
+      }
+    } catch {
+      setSnackbar({ open: true, message: 'Erro ao gerar link', severity: 'error' });
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(linkDialog.link);
+      setSnackbar({ open: true, message: 'Link copiado!', severity: 'success' });
+    } catch {
+      setSnackbar({ open: true, message: 'Erro ao copiar', severity: 'error' });
+    }
   };
 
   if (loading || !isAdmin) return null;
@@ -94,6 +123,15 @@ export default function AdminJogadoresPage() {
                     color={player.active ? 'success' : 'default'} />
                 </TableCell>
                 <TableCell align="right">
+                  <IconButton
+                    onClick={() => handleGenerateLink(player.id, player.name)}
+                    size="small"
+                    color="primary"
+                    title="Gerar link para completar perfil"
+                    disabled={linkLoading}
+                  >
+                    <LinkIcon fontSize="small" />
+                  </IconButton>
                   <IconButton component={Link} href={`/admin/jogadores/${player.id}/editar`} size="small">
                     <Edit fontSize="small" />
                   </IconButton>
@@ -124,6 +162,41 @@ export default function AdminJogadoresPage() {
           />
         )}
       </TableContainer>
+
+      {/* Link Dialog */}
+      <Dialog open={linkDialog.open} onClose={() => setLinkDialog({ ...linkDialog, open: false })} maxWidth="sm" fullWidth>
+        <DialogTitle>Link para Completar Perfil</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Envie este link para <strong>{linkDialog.playerName}</strong> preencher o perfil. O link expira em 7 dias e so pode ser usado uma vez.
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            value={linkDialog.link}
+            InputProps={{ readOnly: true }}
+            onClick={(e) => (e.target as HTMLInputElement).select()}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLinkDialog({ ...linkDialog, open: false })}>Fechar</Button>
+          <Button variant="contained" startIcon={<ContentCopy />} onClick={handleCopyLink}>
+            Copiar Link
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

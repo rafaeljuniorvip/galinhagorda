@@ -1,6 +1,7 @@
 import { query, getOne, getMany } from '@/lib/db';
 import { Player, PaginatedResponse } from '@/types';
 import { buildPaginationQuery } from '@/lib/utils';
+import { v4 as uuidv4 } from 'uuid';
 
 interface PlayerFilters {
   search?: string;
@@ -109,4 +110,66 @@ export async function updatePlayer(id: string, data: Partial<Player>): Promise<P
 export async function deletePlayer(id: string): Promise<boolean> {
   const result = await query('DELETE FROM players WHERE id = $1', [id]);
   return (result.rowCount ?? 0) > 0;
+}
+
+// ============================================================
+// Edit Token: player self-service profile completion
+// ============================================================
+
+export async function generateEditToken(playerId: string): Promise<{ token: string; expires_at: string } | null> {
+  const token = uuidv4();
+  const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+  const result = await getOne<{ edit_token: string; edit_token_expires_at: string }>(
+    `UPDATE players SET edit_token = $2, edit_token_expires_at = $3 WHERE id = $1
+     RETURNING edit_token, edit_token_expires_at`,
+    [playerId, token, expires_at]
+  );
+  if (!result) return null;
+  return { token: result.edit_token, expires_at: result.edit_token_expires_at };
+}
+
+export async function getPlayerByToken(token: string): Promise<Player | null> {
+  return getOne<Player>(
+    `SELECT * FROM players WHERE edit_token = $1 AND edit_token_expires_at > NOW()`,
+    [token]
+  );
+}
+
+const ALLOWED_TOKEN_FIELDS = [
+  'nickname', 'birth_date', 'dominant_foot', 'height', 'weight',
+  'photo_url', 'city', 'state', 'bio', 'instagram', 'social_links',
+] as const;
+
+export async function updatePlayerByToken(token: string, data: Partial<Player>): Promise<Player | null> {
+  const player = await getPlayerByToken(token);
+  if (!player) return null;
+
+  // Filter to only allowed fields
+  const filtered: Record<string, any> = {};
+  for (const key of ALLOWED_TOKEN_FIELDS) {
+    if (key in data) {
+      filtered[key] = data[key];
+    }
+  }
+
+  const setClauses: string[] = [];
+  const params: any[] = [];
+  let paramIndex = 1;
+
+  for (const [key, value] of Object.entries(filtered)) {
+    setClauses.push(`${key} = $${paramIndex}`);
+    params.push(value ?? null);
+    paramIndex++;
+  }
+
+  // Always invalidate token (one-time use)
+  setClauses.push(`edit_token = NULL`);
+  setClauses.push(`edit_token_expires_at = NULL`);
+
+  params.push(player.id);
+
+  return getOne<Player>(
+    `UPDATE players SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+    params
+  );
 }
