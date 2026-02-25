@@ -1,4 +1,3 @@
-import { Box, Typography } from '@mui/material';
 import { Standing } from '@/types';
 
 interface StandingsImageProps {
@@ -9,52 +8,39 @@ interface StandingsImageProps {
 
 export default function StandingsImage({ standings, championshipName, year }: StandingsImageProps) {
   return (
-    <Box sx={{ width: 1080, fontFamily: '"Inter", sans-serif', bgcolor: '#ffffff' }}>
+    <div style={{ width: 1080, minWidth: 1080, fontFamily: '"Inter", sans-serif', background: '#ffffff' }}>
       {/* Header */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
-          px: 4,
-          py: 3,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 2,
-        }}
-      >
-        <Typography sx={{ color: '#ffffff', fontSize: 28, fontWeight: 700, textAlign: 'center' }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
+        padding: '24px 32px',
+        textAlign: 'center',
+      }}>
+        <div style={{ color: '#ffffff', fontSize: 28, fontWeight: 700 }}>
           {championshipName} {year}
-        </Typography>
-      </Box>
-      <Box sx={{ px: 1, py: 0.5, bgcolor: '#ffc107', textAlign: 'center' }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#1a237e', letterSpacing: 2, textTransform: 'uppercase' }}>
+        </div>
+      </div>
+      <div style={{ padding: '4px 8px', background: '#ffc107', textAlign: 'center' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a237e', letterSpacing: 2, textTransform: 'uppercase' }}>
           Classificacao
-        </Typography>
-      </Box>
+        </div>
+      </div>
 
       {/* Table Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          bgcolor: '#263238',
-          color: '#ffffff',
-          px: 2,
-          py: 1.2,
-          fontSize: 13,
-          fontWeight: 700,
-        }}
-      >
-        <Box sx={{ width: 40, textAlign: 'center' }}>#</Box>
-        <Box sx={{ flex: 1 }}>Time</Box>
-        <Box sx={{ width: 50, textAlign: 'center' }}>P</Box>
-        <Box sx={{ width: 50, textAlign: 'center' }}>J</Box>
-        <Box sx={{ width: 50, textAlign: 'center' }}>V</Box>
-        <Box sx={{ width: 50, textAlign: 'center' }}>E</Box>
-        <Box sx={{ width: 50, textAlign: 'center' }}>D</Box>
-        <Box sx={{ width: 50, textAlign: 'center' }}>GP</Box>
-        <Box sx={{ width: 50, textAlign: 'center' }}>GC</Box>
-        <Box sx={{ width: 50, textAlign: 'center' }}>SG</Box>
-      </Box>
+      <div style={{
+        display: 'flex', width: '100%', background: '#263238', color: '#ffffff',
+        padding: '10px 16px', fontSize: 13, fontWeight: 700, boxSizing: 'border-box',
+      }}>
+        <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>#</div>
+        <div style={{ flex: 1 }}>Time</div>
+        <div style={{ width: 55, textAlign: 'center', flexShrink: 0 }}>P</div>
+        <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>J</div>
+        <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>V</div>
+        <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>E</div>
+        <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>D</div>
+        <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>GP</div>
+        <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>GC</div>
+        <div style={{ width: 55, textAlign: 'center', flexShrink: 0 }}>SG</div>
+      </div>
 
       {/* Rows */}
       {standings.map((team, index) => {
@@ -64,67 +50,54 @@ export default function StandingsImage({ standings, championshipName, year }: St
         const isBottom = pos > standings.length - 2 && standings.length > 4;
 
         return (
-          <Box
+          <div
             key={team.team_id}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              px: 2,
-              py: 1,
-              fontSize: 14,
-              bgcolor: index % 2 === 0 ? '#ffffff' : '#f5f5f5',
-              borderLeft: isTop
-                ? '4px solid #2e7d32'
-                : isBottom
-                ? '4px solid #d32f2f'
-                : '4px solid transparent',
+            style={{
+              display: 'flex', width: '100%', alignItems: 'center',
+              padding: '8px 16px', fontSize: 14, boxSizing: 'border-box',
+              background: index % 2 === 0 ? '#ffffff' : '#f5f5f5',
+              borderLeft: isTop ? '4px solid #2e7d32' : isBottom ? '4px solid #d32f2f' : '4px solid transparent',
             }}
           >
-            <Box sx={{ width: 40, textAlign: 'center', fontWeight: 700, color: isTop ? '#2e7d32' : isBottom ? '#d32f2f' : '#333' }}>
+            <div style={{
+              width: 40, textAlign: 'center', fontWeight: 700, flexShrink: 0,
+              color: isTop ? '#2e7d32' : isBottom ? '#d32f2f' : '#333',
+            }}>
               {pos}
-            </Box>
-            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            </div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
               {team.logo_url && (
-                <img
-                  src={team.logo_url}
-                  alt=""
-                  width={24}
-                  height={24}
-                  style={{ objectFit: 'contain', borderRadius: 4 }}
-                />
+                <img src={team.logo_url} alt="" width={24} height={24}
+                  style={{ objectFit: 'contain', borderRadius: 4, flexShrink: 0 }} />
               )}
               <span style={{ fontWeight: 600 }}>{team.team_name}</span>
-            </Box>
-            <Box sx={{ width: 50, textAlign: 'center', fontWeight: 700, color: '#1a237e', fontSize: 15 }}>{team.points}</Box>
-            <Box sx={{ width: 50, textAlign: 'center' }}>{team.matches_played}</Box>
-            <Box sx={{ width: 50, textAlign: 'center' }}>{team.wins}</Box>
-            <Box sx={{ width: 50, textAlign: 'center' }}>{team.draws}</Box>
-            <Box sx={{ width: 50, textAlign: 'center' }}>{team.losses}</Box>
-            <Box sx={{ width: 50, textAlign: 'center' }}>{team.goals_for}</Box>
-            <Box sx={{ width: 50, textAlign: 'center' }}>{team.goals_against}</Box>
-            <Box sx={{ width: 50, textAlign: 'center', fontWeight: 600, color: sg > 0 ? '#2e7d32' : sg < 0 ? '#d32f2f' : '#666' }}>
+            </div>
+            <div style={{ width: 55, textAlign: 'center', fontWeight: 700, color: '#1a237e', fontSize: 15, flexShrink: 0 }}>{team.points}</div>
+            <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>{team.matches_played}</div>
+            <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>{team.wins}</div>
+            <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>{team.draws}</div>
+            <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>{team.losses}</div>
+            <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>{team.goals_for}</div>
+            <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>{team.goals_against}</div>
+            <div style={{
+              width: 55, textAlign: 'center', fontWeight: 600, flexShrink: 0,
+              color: sg > 0 ? '#2e7d32' : sg < 0 ? '#d32f2f' : '#666',
+            }}>
               {sg > 0 ? `+${sg}` : sg}
-            </Box>
-          </Box>
+            </div>
+          </div>
         );
       })}
 
       {/* Footer */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
-          px: 4,
-          py: 1.5,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 1,
-        }}
-      >
-        <Typography sx={{ color: '#ffc107', fontSize: 14, fontWeight: 700 }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
+        padding: '12px 32px', textAlign: 'center',
+      }}>
+        <div style={{ color: '#ffc107', fontSize: 14, fontWeight: 700 }}>
           galinhagorda.vip
-        </Typography>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

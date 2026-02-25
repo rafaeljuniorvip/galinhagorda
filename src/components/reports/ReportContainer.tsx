@@ -27,9 +27,23 @@ export default function ReportContainer({
     if (!captureRef.current) return;
     setDownloading(true);
     try {
-      await downloadElementAsImage(captureRef.current, filename, {
+      const el = captureRef.current;
+
+      // Temporarily remove scale transform for accurate capture
+      el.style.transform = 'none';
+      el.style.marginBottom = '0px';
+
+      // Wait for the browser to apply the style change
+      await new Promise(r => setTimeout(r, 50));
+
+      await downloadElementAsImage(el, filename, {
         backgroundColor: bgColor,
+        captureWidth: width,
       });
+
+      // Restore preview scale
+      el.style.transform = `scale(${previewScale})`;
+      el.style.marginBottom = '';
     } finally {
       setDownloading(false);
     }
@@ -56,17 +70,17 @@ export default function ReportContainer({
           borderRadius: 1,
         }}
       >
-        <Box
+        <div
           ref={captureRef}
-          sx={{
+          style={{
             width,
+            minWidth: width,
             transformOrigin: 'top left',
             transform: `scale(${previewScale})`,
-            marginBottom: `-${100 - previewScale * 100}%`,
           }}
         >
           {children}
-        </Box>
+        </div>
       </Box>
     </Box>
   );

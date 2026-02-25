@@ -1,4 +1,3 @@
-import { Box, Typography } from '@mui/material';
 import { Match } from '@/types';
 
 interface MatchArtProps {
@@ -20,150 +19,138 @@ export default function MatchArt({ match, championshipName }: MatchArtProps) {
   const isFinished = match.status === 'Finalizada';
 
   return (
-    <Box
-      sx={{
-        width: 1080,
-        height: 1080,
-        background: 'linear-gradient(160deg, #0a1628 0%, #132744 40%, #0d1f3c 70%, #0a1628 100%)',
-        position: 'relative',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        fontFamily: '"Inter", sans-serif',
-      }}
-    >
-      {/* Decorative geometric elements */}
-      <Box sx={{
+    <div style={{
+      width: 1080, minWidth: 1080, height: 1080,
+      background: 'linear-gradient(160deg, #0a1628 0%, #132744 40%, #0d1f3c 70%, #0a1628 100%)',
+      position: 'relative', overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
+      fontFamily: '"Inter", sans-serif', boxSizing: 'border-box',
+    }}>
+      {/* Decorative circles */}
+      <div style={{
         position: 'absolute', top: -100, right: -100,
         width: 400, height: 400, borderRadius: '50%',
         border: '2px solid rgba(255,193,7,0.08)',
       }} />
-      <Box sx={{
+      <div style={{
         position: 'absolute', bottom: -150, left: -150,
         width: 500, height: 500, borderRadius: '50%',
         border: '2px solid rgba(255,193,7,0.06)',
       }} />
-      <Box sx={{
-        position: 'absolute', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 600, height: 600, borderRadius: '50%',
-        border: '1px solid rgba(255,255,255,0.03)',
-      }} />
 
       {/* Championship Name */}
-      <Box sx={{ textAlign: 'center', pt: 5, pb: 2, position: 'relative', zIndex: 1 }}>
-        <Typography sx={{
+      <div style={{ textAlign: 'center', paddingTop: 48, paddingBottom: 16, position: 'relative', zIndex: 1 }}>
+        <div style={{
           color: '#ffc107', fontSize: 16, fontWeight: 700,
           letterSpacing: 4, textTransform: 'uppercase',
         }}>
           {championshipName}
-        </Typography>
+        </div>
         {match.match_round && (
-          <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, mt: 0.5, letterSpacing: 2 }}>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, marginTop: 4, letterSpacing: 2 }}>
             {match.match_round}
-          </Typography>
+          </div>
         )}
-      </Box>
+      </div>
 
-      {/* Main Content */}
-      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, px: 4 }}>
+      {/* Main Content - Teams */}
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'relative', zIndex: 1, padding: '0 32px', width: '100%', boxSizing: 'border-box',
+      }}>
         {/* Home Team */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <Box sx={{
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{
             width: 180, height: 180, borderRadius: '50%',
-            bgcolor: 'rgba(255,255,255,0.06)',
+            background: 'rgba(255,255,255,0.06)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             border: '2px solid rgba(255,255,255,0.1)',
           }}>
             {match.home_team_logo ? (
               <img src={match.home_team_logo} alt="" width={130} height={130} style={{ objectFit: 'contain' }} />
             ) : (
-              <Typography sx={{ fontSize: 48, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
+              <div style={{ fontSize: 48, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
                 {match.home_team_short?.[0] || match.home_team_name?.[0]}
-              </Typography>
+              </div>
             )}
-          </Box>
-          <Typography sx={{ color: '#ffffff', fontSize: 22, fontWeight: 700, textAlign: 'center', maxWidth: 250 }}>
+          </div>
+          <div style={{ color: '#ffffff', fontSize: 22, fontWeight: 700, textAlign: 'center', maxWidth: 250 }}>
             {match.home_team_name}
-          </Typography>
-        </Box>
+          </div>
+        </div>
 
         {/* VS / Score */}
-        <Box sx={{ mx: 2, textAlign: 'center' }}>
+        <div style={{ margin: '0 16px', textAlign: 'center' }}>
           {isFinished ? (
-            <Box>
-              <Typography sx={{ color: '#ffffff', fontSize: 72, fontWeight: 700, lineHeight: 1, letterSpacing: 4 }}>
+            <div>
+              <div style={{ color: '#ffffff', fontSize: 72, fontWeight: 700, lineHeight: 1, letterSpacing: 4 }}>
                 {match.home_score} - {match.away_score}
-              </Typography>
-              <Typography sx={{ color: '#ffc107', fontSize: 14, fontWeight: 600, mt: 1, letterSpacing: 2, textTransform: 'uppercase' }}>
+              </div>
+              <div style={{ color: '#ffc107', fontSize: 14, fontWeight: 600, marginTop: 8, letterSpacing: 2, textTransform: 'uppercase' }}>
                 Final
-              </Typography>
-            </Box>
+              </div>
+            </div>
           ) : (
-            <Typography sx={{
-              color: 'rgba(255,255,255,0.15)', fontSize: 80, fontWeight: 700, lineHeight: 1,
-            }}>
+            <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: 80, fontWeight: 700, lineHeight: 1 }}>
               VS
-            </Typography>
+            </div>
           )}
-        </Box>
+        </div>
 
         {/* Away Team */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <Box sx={{
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{
             width: 180, height: 180, borderRadius: '50%',
-            bgcolor: 'rgba(255,255,255,0.06)',
+            background: 'rgba(255,255,255,0.06)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             border: '2px solid rgba(255,255,255,0.1)',
           }}>
             {match.away_team_logo ? (
               <img src={match.away_team_logo} alt="" width={130} height={130} style={{ objectFit: 'contain' }} />
             ) : (
-              <Typography sx={{ fontSize: 48, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
+              <div style={{ fontSize: 48, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
                 {match.away_team_short?.[0] || match.away_team_name?.[0]}
-              </Typography>
+              </div>
             )}
-          </Box>
-          <Typography sx={{ color: '#ffffff', fontSize: 22, fontWeight: 700, textAlign: 'center', maxWidth: 250 }}>
+          </div>
+          <div style={{ color: '#ffffff', fontSize: 22, fontWeight: 700, textAlign: 'center', maxWidth: 250 }}>
             {match.away_team_name}
-          </Typography>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
 
       {/* Date/Time/Venue */}
-      <Box sx={{ textAlign: 'center', pb: 2, position: 'relative', zIndex: 1 }}>
+      <div style={{ textAlign: 'center', paddingBottom: 16, position: 'relative', zIndex: 1 }}>
         {!isFinished && date && (
-          <Typography sx={{ color: '#ffc107', fontSize: 24, fontWeight: 700, mb: 0.5 }}>
+          <div style={{ color: '#ffc107', fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
             {date} - {time}
-          </Typography>
+          </div>
         )}
         {isFinished && match.match_date && (
-          <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
             {new Date(match.match_date).toLocaleDateString('pt-BR')}
-          </Typography>
+          </div>
         )}
         {match.venue && (
-          <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, mt: 0.5 }}>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginTop: 4 }}>
             {match.venue}
-          </Typography>
+          </div>
         )}
-      </Box>
+      </div>
 
       {/* Footer */}
-      <Box sx={{
-        bgcolor: 'rgba(0,0,0,0.4)',
-        py: 2,
-        textAlign: 'center',
-        borderTop: '1px solid rgba(255,193,7,0.2)',
-        position: 'relative', zIndex: 1,
+      <div style={{
+        background: 'rgba(0,0,0,0.4)', padding: '16px 0',
+        textAlign: 'center', borderTop: '1px solid rgba(255,193,7,0.2)',
+        position: 'relative', zIndex: 1, width: '100%',
       }}>
-        <Typography sx={{ color: '#ffc107', fontSize: 16, fontWeight: 700, letterSpacing: 3 }}>
+        <div style={{ color: '#ffc107', fontSize: 16, fontWeight: 700, letterSpacing: 3 }}>
           GALINHA GORDA
-        </Typography>
-        <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, mt: 0.3, letterSpacing: 1 }}>
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 2, letterSpacing: 1 }}>
           galinhagorda.vip
-        </Typography>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

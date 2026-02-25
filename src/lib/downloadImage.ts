@@ -7,9 +7,10 @@ export async function downloadElementAsImage(
     quality?: number;
     backgroundColor?: string;
     scale?: number;
+    captureWidth?: number;
   }
 ): Promise<void> {
-  const { quality = 0.92, backgroundColor = '#ffffff', scale = 2 } = options || {};
+  const { quality = 0.92, backgroundColor = '#ffffff', scale = 2, captureWidth } = options || {};
 
   // Ensure fonts are loaded before capture
   await document.fonts.ready;
@@ -19,8 +20,9 @@ export async function downloadElementAsImage(
     backgroundColor,
     useCORS: true,
     logging: false,
-    width: element.scrollWidth,
+    width: captureWidth || element.scrollWidth,
     height: element.scrollHeight,
+    windowWidth: captureWidth || element.scrollWidth,
   });
 
   const link = document.createElement('a');
