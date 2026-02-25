@@ -28,6 +28,9 @@ import { formatDateTime } from '@/lib/utils';
 import StreamingLinksDisplay from '@/components/public/StreamingLinksDisplay';
 import MatchLineupDisplay from '@/components/public/MatchLineupDisplay';
 import MatchTimeline from '@/components/public/MatchTimeline';
+import MatchVoting from '@/components/public/MatchVoting';
+import FanWall from '@/components/public/FanWall';
+import SocialShare from '@/components/public/SocialShare';
 
 interface Props {
   params: { id: string };
@@ -319,12 +322,27 @@ export default async function MatchDetailPage({ params }: Props) {
                 <Typography variant="caption">{match.venue}</Typography>
               </Box>
             )}
-            {match.referee && (
+            {(match.referee_name || match.referee) && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <Gavel sx={{ fontSize: 16 }} />
-                <Typography variant="caption">{match.referee}</Typography>
+                <Typography variant="caption">
+                  {match.referee_name || match.referee}
+                  {(match.assistant_referee_1_name || match.assistant_referee_1) && ` | ${match.assistant_referee_1_name || match.assistant_referee_1}`}
+                  {(match.assistant_referee_2_name || match.assistant_referee_2) && ` | ${match.assistant_referee_2_name || match.assistant_referee_2}`}
+                </Typography>
               </Box>
             )}
+          </Box>
+
+          {/* Social Share */}
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <SocialShare
+              homeTeam={match.home_team_name || ''}
+              awayTeam={match.away_team_name || ''}
+              homeScore={match.home_score}
+              awayScore={match.away_score}
+              championship={match.championship_name}
+            />
           </Box>
 
           {/* Live streaming indicator in header */}
@@ -505,12 +523,12 @@ export default async function MatchDetailPage({ params }: Props) {
                 <DetailRow label="Data/Hora" value={formatDateTime(match.match_date)} />
               )}
               {match.venue && <DetailRow label="Local" value={match.venue} />}
-              {match.referee && <DetailRow label="Arbitro" value={match.referee} />}
-              {match.assistant_referee_1 && (
-                <DetailRow label="Assistente 1" value={match.assistant_referee_1} />
+              {(match.referee_name || match.referee) && <DetailRow label="Arbitro" value={match.referee_name || match.referee} />}
+              {(match.assistant_referee_1_name || match.assistant_referee_1) && (
+                <DetailRow label="Assistente 1" value={match.assistant_referee_1_name || match.assistant_referee_1} />
               )}
-              {match.assistant_referee_2 && (
-                <DetailRow label="Assistente 2" value={match.assistant_referee_2} />
+              {(match.assistant_referee_2_name || match.assistant_referee_2) && (
+                <DetailRow label="Assistente 2" value={match.assistant_referee_2_name || match.assistant_referee_2} />
               )}
             </Paper>
 
@@ -532,6 +550,18 @@ export default async function MatchDetailPage({ params }: Props) {
             )}
           </Grid>
         </Grid>
+
+        {/* Match Voting */}
+        {(match.status === 'Finalizada' || match.voting_open) && (
+          <Box sx={{ mt: 4 }}>
+            <MatchVoting matchId={params.id} />
+          </Box>
+        )}
+
+        {/* Fan Wall */}
+        <Box sx={{ mt: 4 }}>
+          <FanWall targetType="match" targetId={params.id} />
+        </Box>
       </Container>
     </Box>
   );

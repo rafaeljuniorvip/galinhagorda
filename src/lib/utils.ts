@@ -68,6 +68,8 @@ export const CHAMPIONSHIP_STATUS = [
   'Cancelado',
 ] as const;
 
+export const REFEREE_CATEGORIES = ['Arbitro', 'Assistente', 'Quarto Arbitro'] as const;
+
 export const EVENT_TYPES = [
   { value: 'GOL', label: 'Gol' },
   { value: 'GOL_CONTRA', label: 'Gol Contra' },

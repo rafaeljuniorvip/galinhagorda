@@ -15,7 +15,10 @@ const MATCH_SELECT = `
   m.*,
   ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short,
   at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short,
-  c.name AS championship_name
+  c.name AS championship_name,
+  r.name AS referee_name,
+  ar1.name AS assistant_referee_1_name,
+  ar2.name AS assistant_referee_2_name
 `;
 
 const MATCH_JOINS = `
@@ -23,6 +26,9 @@ const MATCH_JOINS = `
   JOIN teams ht ON ht.id = m.home_team_id
   JOIN teams at ON at.id = m.away_team_id
   JOIN championships c ON c.id = m.championship_id
+  LEFT JOIN referees r ON r.id = m.referee_id
+  LEFT JOIN referees ar1 ON ar1.id = m.assistant_referee_1_id
+  LEFT JOIN referees ar2 ON ar2.id = m.assistant_referee_2_id
 `;
 
 export async function listMatches(filters: MatchFilters = {}): Promise<PaginatedResponse<Match>> {
@@ -101,15 +107,18 @@ export async function getMatchesByPlayer(playerId: string, championshipId?: stri
 
 export async function createMatch(data: Partial<Match>): Promise<Match> {
   const result = await getOne<Match>(
-    `INSERT INTO matches (championship_id, home_team_id, away_team_id, home_score, away_score, match_date, match_round, venue, referee, assistant_referee_1, assistant_referee_2, status, observations)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    `INSERT INTO matches (championship_id, home_team_id, away_team_id, home_score, away_score, match_date, match_round, venue, referee, assistant_referee_1, assistant_referee_2, referee_id, assistant_referee_1_id, assistant_referee_2_id, status, observations)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING *`,
     [
       data.championship_id, data.home_team_id, data.away_team_id,
       data.home_score ?? null, data.away_score ?? null,
       data.match_date || null, data.match_round || null, data.venue || null,
       data.referee || null, data.assistant_referee_1 || null,
-      data.assistant_referee_2 || null, data.status || 'Agendada',
+      data.assistant_referee_2 || null,
+      data.referee_id || null, data.assistant_referee_1_id || null,
+      data.assistant_referee_2_id || null,
+      data.status || 'Agendada',
       data.observations || null,
     ]
   );
@@ -130,20 +139,26 @@ export async function updateMatch(id: string, data: Partial<Match>): Promise<Mat
       referee = $10,
       assistant_referee_1 = $11,
       assistant_referee_2 = $12,
-      status = COALESCE($13, status),
-      observations = $14,
-      streaming_url = $15,
-      highlights_url = $16,
-      is_featured = COALESCE($17, is_featured),
-      voting_open = COALESCE($18, voting_open),
-      voting_deadline = $19
+      referee_id = $13,
+      assistant_referee_1_id = $14,
+      assistant_referee_2_id = $15,
+      status = COALESCE($16, status),
+      observations = $17,
+      streaming_url = $18,
+      highlights_url = $19,
+      is_featured = COALESCE($20, is_featured),
+      voting_open = COALESCE($21, voting_open),
+      voting_deadline = $22
      WHERE id = $1 RETURNING *`,
     [
       id, data.championship_id, data.home_team_id, data.away_team_id,
       data.home_score ?? null, data.away_score ?? null,
       data.match_date ?? null, data.match_round ?? null, data.venue ?? null,
       data.referee ?? null, data.assistant_referee_1 ?? null,
-      data.assistant_referee_2 ?? null, data.status,
+      data.assistant_referee_2 ?? null,
+      data.referee_id ?? null, data.assistant_referee_1_id ?? null,
+      data.assistant_referee_2_id ?? null,
+      data.status,
       data.observations ?? null,
       data.streaming_url ?? null, data.highlights_url ?? null,
       data.is_featured, data.voting_open,

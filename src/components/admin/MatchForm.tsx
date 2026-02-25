@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Box, TextField, Button, Grid, MenuItem, Alert, Typography, Card, CardContent, FormControlLabel, Switch } from '@mui/material';
+import { Box, TextField, Button, Grid, MenuItem, Alert, Typography, Card, CardContent, FormControlLabel, Switch, Autocomplete } from '@mui/material';
 import { Save, ArrowBack } from '@mui/icons-material';
-import { Match, Championship, Team } from '@/types';
+import { Match, Championship, Team, Referee } from '@/types';
 import { MATCH_STATUS } from '@/lib/utils';
 
 interface Props { match?: Match; }
@@ -17,6 +17,7 @@ export default function MatchForm({ match }: Props) {
   const [saving, setSaving] = useState(false);
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [referees, setReferees] = useState<Referee[]>([]);
 
   const [form, setForm] = useState({
     championship_id: match?.championship_id || '',
@@ -28,6 +29,9 @@ export default function MatchForm({ match }: Props) {
     match_round: match?.match_round || '',
     venue: match?.venue || '',
     referee: match?.referee || '',
+    referee_id: match?.referee_id || '',
+    assistant_referee_1_id: match?.assistant_referee_1_id || '',
+    assistant_referee_2_id: match?.assistant_referee_2_id || '',
     status: match?.status || 'Agendada',
     observations: match?.observations || '',
     streaming_url: match?.streaming_url || '',
@@ -41,7 +45,8 @@ export default function MatchForm({ match }: Props) {
     Promise.all([
       fetch('/api/championships?all=true').then(r => r.json()),
       fetch('/api/teams?all=true').then(r => r.json()),
-    ]).then(([c, t]) => { setChampionships(c); setTeams(t); });
+      fetch('/api/referees?all=true').then(r => r.json()),
+    ]).then(([c, t, refs]) => { setChampionships(c); setTeams(t); setReferees(refs); });
   }, []);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,6 +58,9 @@ export default function MatchForm({ match }: Props) {
     setError('');
     setSaving(true);
     try {
+      const selectedReferee = referees.find(r => r.id === form.referee_id);
+      const selectedAR1 = referees.find(r => r.id === form.assistant_referee_1_id);
+      const selectedAR2 = referees.find(r => r.id === form.assistant_referee_2_id);
       const body = {
         ...form,
         home_score: form.home_score !== '' ? parseInt(form.home_score) : null,
@@ -60,7 +68,12 @@ export default function MatchForm({ match }: Props) {
         match_date: form.match_date || null,
         match_round: form.match_round || null,
         venue: form.venue || null,
-        referee: form.referee || null,
+        referee: selectedReferee?.name || form.referee || null,
+        assistant_referee_1: selectedAR1?.name || null,
+        assistant_referee_2: selectedAR2?.name || null,
+        referee_id: form.referee_id || null,
+        assistant_referee_1_id: form.assistant_referee_1_id || null,
+        assistant_referee_2_id: form.assistant_referee_2_id || null,
         observations: form.observations || null,
         streaming_url: form.streaming_url || null,
         highlights_url: form.highlights_url || null,
@@ -115,7 +128,36 @@ export default function MatchForm({ match }: Props) {
               </Grid>
               <Grid item xs={12} md={4}><TextField label="Data e Hora" type="datetime-local" fullWidth InputLabelProps={{ shrink: true }} value={form.match_date} onChange={handleChange('match_date')} /></Grid>
               <Grid item xs={12} md={4}><TextField label="Local" fullWidth value={form.venue} onChange={handleChange('venue')} /></Grid>
-              <Grid item xs={12} md={4}><TextField label="Arbitro" fullWidth value={form.referee} onChange={handleChange('referee')} /></Grid>
+              <Grid item xs={12} md={4}>
+                <Autocomplete
+                  options={referees}
+                  getOptionLabel={(o) => o.nickname ? `${o.name} (${o.nickname})` : o.name}
+                  value={referees.find(r => r.id === form.referee_id) || null}
+                  onChange={(_, v) => setForm(prev => ({ ...prev, referee_id: v?.id || '', referee: v?.name || '' }))}
+                  renderInput={(params) => <TextField {...params} label="Arbitro" />}
+                  isOptionEqualToValue={(o, v) => o.id === v.id}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Autocomplete
+                  options={referees}
+                  getOptionLabel={(o) => o.nickname ? `${o.name} (${o.nickname})` : o.name}
+                  value={referees.find(r => r.id === form.assistant_referee_1_id) || null}
+                  onChange={(_, v) => setForm(prev => ({ ...prev, assistant_referee_1_id: v?.id || '' }))}
+                  renderInput={(params) => <TextField {...params} label="Assistente 1" />}
+                  isOptionEqualToValue={(o, v) => o.id === v.id}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Autocomplete
+                  options={referees}
+                  getOptionLabel={(o) => o.nickname ? `${o.name} (${o.nickname})` : o.name}
+                  value={referees.find(r => r.id === form.assistant_referee_2_id) || null}
+                  onChange={(_, v) => setForm(prev => ({ ...prev, assistant_referee_2_id: v?.id || '' }))}
+                  renderInput={(params) => <TextField {...params} label="Assistente 2" />}
+                  isOptionEqualToValue={(o, v) => o.id === v.id}
+                />
+              </Grid>
               <Grid item xs={12} md={4}><TextField label="URL Transmissao" fullWidth value={form.streaming_url} onChange={handleChange('streaming_url')} placeholder="https://..." /></Grid>
               <Grid item xs={12} md={4}><TextField label="URL Melhores Momentos" fullWidth value={form.highlights_url} onChange={handleChange('highlights_url')} placeholder="https://..." /></Grid>
               <Grid item xs={12} md={4}>

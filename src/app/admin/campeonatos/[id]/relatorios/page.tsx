@@ -77,7 +77,7 @@ export default function CampeonatoRelatoriosPage() {
                 Tabela de Classificacao
               </Typography>
               {standings.length > 0 ? (
-                <ReportContainer filename={`classificacao-${slug}-${championship.year}`}>
+                <ReportContainer filename={`classificacao-${slug}-${championship.year}`} title="Tabela de Classificacao">
                   <StandingsImage
                     standings={standings}
                     championshipName={championship.name}
@@ -99,7 +99,7 @@ export default function CampeonatoRelatoriosPage() {
                 Artilharia
               </Typography>
               {scorers.length > 0 ? (
-                <ReportContainer filename={`artilharia-${slug}-${championship.year}`}>
+                <ReportContainer filename={`artilharia-${slug}-${championship.year}`} title="Artilharia">
                   <TopScorersImage
                     scorers={scorers}
                     championshipName={championship.name}

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { getTeamById } from '@/services/teamService';
 import { getMany } from '@/lib/db';
 import { getPublicPhotos } from '@/services/photoPublicService';
+import { Match } from '@/types';
 import {
   Container, Typography, Box, Avatar, Card, CardContent, Grid, Chip, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -13,6 +14,8 @@ import {
 } from '@mui/icons-material';
 import Link from 'next/link';
 import PhotoGallery from '@/components/public/PhotoGallery';
+import MatchResultCard from '@/components/public/MatchResultCard';
+import FanWall from '@/components/public/FanWall';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,8 +74,49 @@ export default async function TeamDetailPage({ params }: Props) {
     [params.id]
   );
 
-  // Get photos
-  const photos = await getPublicPhotos('team', params.id);
+  // Get photos, recent results, upcoming matches, top scorer
+  const [photos, recentResults, upcomingMatches, topScorer] = await Promise.all([
+    getPublicPhotos('team', params.id),
+    getMany<Match>(
+      `SELECT m.*,
+        ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short,
+        at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short,
+        c.name AS championship_name
+       FROM matches m
+       JOIN teams ht ON ht.id = m.home_team_id
+       JOIN teams at ON at.id = m.away_team_id
+       JOIN championships c ON c.id = m.championship_id
+       WHERE (m.home_team_id = $1 OR m.away_team_id = $1) AND m.status = 'Finalizada'
+       ORDER BY m.match_date DESC NULLS LAST
+       LIMIT 5`,
+      [params.id]
+    ),
+    getMany<Match>(
+      `SELECT m.*,
+        ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short,
+        at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short,
+        c.name AS championship_name
+       FROM matches m
+       JOIN teams ht ON ht.id = m.home_team_id
+       JOIN teams at ON at.id = m.away_team_id
+       JOIN championships c ON c.id = m.championship_id
+       WHERE (m.home_team_id = $1 OR m.away_team_id = $1) AND m.status = 'Agendada'
+       ORDER BY m.match_date ASC NULLS LAST
+       LIMIT 3`,
+      [params.id]
+    ),
+    getMany(
+      `SELECT p.id, p.name, p.photo_url,
+        COUNT(*) FILTER (WHERE me.event_type IN ('GOL', 'GOL_PENALTI'))::int AS goals
+       FROM match_events me
+       JOIN players p ON p.id = me.player_id
+       WHERE me.team_id = $1 AND me.event_type IN ('GOL', 'GOL_PENALTI')
+       GROUP BY p.id, p.name, p.photo_url
+       ORDER BY goals DESC
+       LIMIT 1`,
+      [params.id]
+    ),
+  ]);
 
   return (
     <Box>
@@ -237,6 +281,60 @@ export default async function TeamDetailPage({ params }: Props) {
           </Box>
         )}
 
+        {/* Recent Results & Upcoming Matches */}
+        {(recentResults.length > 0 || upcomingMatches.length > 0 || topScorer.length > 0) && (
+          <Box sx={{ mb: 4 }}>
+            <Divider sx={{ mb: 3 }} />
+            <Grid container spacing={3}>
+              {recentResults.length > 0 && (
+                <Grid item xs={12} md={topScorer.length > 0 ? 5 : 6}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
+                    ULTIMOS RESULTADOS
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {recentResults.map((m) => (
+                      <MatchResultCard key={m.id} match={m} highlightTeamId={params.id} />
+                    ))}
+                  </Box>
+                </Grid>
+              )}
+              {upcomingMatches.length > 0 && (
+                <Grid item xs={12} md={topScorer.length > 0 ? 4 : 6}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
+                    PROXIMOS JOGOS
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {upcomingMatches.map((m) => (
+                      <MatchResultCard key={m.id} match={m} />
+                    ))}
+                  </Box>
+                </Grid>
+              )}
+              {topScorer.length > 0 && (
+                <Grid item xs={12} md={3}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
+                    ARTILHEIRO
+                  </Typography>
+                  <Card variant="outlined" sx={{ textAlign: 'center', p: 2 }}>
+                    <Avatar
+                      src={topScorer[0].photo_url || ''}
+                      sx={{ width: 72, height: 72, mx: 'auto', mb: 1, border: '3px solid #ffd600' }}
+                    >
+                      {topScorer[0].name[0]}
+                    </Avatar>
+                    <Typography variant="body1" fontWeight={700}>{topScorer[0].name}</Typography>
+                    <Chip
+                      label={`${topScorer[0].goals} gol${topScorer[0].goals > 1 ? 's' : ''}`}
+                      size="small"
+                      sx={{ mt: 1, bgcolor: '#ffd600', color: '#1a237e', fontWeight: 700 }}
+                    />
+                  </Card>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        )}
+
         {/* Photo Gallery */}
         {photos.length > 0 && (
           <Box sx={{ mb: 4 }}>
@@ -245,7 +343,7 @@ export default async function TeamDetailPage({ params }: Props) {
           </Box>
         )}
 
-        {/* Fan Wall Placeholder */}
+        {/* Fan Wall */}
         <Box sx={{ mb: 4 }}>
           <Divider sx={{ mb: 3 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -254,12 +352,7 @@ export default async function TeamDetailPage({ params }: Props) {
               MURAL DO TORCEDOR
             </Typography>
           </Box>
-          <Card variant="outlined" sx={{ textAlign: 'center', py: 4, bgcolor: '#fafafa' }}>
-            <Forum sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
-            <Typography variant="body2" color="text.secondary">
-              Em breve voce podera deixar sua mensagem aqui!
-            </Typography>
-          </Card>
+          <FanWall targetType="team" targetId={params.id} />
         </Box>
       </Container>
     </Box>

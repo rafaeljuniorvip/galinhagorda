@@ -85,6 +85,7 @@ export default function PartidaRelatoriosPage() {
               </Typography>
               <ReportContainer
                 filename={`arte-${homeShort}-x-${awayShort}`}
+                title="Arte do Jogo"
                 width={1080}
                 bgColor="#0a1628"
                 previewScale={0.4}
@@ -103,7 +104,7 @@ export default function PartidaRelatoriosPage() {
                 Relatorio de Eventos / Cartoes
               </Typography>
               {events.length > 0 ? (
-                <ReportContainer filename={`relatorio-${homeShort}-x-${awayShort}-${dateStr}`}>
+                <ReportContainer filename={`relatorio-${homeShort}-x-${awayShort}-${dateStr}`} title="Relatorio de Eventos">
                   <MatchEventsImage
                     match={match}
                     events={events}

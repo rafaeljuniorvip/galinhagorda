@@ -8,7 +8,7 @@ import {
   Toolbar, Typography, Box, IconButton, useMediaQuery, useTheme, Divider,
 } from '@mui/material';
 import {
-  Dashboard, People, Groups, EmojiEvents, SportsSoccer,
+  Dashboard, People, Groups, EmojiEvents, SportsSoccer, Gavel,
   Menu as MenuIcon, ChevronLeft, Newspaper, PhotoLibrary, HowToVote, Forum,
   SupervisorAccount,
 } from '@mui/icons-material';
@@ -22,6 +22,7 @@ const menuItems = [
   { text: 'Times', icon: <Groups />, href: '/admin/times' },
   { text: 'Campeonatos', icon: <EmojiEvents />, href: '/admin/campeonatos' },
   { text: 'Partidas', icon: <SportsSoccer />, href: '/admin/partidas' },
+  { text: 'Arbitros', icon: <Gavel />, href: '/admin/arbitros' },
 ];
 
 const secondaryMenuItems = [

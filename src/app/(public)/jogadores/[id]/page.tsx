@@ -1,15 +1,16 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getPlayerById } from '@/services/playerService';
-import { getPlayerStats } from '@/services/statsService';
+import { getPlayerStats, getPlayerCareerStats } from '@/services/statsService';
 import { getRegistrationsByPlayer } from '@/services/registrationService';
 import { getPublicPhotos } from '@/services/photoPublicService';
 import PlayerBIDProfile from '@/components/public/PlayerBIDProfile';
 import PhotoGallery from '@/components/public/PhotoGallery';
 import {
-  Box, Container, Typography, Card, CardContent, Button, Divider,
+  Box, Container, Typography, Card, CardContent, Button, Divider, Grid,
 } from '@mui/material';
-import { Instagram, Forum } from '@mui/icons-material';
+import { Instagram, Forum, SportsSoccer, Style, Block } from '@mui/icons-material';
+import FanWall from '@/components/public/FanWall';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,10 +31,11 @@ export default async function PlayerProfilePage({ params }: Props) {
   const player = await getPlayerById(params.id);
   if (!player) notFound();
 
-  const [stats, registrations, photos] = await Promise.all([
+  const [stats, registrations, photos, careerStats] = await Promise.all([
     getPlayerStats(params.id),
     getRegistrationsByPlayer(params.id),
     getPublicPhotos('player', params.id),
+    getPlayerCareerStats(params.id),
   ]);
 
   return (
@@ -84,6 +86,54 @@ export default async function PlayerProfilePage({ params }: Props) {
           </Box>
         )}
 
+        {/* Career Stats */}
+        {(careerStats.total_matches > 0 || careerStats.total_goals > 0) && (
+          <Box sx={{ mb: 4 }}>
+            <Divider sx={{ mb: 3 }} />
+            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
+              NUMEROS NA CARREIRA
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={6} sm={3}>
+                <Card variant="outlined" sx={{ textAlign: 'center' }}>
+                  <CardContent>
+                    <SportsSoccer sx={{ color: '#1976d2', fontSize: 32 }} />
+                    <Typography variant="h4" fontWeight={800} sx={{ color: '#1a237e' }}>{careerStats.total_matches}</Typography>
+                    <Typography variant="caption" color="text.secondary">Partidas</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Card variant="outlined" sx={{ textAlign: 'center' }}>
+                  <CardContent>
+                    <SportsSoccer sx={{ color: '#2e7d32', fontSize: 32 }} />
+                    <Typography variant="h4" fontWeight={800} sx={{ color: '#2e7d32' }}>{careerStats.total_goals}</Typography>
+                    <Typography variant="caption" color="text.secondary">Gols</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Card variant="outlined" sx={{ textAlign: 'center' }}>
+                  <CardContent>
+                    <Style sx={{ color: '#ffd600', fontSize: 32 }} />
+                    <Typography variant="h4" fontWeight={800} sx={{ color: '#ed6c02' }}>{careerStats.total_yellow_cards}</Typography>
+                    <Typography variant="caption" color="text.secondary">Amarelos</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Card variant="outlined" sx={{ textAlign: 'center' }}>
+                  <CardContent>
+                    <Block sx={{ color: '#d32f2f', fontSize: 32 }} />
+                    <Typography variant="h4" fontWeight={800} sx={{ color: '#d32f2f' }}>{careerStats.total_red_cards}</Typography>
+                    <Typography variant="caption" color="text.secondary">Vermelhos</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+
         {/* Photo Gallery */}
         {photos.length > 0 && (
           <Box sx={{ mb: 4 }}>
@@ -92,7 +142,7 @@ export default async function PlayerProfilePage({ params }: Props) {
           </Box>
         )}
 
-        {/* Fan Wall Placeholder */}
+        {/* Fan Wall */}
         <Box sx={{ mb: 4 }}>
           <Divider sx={{ mb: 3 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -101,12 +151,7 @@ export default async function PlayerProfilePage({ params }: Props) {
               MURAL DO TORCEDOR
             </Typography>
           </Box>
-          <Card variant="outlined" sx={{ textAlign: 'center', py: 4, bgcolor: '#fafafa' }}>
-            <Forum sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
-            <Typography variant="body2" color="text.secondary">
-              Em breve voce podera deixar sua mensagem aqui!
-            </Typography>
-          </Card>
+          <FanWall targetType="player" targetId={params.id} />
         </Box>
       </Container>
     </Box>

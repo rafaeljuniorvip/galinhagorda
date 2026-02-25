@@ -1,13 +1,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Box, Button, CircularProgress } from '@mui/material';
-import { Download } from '@mui/icons-material';
+import { Box, Button, CircularProgress, Dialog, AppBar, Toolbar, Typography, IconButton } from '@mui/material';
+import { Download, Visibility, Close } from '@mui/icons-material';
 import { downloadElementAsImage } from '@/lib/downloadImage';
 
 interface ReportContainerProps {
   filename: string;
   children: React.ReactNode;
+  title?: string;
   width?: number;
   bgColor?: string;
   previewScale?: number;
@@ -16,12 +17,14 @@ interface ReportContainerProps {
 export default function ReportContainer({
   filename,
   children,
+  title,
   width = 1080,
   bgColor = '#ffffff',
   previewScale = 0.45,
 }: ReportContainerProps) {
   const captureRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
 
   const handleDownload = async () => {
     if (!captureRef.current) return;
@@ -51,7 +54,7 @@ export default function ReportContainer({
 
   return (
     <Box>
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
         <Button
           variant="contained"
           startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <Download />}
@@ -59,6 +62,13 @@ export default function ReportContainer({
           disabled={downloading}
         >
           {downloading ? 'Gerando...' : 'Download JPG'}
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<Visibility />}
+          onClick={() => setFullscreenOpen(true)}
+        >
+          Visualizar
         </Button>
       </Box>
       <Box
@@ -82,6 +92,38 @@ export default function ReportContainer({
           {children}
         </div>
       </Box>
+
+      {/* Fullscreen Dialog */}
+      <Dialog
+        fullScreen
+        open={fullscreenOpen}
+        onClose={() => setFullscreenOpen(false)}
+      >
+        <AppBar sx={{ position: 'relative' }}>
+          <Toolbar>
+            <Typography sx={{ flex: 1 }} variant="h6">
+              {title || 'Relatorio'}
+            </Typography>
+            <Button
+              color="inherit"
+              startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <Download />}
+              onClick={handleDownload}
+              disabled={downloading}
+              sx={{ mr: 1 }}
+            >
+              {downloading ? 'Gerando...' : 'Download JPG'}
+            </Button>
+            <IconButton edge="end" color="inherit" onClick={() => setFullscreenOpen(false)}>
+              <Close />
+            </IconButton>
+          </Toolbar>
+        </AppBar>
+        <Box sx={{ overflow: 'auto', display: 'flex', justifyContent: 'center', bgcolor: '#f5f5f5', p: 2 }}>
+          <div style={{ width, minWidth: width }}>
+            {children}
+          </div>
+        </Box>
+      </Dialog>
     </Box>
   );
 }

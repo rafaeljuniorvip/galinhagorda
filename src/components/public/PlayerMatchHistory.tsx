@@ -20,10 +20,12 @@ export default function PlayerMatchHistory({ playerId, championshipId }: Props) 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const res = await fetch(`/api/matches?championship_id=${championshipId}&limit=50`);
+      const params = new URLSearchParams();
+      if (championshipId) params.set('championship_id', championshipId);
+      const res = await fetch(`/api/players/${playerId}/matches?${params}`);
       if (res.ok) {
         const data = await res.json();
-        setMatches(data.data || []);
+        setMatches(Array.isArray(data) ? data : data.data || []);
       }
       setLoading(false);
     }

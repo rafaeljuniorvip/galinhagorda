@@ -11,6 +11,7 @@ import { getChampionshipStandings, getTopScorers } from '@/services/statsService
 import { getPublishedNews } from '@/services/newsPublicService';
 import FeaturedMatches from '@/components/public/FeaturedMatches';
 import NewsCard from '@/components/public/NewsCard';
+import MatchResultCard from '@/components/public/MatchResultCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,40 @@ async function getActiveChampionship(): Promise<Championship | null> {
        CASE WHEN status = 'Em Andamento' THEN 0 ELSE 1 END,
        year DESC
      LIMIT 1`
+  );
+}
+
+async function getRecentResults(champId: string): Promise<Match[]> {
+  return getMany<Match>(
+    `SELECT m.*,
+      ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short,
+      at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short,
+      c.name AS championship_name
+     FROM matches m
+     JOIN teams ht ON ht.id = m.home_team_id
+     JOIN teams at ON at.id = m.away_team_id
+     JOIN championships c ON c.id = m.championship_id
+     WHERE m.championship_id = $1 AND m.status = 'Finalizada'
+     ORDER BY m.match_date DESC NULLS LAST
+     LIMIT 6`,
+    [champId]
+  );
+}
+
+async function getUpcomingMatches(champId: string): Promise<Match[]> {
+  return getMany<Match>(
+    `SELECT m.*,
+      ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short,
+      at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short,
+      c.name AS championship_name
+     FROM matches m
+     JOIN teams ht ON ht.id = m.home_team_id
+     JOIN teams at ON at.id = m.away_team_id
+     JOIN championships c ON c.id = m.championship_id
+     WHERE m.championship_id = $1 AND m.status = 'Agendada'
+     ORDER BY m.match_date ASC NULLS LAST
+     LIMIT 6`,
+    [champId]
   );
 }
 
@@ -58,13 +93,17 @@ export default async function HomePage() {
     getPublishedNews(1, 4),
   ]);
 
-  // Load standings and top scorers if there's an active championship
+  // Load standings, top scorers, results and upcoming if there's an active championship
   let standings: any[] = [];
   let topScorers: any[] = [];
+  let recentResults: Match[] = [];
+  let upcomingMatches: Match[] = [];
   if (activeChampionship) {
-    [standings, topScorers] = await Promise.all([
+    [standings, topScorers, recentResults, upcomingMatches] = await Promise.all([
       getChampionshipStandings(activeChampionship.id),
       getTopScorers(activeChampionship.id, 5),
+      getRecentResults(activeChampionship.id),
+      getUpcomingMatches(activeChampionship.id),
     ]);
   }
 
@@ -160,6 +199,50 @@ export default async function HomePage() {
                   <NewsCard article={article} featured={index === 0} />
                 </Grid>
               ))}
+            </Grid>
+          </Container>
+        </Box>
+      )}
+
+      {/* Recent Results & Upcoming Matches */}
+      {activeChampionship && (recentResults.length > 0 || upcomingMatches.length > 0) && (
+        <Box sx={{ py: 4 }}>
+          <Container maxWidth="lg">
+            <Grid container spacing={4}>
+              {recentResults.length > 0 && (
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
+                      <SportsSoccer sx={{ mr: 1, verticalAlign: 'middle', color: '#2e7d32' }} />
+                      ULTIMOS RESULTADOS
+                    </Typography>
+                  </Box>
+                  <Grid container spacing={1.5}>
+                    {recentResults.map((m) => (
+                      <Grid item xs={12} sm={6} key={m.id}>
+                        <MatchResultCard match={m} />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Grid>
+              )}
+              {upcomingMatches.length > 0 && (
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
+                      <SportsSoccer sx={{ mr: 1, verticalAlign: 'middle', color: '#1976d2' }} />
+                      PROXIMOS JOGOS
+                    </Typography>
+                  </Box>
+                  <Grid container spacing={1.5}>
+                    {upcomingMatches.map((m) => (
+                      <Grid item xs={12} sm={6} key={m.id}>
+                        <MatchResultCard match={m} />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Grid>
+              )}
             </Grid>
           </Container>
         </Box>

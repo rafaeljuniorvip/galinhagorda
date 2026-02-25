@@ -112,6 +112,9 @@ export interface Match {
   referee: string | null;
   assistant_referee_1: string | null;
   assistant_referee_2: string | null;
+  referee_id: string | null;
+  assistant_referee_1_id: string | null;
+  assistant_referee_2_id: string | null;
   status: string;
   observations: string | null;
   voting_open: boolean;
@@ -129,6 +132,9 @@ export interface Match {
   away_team_logo?: string;
   away_team_short?: string;
   championship_name?: string;
+  referee_name?: string;
+  assistant_referee_1_name?: string;
+  assistant_referee_2_name?: string;
 }
 
 export interface MatchEvent {
@@ -316,4 +322,19 @@ export interface Notification {
   link: string | null;
   is_read: boolean;
   created_at: string;
+}
+
+export interface Referee {
+  id: string;
+  name: string;
+  nickname: string | null;
+  cpf: string | null;
+  phone: string | null;
+  category: string;
+  city: string;
+  state: string;
+  active: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }

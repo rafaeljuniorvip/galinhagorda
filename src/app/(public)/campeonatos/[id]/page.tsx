@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getChampionshipById } from '@/services/championshipService';
-import { getChampionshipStandings, getTopScorers } from '@/services/statsService';
+import { getChampionshipStandings, getTopScorers, getDisciplinaryRanking, getTeamFairPlayRanking } from '@/services/statsService';
 import { getEnrolledTeams } from '@/services/registrationService';
 import { getNewsByChampionship } from '@/services/newsPublicService';
 import { getPublicPhotos } from '@/services/photoPublicService';
@@ -18,6 +18,7 @@ import Link from 'next/link';
 import ChampionshipMatchesClient from '@/components/public/ChampionshipMatchesClient';
 import NewsCard from '@/components/public/NewsCard';
 import PhotoGallery from '@/components/public/PhotoGallery';
+import FanWall from '@/components/public/FanWall';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,12 +34,14 @@ export default async function ChampionshipDetailPage({ params }: Props) {
   const championship = await getChampionshipById(params.id);
   if (!championship) notFound();
 
-  const [standings, topScorers, enrolledTeams, relatedNews, photos] = await Promise.all([
+  const [standings, topScorers, enrolledTeams, relatedNews, photos, disciplinary, fairPlay] = await Promise.all([
     getChampionshipStandings(params.id),
     getTopScorers(params.id),
     getEnrolledTeams(params.id),
     getNewsByChampionship(params.id, 4),
     getPublicPhotos('championship', params.id),
+    getDisciplinaryRanking(params.id),
+    getTeamFairPlayRanking(params.id),
   ]);
 
   const hasInfoCards = championship.prize || championship.location || championship.sponsor || championship.format || championship.category;
@@ -175,8 +178,10 @@ export default async function ChampionshipDetailPage({ params }: Props) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {standings.map((s, i) => (
-                    <TableRow key={s.team_id} hover>
+                  {standings.map((s, i) => {
+                    const posColor = i < 4 ? '#2e7d32' : (i >= standings.length - 2 ? '#d32f2f' : 'transparent');
+                    return (
+                    <TableRow key={s.team_id} hover sx={{ borderLeft: `4px solid ${posColor}` }}>
                       <TableCell sx={{ fontWeight: 700 }}>{i + 1}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -193,7 +198,8 @@ export default async function ChampionshipDetailPage({ params }: Props) {
                       <TableCell align="center">{s.goals_against}</TableCell>
                       <TableCell align="center">{s.goals_for - s.goals_against}</TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -222,6 +228,92 @@ export default async function ChampionshipDetailPage({ params }: Props) {
                   </Card>
                 </Grid>
               ))}
+            </Grid>
+          </Box>
+        )}
+
+        {/* Cartoes / Disciplinar */}
+        {(disciplinary.length > 0 || fairPlay.length > 0) && (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>CARTOES</Typography>
+            <Grid container spacing={3}>
+              {disciplinary.length > 0 && (
+                <Grid item xs={12} md={7}>
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>Ranking Disciplinar</Typography>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>#</TableCell>
+                          <TableCell>Jogador</TableCell>
+                          <TableCell>Time</TableCell>
+                          <TableCell align="center">AM</TableCell>
+                          <TableCell align="center">VM</TableCell>
+                          <TableCell align="center">Pts</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {disciplinary.map((d, i) => (
+                          <TableRow key={d.player_id} hover>
+                            <TableCell>{i + 1}</TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar src={d.photo_url || ''} sx={{ width: 24, height: 24 }}>{d.player_name[0]}</Avatar>
+                                <Typography variant="body2" fontWeight={600}>{d.player_name}</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Avatar src={d.team_logo || ''} sx={{ width: 18, height: 18 }}>{d.team_name[0]}</Avatar>
+                                <Typography variant="caption">{d.team_name}</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Chip label={d.yellow_cards} size="small" sx={{ bgcolor: '#ffd600', color: '#333', fontWeight: 700, minWidth: 28 }} />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Chip label={d.red_cards} size="small" sx={{ bgcolor: d.red_cards > 0 ? '#d32f2f' : '#eee', color: d.red_cards > 0 ? '#fff' : '#666', fontWeight: 700, minWidth: 28 }} />
+                            </TableCell>
+                            <TableCell align="center"><Typography fontWeight={700}>{d.penalty_points}</Typography></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+              )}
+              {fairPlay.length > 0 && (
+                <Grid item xs={12} md={5}>
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>Fair Play por Time</Typography>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Time</TableCell>
+                          <TableCell align="center">AM</TableCell>
+                          <TableCell align="center">VM</TableCell>
+                          <TableCell align="center">Pts</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {fairPlay.map((fp) => (
+                          <TableRow key={fp.team_id} hover>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar src={fp.logo_url || ''} sx={{ width: 24, height: 24 }}>{fp.team_name[0]}</Avatar>
+                                <Typography variant="body2" fontWeight={600}>{fp.team_name}</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center">{fp.yellow_cards}</TableCell>
+                            <TableCell align="center">{fp.red_cards}</TableCell>
+                            <TableCell align="center"><Typography fontWeight={700}>{fp.penalty_points}</Typography></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+              )}
             </Grid>
           </Box>
         )}
@@ -269,7 +361,7 @@ export default async function ChampionshipDetailPage({ params }: Props) {
           </Box>
         )}
 
-        {/* Fan Wall Placeholder */}
+        {/* Fan Wall */}
         <Box sx={{ mb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <Forum sx={{ color: '#1a237e' }} />
@@ -277,12 +369,7 @@ export default async function ChampionshipDetailPage({ params }: Props) {
               MURAL DO TORCEDOR
             </Typography>
           </Box>
-          <Card variant="outlined" sx={{ textAlign: 'center', py: 4, bgcolor: '#fafafa' }}>
-            <Forum sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
-            <Typography variant="body2" color="text.secondary">
-              Em breve voce podera deixar sua mensagem aqui!
-            </Typography>
-          </Card>
+          <FanWall targetType="championship" targetId={params.id} />
         </Box>
       </Container>
     </Box>
