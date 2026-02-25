@@ -64,13 +64,32 @@ export async function createRegistration(data: Partial<PlayerRegistration>): Pro
 }
 
 export async function updateRegistration(id: string, data: Partial<PlayerRegistration>): Promise<PlayerRegistration | null> {
+  const fields: string[] = [];
+  const params: any[] = [id];
+  let idx = 2;
+
+  if (data.team_id !== undefined) {
+    fields.push(`team_id = $${idx++}`);
+    params.push(data.team_id);
+  }
+  if (data.shirt_number !== undefined) {
+    fields.push(`shirt_number = $${idx++}`);
+    params.push(data.shirt_number);
+  }
+  if (data.status !== undefined) {
+    fields.push(`status = $${idx++}`);
+    params.push(data.status);
+  }
+  if (data.notes !== undefined) {
+    fields.push(`notes = $${idx++}`);
+    params.push(data.notes);
+  }
+
+  if (fields.length === 0) return null;
+
   return getOne<PlayerRegistration>(
-    `UPDATE player_registrations SET
-      shirt_number = $2,
-      status = COALESCE($3, status),
-      notes = $4
-     WHERE id = $1 RETURNING *`,
-    [id, data.shirt_number ?? null, data.status, data.notes ?? null]
+    `UPDATE player_registrations SET ${fields.join(', ')} WHERE id = $1 RETURNING *`,
+    params
   );
 }
 

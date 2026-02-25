@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRegistrationsByChampionship, createRegistration, enrollTeam, getEnrolledTeams, removeTeamFromChampionship } from '@/services/registrationService';
+import { getRegistrationsByChampionship, createRegistration, enrollTeam, getEnrolledTeams, removeTeamFromChampionship, deleteRegistration, updateRegistration } from '@/services/registrationService';
 import { getAuthUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -62,5 +62,53 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
     console.error('[API] Create registration error:', error);
     return NextResponse.json({ error: 'Erro ao criar inscrição' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getAuthUser(request);
+    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+
+    const body = await request.json();
+    if (!body.registration_id) {
+      return NextResponse.json({ error: 'ID da inscrição é obrigatório' }, { status: 400 });
+    }
+
+    const deleted = await deleteRegistration(body.registration_id);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Inscrição não encontrada' }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('[API] Delete registration error:', error);
+    return NextResponse.json({ error: 'Erro ao remover inscrição' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const user = await getAuthUser(request);
+    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+
+    const body = await request.json();
+    if (!body.registration_id) {
+      return NextResponse.json({ error: 'ID da inscrição é obrigatório' }, { status: 400 });
+    }
+
+    const updated = await updateRegistration(body.registration_id, {
+      team_id: body.team_id,
+      shirt_number: body.shirt_number,
+    });
+    if (!updated) {
+      return NextResponse.json({ error: 'Inscrição não encontrada' }, { status: 404 });
+    }
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    if (error?.code === '23505') {
+      return NextResponse.json({ error: 'Jogador já inscrito neste time' }, { status: 409 });
+    }
+    console.error('[API] Update registration error:', error);
+    return NextResponse.json({ error: 'Erro ao atualizar inscrição' }, { status: 500 });
   }
 }

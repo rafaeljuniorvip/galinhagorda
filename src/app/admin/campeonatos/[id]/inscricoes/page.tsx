@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   IconButton, Avatar, Chip, Alert, Divider, Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
-import { ArrowBack, PersonAdd, Delete, GroupAdd } from '@mui/icons-material';
+import { ArrowBack, PersonAdd, Delete, GroupAdd, SwapHoriz } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function InscricoesPage() {
@@ -30,6 +30,11 @@ export default function InscricoesPage() {
   const [selectedPlayer, setSelectedPlayer] = useState('');
   const [selectedPlayerTeam, setSelectedPlayerTeam] = useState('');
   const [shirtNumber, setShirtNumber] = useState('');
+
+  // Swap team dialog
+  const [swapDialogOpen, setSwapDialogOpen] = useState(false);
+  const [swapRegistration, setSwapRegistration] = useState<any>(null);
+  const [swapNewTeam, setSwapNewTeam] = useState('');
 
   useEffect(() => { if (!authLoading && !isAdmin) router.push('/admin/login'); }, [isAdmin, authLoading, router]);
 
@@ -72,15 +77,44 @@ export default function InscricoesPage() {
     else { const d = await res.json(); setError(d.error); }
   };
 
-  const removeRegistration = async (id: string, name: string) => {
-    if (!confirm(`Remover inscricao de "${name}"?`)) return;
-    // Use a general delete approach
+  const removeTeamEnrollment = async (teamId: string, name: string) => {
+    if (!confirm(`Remover time "${name}" do campeonato?`)) return;
     await fetch(`/api/championships/${params.id}/registrations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'remove_team', team_id: id }),
+      body: JSON.stringify({ type: 'remove_team', team_id: teamId }),
     });
     loadData();
+  };
+
+  const removePlayerRegistration = async (registrationId: string, playerName: string) => {
+    if (!confirm(`Remover inscrição de "${playerName}"?`)) return;
+    setError(''); setSuccess('');
+    const res = await fetch(`/api/championships/${params.id}/registrations`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registration_id: registrationId }),
+    });
+    if (res.ok) { setSuccess('Inscrição removida!'); loadData(); }
+    else { const d = await res.json(); setError(d.error); }
+  };
+
+  const openSwapDialog = (registration: any) => {
+    setSwapRegistration(registration);
+    setSwapNewTeam('');
+    setSwapDialogOpen(true);
+  };
+
+  const swapTeam = async () => {
+    if (!swapRegistration || !swapNewTeam) return;
+    setError(''); setSuccess('');
+    const res = await fetch(`/api/championships/${params.id}/registrations`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registration_id: swapRegistration.id, team_id: swapNewTeam }),
+    });
+    if (res.ok) { setSuccess('Time do jogador atualizado!'); setSwapDialogOpen(false); setSwapRegistration(null); loadData(); }
+    else { const d = await res.json(); setError(d.error); }
   };
 
   if (authLoading || !isAdmin || !championship) return null;
@@ -118,7 +152,7 @@ export default function InscricoesPage() {
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 2 }}>
                 <Avatar src={t.team_logo || ''} sx={{ width: 32, height: 32 }}>{t.team_name?.[0]}</Avatar>
                 <Typography variant="body2" fontWeight={600} sx={{ flex: 1 }}>{t.team_name}</Typography>
-                <IconButton size="small" color="error" onClick={() => removeRegistration(t.team_id, t.team_name)}><Delete fontSize="small" /></IconButton>
+                <IconButton size="small" color="error" onClick={() => removeTeamEnrollment(t.team_id, t.team_name)}><Delete fontSize="small" /></IconButton>
               </CardContent>
             </Card>
           </Grid>
@@ -141,6 +175,7 @@ export default function InscricoesPage() {
                   <TableCell>N Camisa</TableCell>
                   <TableCell>N BID</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell align="center">Ações</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -156,6 +191,10 @@ export default function InscricoesPage() {
                     <TableCell>{r.shirt_number || '-'}</TableCell>
                     <TableCell><Chip label={r.bid_number} size="small" variant="outlined" /></TableCell>
                     <TableCell><Chip label={r.status} size="small" color={r.status === 'Ativo' ? 'success' : 'default'} /></TableCell>
+                    <TableCell align="center">
+                      <IconButton size="small" color="primary" title="Trocar time" onClick={() => openSwapDialog(r)}><SwapHoriz fontSize="small" /></IconButton>
+                      <IconButton size="small" color="error" title="Remover inscrição" onClick={() => removePlayerRegistration(r.id, r.player_name)}><Delete fontSize="small" /></IconButton>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -197,6 +236,27 @@ export default function InscricoesPage() {
         <DialogActions>
           <Button onClick={() => setPlayerDialogOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={registerPlayer} disabled={!selectedPlayer || !selectedPlayerTeam}>Inscrever</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog: Trocar Time */}
+      <Dialog open={swapDialogOpen} onClose={() => setSwapDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Trocar Time do Jogador</DialogTitle>
+        <DialogContent>
+          {swapRegistration && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Jogador: <strong>{swapRegistration.player_name}</strong> (atual: {swapRegistration.team_name})
+            </Typography>
+          )}
+          <TextField select label="Novo Time" fullWidth value={swapNewTeam} onChange={(e) => setSwapNewTeam(e.target.value)} sx={{ mt: 1 }}>
+            {enrolledTeams.filter(t => t.team_id !== swapRegistration?.team_id).map(t => (
+              <MenuItem key={t.team_id} value={t.team_id}>{t.team_name}</MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSwapDialogOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={swapTeam} disabled={!swapNewTeam}>Trocar</Button>
         </DialogActions>
       </Dialog>
     </Box>
