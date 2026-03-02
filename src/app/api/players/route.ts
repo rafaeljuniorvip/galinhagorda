@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { listPlayers, createPlayer } from '@/services/playerService';
+import { listPlayers, createPlayer, getAllPlayers } from '@/services/playerService';
 import { getAuthUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+
+    // Return all players without pagination (for selects/dropdowns)
+    if (searchParams.get('all') === 'true') {
+      const players = await getAllPlayers();
+      return NextResponse.json({ data: players, total: players.length });
+    }
+
     const result = await listPlayers({
       search: searchParams.get('search') || undefined,
       position: searchParams.get('position') || undefined,

@@ -56,6 +56,10 @@ export async function listPlayers(filters: PlayerFilters = {}): Promise<Paginate
   };
 }
 
+export async function getAllPlayers(): Promise<Player[]> {
+  return getMany<Player>('SELECT * FROM players ORDER BY name ASC', []);
+}
+
 export async function getPlayerById(id: string): Promise<Player | null> {
   return getOne<Player>('SELECT * FROM players WHERE id = $1', [id]);
 }

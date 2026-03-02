@@ -44,7 +44,7 @@ export default function InscricoesPage() {
       fetch(`/api/championships/${params.id}/registrations?type=teams`),
       fetch(`/api/championships/${params.id}/registrations`),
       fetch('/api/teams?all=true'),
-      fetch('/api/players?limit=500'),
+      fetch('/api/players?all=true'),
     ]);
     if (champRes.ok) setChampionship(await champRes.json());
     if (teamsRes.ok) setEnrolledTeams(await teamsRes.json());
