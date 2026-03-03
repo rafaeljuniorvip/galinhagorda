@@ -29,7 +29,6 @@ export default function InscricoesPage() {
   const [selectedTeam, setSelectedTeam] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState('');
   const [selectedPlayerTeam, setSelectedPlayerTeam] = useState('');
-  const [shirtNumber, setShirtNumber] = useState('');
 
   // Swap team dialog
   const [swapDialogOpen, setSwapDialogOpen] = useState(false);
@@ -71,9 +70,9 @@ export default function InscricoesPage() {
     const res = await fetch(`/api/championships/${params.id}/registrations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player_id: selectedPlayer, team_id: selectedPlayerTeam, shirt_number: shirtNumber ? parseInt(shirtNumber) : null }),
+      body: JSON.stringify({ player_id: selectedPlayer, team_id: selectedPlayerTeam }),
     });
-    if (res.ok) { setSuccess('Jogador inscrito (BID gerado)!'); setPlayerDialogOpen(false); setSelectedPlayer(''); setSelectedPlayerTeam(''); setShirtNumber(''); loadData(); }
+    if (res.ok) { setSuccess('Jogador inscrito (BID gerado)!'); setPlayerDialogOpen(false); setSelectedPlayer(''); setSelectedPlayerTeam(''); loadData(); }
     else { const d = await res.json(); setError(d.error); }
   };
 
@@ -172,7 +171,6 @@ export default function InscricoesPage() {
                 <TableRow>
                   <TableCell>Jogador</TableCell>
                   <TableCell>Posicao</TableCell>
-                  <TableCell>N Camisa</TableCell>
                   <TableCell>N BID</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="center">Ações</TableCell>
@@ -188,7 +186,6 @@ export default function InscricoesPage() {
                       </Box>
                     </TableCell>
                     <TableCell>{r.player_position}</TableCell>
-                    <TableCell>{r.shirt_number || '-'}</TableCell>
                     <TableCell><Chip label={r.bid_number} size="small" variant="outlined" /></TableCell>
                     <TableCell><Chip label={r.status} size="small" color={r.status === 'Ativo' ? 'success' : 'default'} /></TableCell>
                     <TableCell align="center">
@@ -226,12 +223,11 @@ export default function InscricoesPage() {
           <TextField select label="Time" fullWidth value={selectedPlayerTeam} onChange={(e) => setSelectedPlayerTeam(e.target.value)} sx={{ mt: 1, mb: 2 }}>
             {enrolledTeams.map(t => <MenuItem key={t.team_id} value={t.team_id}>{t.team_name}</MenuItem>)}
           </TextField>
-          <TextField select label="Jogador" fullWidth value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)} sx={{ mb: 2 }}>
+          <TextField select label="Jogador" fullWidth value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)}>
             {allPlayers.filter(p => !registrations.find(r => r.player_id === p.id)).map(p => (
               <MenuItem key={p.id} value={p.id}>{p.name} - {p.position}</MenuItem>
             ))}
           </TextField>
-          <TextField label="Numero da Camisa" type="number" fullWidth value={shirtNumber} onChange={(e) => setShirtNumber(e.target.value)} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPlayerDialogOpen(false)}>Cancelar</Button>
