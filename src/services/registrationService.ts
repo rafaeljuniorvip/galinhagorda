@@ -12,7 +12,7 @@ export async function getRegistrationsByChampionship(championshipId: string, tea
 
   return getMany<PlayerRegistration>(
     `SELECT pr.*,
-      p.name AS player_name, p.photo_url AS player_photo, p.position AS player_position,
+      p.full_name AS player_name, p.photo_url AS player_photo, p.position AS player_position,
       t.name AS team_name, t.logo_url AS team_logo,
       c.name AS championship_name
      FROM player_registrations pr
@@ -20,7 +20,7 @@ export async function getRegistrationsByChampionship(championshipId: string, tea
      JOIN teams t ON t.id = pr.team_id
      JOIN championships c ON c.id = pr.championship_id
      WHERE ${conditions.join(' AND ')}
-     ORDER BY t.name ASC, p.name ASC`,
+     ORDER BY t.name ASC, p.full_name ASC`,
     params
   );
 }
@@ -28,7 +28,7 @@ export async function getRegistrationsByChampionship(championshipId: string, tea
 export async function getRegistrationsByPlayer(playerId: string): Promise<PlayerRegistration[]> {
   return getMany<PlayerRegistration>(
     `SELECT pr.*,
-      p.name AS player_name, p.photo_url AS player_photo, p.position AS player_position,
+      p.full_name AS player_name, p.photo_url AS player_photo, p.position AS player_position,
       t.name AS team_name, t.logo_url AS team_logo,
       c.name AS championship_name
      FROM player_registrations pr

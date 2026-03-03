@@ -9,7 +9,7 @@ interface GroupedLineups {
 export async function getMatchLineups(matchId: string): Promise<GroupedLineups> {
   const lineups = await getMany<MatchLineup & { team_side: string }>(
     `SELECT ml.*,
-            p.name AS player_name,
+            p.full_name AS player_name,
             p.photo_url AS player_photo,
             CASE
               WHEN ml.team_id = m.home_team_id THEN 'home'

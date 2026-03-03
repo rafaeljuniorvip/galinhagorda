@@ -225,7 +225,7 @@ export default function InscricoesPage() {
           </TextField>
           <TextField select label="Jogador" fullWidth value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)}>
             {allPlayers.filter(p => !registrations.find(r => r.player_id === p.id)).map(p => (
-              <MenuItem key={p.id} value={p.id}>{p.name} - {p.position}</MenuItem>
+              <MenuItem key={p.id} value={p.id}>{p.full_name || p.name} - {p.position}</MenuItem>
             ))}
           </TextField>
         </DialogContent>

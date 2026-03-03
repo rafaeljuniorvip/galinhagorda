@@ -3,7 +3,7 @@ import { MatchEvent } from '@/types';
 
 export async function getEventsByMatch(matchId: string): Promise<MatchEvent[]> {
   return getMany<MatchEvent>(
-    `SELECT me.*, p.name AS player_name, t.name AS team_name
+    `SELECT me.*, p.full_name AS player_name, t.name AS team_name
      FROM match_events me
      JOIN players p ON p.id = me.player_id
      JOIN teams t ON t.id = me.team_id
