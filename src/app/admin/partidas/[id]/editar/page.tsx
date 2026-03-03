@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CircularProgress, Box } from '@mui/material';
+import { Loader2 } from 'lucide-react';
 import MatchForm from '@/components/admin/MatchForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { Match } from '@/types';
@@ -19,7 +19,7 @@ export default function EditarPartidaPage() {
     if (user) load();
   }, [params.id, user]);
 
-  if (loading || authLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
+  if (loading || authLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!match) return null;
   return <MatchForm match={match} />;
 }

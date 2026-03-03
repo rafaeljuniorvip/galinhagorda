@@ -2,15 +2,20 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Box, Typography, Card, CardContent, Grid, MenuItem, TextField,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Button, Chip, Alert, Avatar, LinearProgress, Switch, FormControlLabel,
-} from '@mui/material';
-import { HowToVote, EmojiEvents } from '@mui/icons-material';
+import { Vote, Trophy } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { Match, Championship, VoteResult } from '@/types';
 import { formatDateTime } from '@/lib/utils';
+import PageHeader from '@/components/admin/PageHeader';
+import StatusBadge from '@/components/admin/StatusBadge';
 
 interface MatchWithVoting extends Match {
   votingStatus?: {
@@ -26,32 +31,26 @@ export default function AdminVotacoesPage() {
   const router = useRouter();
   const [matches, setMatches] = useState<MatchWithVoting[]>([]);
   const [championships, setChampionships] = useState<Championship[]>([]);
-  const [championshipFilter, setChampionshipFilter] = useState('');
+  const [championshipFilter, setChampionshipFilter] = useState('all');
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [voteResults, setVoteResults] = useState<VoteResult[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [deadline, setDeadline] = useState('');
 
-  useEffect(() => {
-    if (!loading && !isAdmin) router.push('/admin/login');
-  }, [isAdmin, loading, router]);
+  useEffect(() => { if (!loading && !isAdmin) router.push('/admin/login'); }, [isAdmin, loading, router]);
 
   useEffect(() => {
-    fetch('/api/championships?all=true')
-      .then(r => r.json())
-      .then(setChampionships)
-      .catch(() => {});
+    fetch('/api/championships?all=true').then(r => r.json()).then(setChampionships).catch(() => {});
   }, []);
 
   const loadMatches = useCallback(async () => {
     const params = new URLSearchParams({ page: '1', limit: '50' });
-    if (championshipFilter) params.set('championship_id', championshipFilter);
+    if (championshipFilter && championshipFilter !== 'all') params.set('championship_id', championshipFilter);
     const res = await fetch(`/api/matches?${params}`);
     if (!res.ok) return;
     const data = await res.json();
 
-    // Load voting status for each match
     const matchesWithVoting: MatchWithVoting[] = [];
     for (const match of data.data) {
       try {
@@ -69,9 +68,7 @@ export default function AdminVotacoesPage() {
     setMatches(matchesWithVoting);
   }, [championshipFilter]);
 
-  useEffect(() => {
-    if (user) loadMatches();
-  }, [user, loadMatches]);
+  useEffect(() => { if (user) loadMatches(); }, [user, loadMatches]);
 
   const loadVoteResults = async (matchId: string) => {
     setSelectedMatch(matchId);
@@ -83,225 +80,147 @@ export default function AdminVotacoesPage() {
   };
 
   const handleToggleVoting = async (matchId: string, currentOpen: boolean) => {
-    setError('');
-    setSuccess('');
-
+    setError(''); setSuccess('');
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
-
-    const body: any = {
-      ...match,
-      voting_open: !currentOpen,
-    };
-
-    if (!currentOpen && deadline) {
-      body.voting_deadline = deadline;
-    }
-
-    const res = await fetch(`/api/matches/${matchId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    if (res.ok) {
-      setSuccess(!currentOpen ? 'Votacao aberta!' : 'Votacao encerrada!');
-      loadMatches();
-    } else {
-      setError('Erro ao alterar votacao');
-    }
+    const body: any = { ...match, voting_open: !currentOpen };
+    if (!currentOpen && deadline) body.voting_deadline = deadline;
+    const res = await fetch(`/api/matches/${matchId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (res.ok) { setSuccess(!currentOpen ? 'Votacao aberta!' : 'Votacao encerrada!'); loadMatches(); }
+    else { setError('Erro ao alterar votacao'); }
   };
 
   const handleSetDeadline = async (matchId: string) => {
-    setError('');
-    setSuccess('');
-
-    if (!deadline) {
-      setError('Defina um prazo');
-      return;
-    }
-
+    setError(''); setSuccess('');
+    if (!deadline) { setError('Defina um prazo'); return; }
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
-
-    const res = await fetch(`/api/matches/${matchId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...match,
-        voting_deadline: deadline,
-      }),
-    });
-
-    if (res.ok) {
-      setSuccess('Prazo definido!');
-      loadMatches();
-    } else {
-      setError('Erro ao definir prazo');
-    }
+    const res = await fetch(`/api/matches/${matchId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...match, voting_deadline: deadline }) });
+    if (res.ok) { setSuccess('Prazo definido!'); loadMatches(); }
+    else { setError('Erro ao definir prazo'); }
   };
 
   if (loading || !isAdmin) return null;
 
   return (
-    <Box>
-      <Typography variant="h4" fontWeight={700} gutterBottom>Votacoes</Typography>
+    <div>
+      <PageHeader title="Votacoes" />
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert variant="destructive" className="mb-4"><AlertDescription>{error}</AlertDescription></Alert>}
+      {success && <Alert className="mb-4 border-green-200 bg-green-50 text-green-800"><AlertDescription>{success}</AlertDescription></Alert>}
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField
-          select
-          label="Campeonato"
-          size="small"
-          value={championshipFilter}
-          onChange={(e) => setChampionshipFilter(e.target.value)}
-          sx={{ width: { xs: '100%', md: 300 } }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          {championships.map(c => <MenuItem key={c.id} value={c.id}>{c.name} ({c.year})</MenuItem>)}
-        </TextField>
-        <TextField
-          label="Prazo para votacao"
-          type="datetime-local"
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          value={deadline}
-          onChange={(e) => setDeadline(e.target.value)}
-          sx={{ width: { xs: '100%', md: 250 } }}
-        />
-      </Box>
+      <div className="flex flex-wrap gap-3 mb-4 items-end">
+        <Select value={championshipFilter} onValueChange={setChampionshipFilter}>
+          <SelectTrigger className="w-full md:w-[300px]">
+            <SelectValue placeholder="Campeonato" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {championships.map(c => <SelectItem key={c.id} value={c.id}>{c.name} ({c.year})</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="w-full md:w-auto">
+          <label className="text-sm text-muted-foreground block mb-1">Prazo para votacao</label>
+          <Input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full md:w-[250px]" />
+        </div>
+      </div>
 
-      <TableContainer component={Paper} sx={{ mb: 3 }}>
+      <Card className="mb-4">
         <Table>
-          <TableHead>
+          <TableHeader>
             <TableRow>
-              <TableCell>Partida</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Votos</TableCell>
-              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Vencedor</TableCell>
-              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Prazo</TableCell>
-              <TableCell align="right">Acoes</TableCell>
+              <TableHead>Partida</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Votos</TableHead>
+              <TableHead className="hidden md:table-cell">Vencedor</TableHead>
+              <TableHead className="hidden md:table-cell">Prazo</TableHead>
+              <TableHead className="text-right">Acoes</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {matches.map((match) => {
               const vs = match.votingStatus;
               return (
-                <TableRow key={match.id} hover selected={selectedMatch === match.id}
-                  sx={{ cursor: 'pointer' }}
-                  onClick={() => loadVoteResults(match.id)}
-                >
+                <TableRow key={match.id} className={`cursor-pointer ${selectedMatch === match.id ? 'bg-accent' : ''}`} onClick={() => loadVoteResults(match.id)}>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar src={match.home_team_logo || ''} sx={{ width: 24, height: 24 }}>
-                        {match.home_team_short?.[0]}
+                    <div className="flex items-center gap-1.5">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={match.home_team_logo || ''} />
+                        <AvatarFallback className="text-[10px]">{match.home_team_short?.[0]}</AvatarFallback>
                       </Avatar>
-                      <Typography variant="body2" fontWeight={600}>
-                        {match.home_team_short || match.home_team_name} x {match.away_team_short || match.away_team_name}
-                      </Typography>
-                      <Avatar src={match.away_team_logo || ''} sx={{ width: 24, height: 24 }}>
-                        {match.away_team_short?.[0]}
+                      <span className="font-semibold text-sm">{match.home_team_short || match.home_team_name} x {match.away_team_short || match.away_team_name}</span>
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={match.away_team_logo || ''} />
+                        <AvatarFallback className="text-[10px]">{match.away_team_short?.[0]}</AvatarFallback>
                       </Avatar>
-                    </Box>
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      icon={<HowToVote />}
-                      label={vs?.isOpen ? 'Aberta' : 'Fechada'}
-                      size="small"
-                      color={vs?.isOpen ? 'success' : 'default'}
-                    />
+                    <StatusBadge status={vs?.isOpen ? 'Aberta' : 'Fechada'} variant={vs?.isOpen ? 'success' : 'default'} />
                   </TableCell>
                   <TableCell>{vs?.totalVotes || 0}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                  <TableCell className="hidden md:table-cell">
                     {vs?.winner ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar src={vs.winner.player_photo || ''} sx={{ width: 24, height: 24 }}>
-                          {vs.winner.player_name[0]}
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={vs.winner.player_photo || ''} />
+                          <AvatarFallback className="text-[10px]">{vs.winner.player_name[0]}</AvatarFallback>
                         </Avatar>
-                        <Typography variant="body2">{vs.winner.player_name}</Typography>
-                      </Box>
+                        <span className="text-sm">{vs.winner.player_name}</span>
+                      </div>
                     ) : '-'}
                   </TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                    {vs?.deadline ? formatDateTime(vs.deadline) : '-'}
-                  </TableCell>
-                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexDirection: { xs: 'column', md: 'row' } }}>
-                      <Button
-                        size="small"
-                        variant={vs?.isOpen ? 'outlined' : 'contained'}
-                        color={vs?.isOpen ? 'error' : 'success'}
-                        onClick={() => handleToggleVoting(match.id, vs?.isOpen || false)}
-                      >
+                  <TableCell className="hidden md:table-cell text-sm">{vs?.deadline ? formatDateTime(vs.deadline) : '-'}</TableCell>
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex gap-1 justify-end flex-col md:flex-row">
+                      <Button size="sm" variant={vs?.isOpen ? 'outline' : 'default'} className={vs?.isOpen ? 'text-destructive border-destructive' : 'bg-green-600 hover:bg-green-700'}
+                        onClick={() => handleToggleVoting(match.id, vs?.isOpen || false)}>
                         {vs?.isOpen ? 'Fechar' : 'Abrir'}
                       </Button>
                       {deadline && (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleSetDeadline(match.id)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => handleSetDeadline(match.id)}>
                           Definir Prazo
                         </Button>
                       )}
-                    </Box>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
             })}
             {matches.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">Nenhuma partida encontrada</Typography>
-                </TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma partida encontrada</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-      </TableContainer>
+      </Card>
 
       {selectedMatch && voteResults.length > 0 && (
         <Card>
-          <CardContent>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Resultados da Votacao
-            </Typography>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-semibold mb-4">Resultados da Votacao</h3>
             {voteResults.map((result, index) => (
-              <Box key={result.player_id} sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
-                  {index === 0 && <EmojiEvents sx={{ color: '#ffc107' }} />}
-                  <Avatar src={result.player_photo || ''} sx={{ width: 32, height: 32 }}>
-                    {result.player_name[0]}
+              <div key={result.player_id} className="mb-4">
+                <div className="flex items-center gap-3 mb-1">
+                  {index === 0 && <Trophy className="h-5 w-5 text-yellow-500" />}
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={result.player_photo || ''} />
+                    <AvatarFallback className="text-xs">{result.player_name[0]}</AvatarFallback>
                   </Avatar>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="body2" fontWeight={600}>
-                      {result.player_name}
-                      <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                        {result.team_name}
-                      </Typography>
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" fontWeight={600}>
-                    {result.votes} votos ({result.percentage}%)
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={result.percentage}
-                  sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    bgcolor: '#e0e0e0',
-                    '& .MuiLinearProgress-bar': {
-                      borderRadius: 4,
-                      bgcolor: index === 0 ? '#ffc107' : '#1976d2',
-                    },
-                  }}
-                />
-              </Box>
+                  <div className="flex-1">
+                    <span className="text-sm font-semibold">{result.player_name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">{result.team_name}</span>
+                  </div>
+                  <span className="text-sm font-semibold">{result.votes} votos ({result.percentage}%)</span>
+                </div>
+                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${index === 0 ? 'bg-yellow-500' : 'bg-primary'}`}
+                    style={{ width: `${result.percentage}%` }}
+                  />
+                </div>
+              </div>
             ))}
           </CardContent>
         </Card>
@@ -309,12 +228,12 @@ export default function AdminVotacoesPage() {
 
       {selectedMatch && voteResults.length === 0 && (
         <Card>
-          <CardContent sx={{ textAlign: 'center', py: 4 }}>
-            <HowToVote sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-            <Typography color="text.secondary">Nenhum voto registrado para esta partida</Typography>
+          <CardContent className="text-center py-8">
+            <Vote className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">Nenhum voto registrado para esta partida</p>
           </CardContent>
         </Card>
       )}
-    </Box>
+    </div>
   );
 }

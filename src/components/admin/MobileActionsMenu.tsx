@@ -1,9 +1,16 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
-import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, useMediaQuery, useTheme, Box } from '@mui/material';
-import { MoreVert } from '@mui/icons-material';
+import { ReactNode } from 'react';
 import Link from 'next/link';
+import { MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/cn';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface ActionItem {
   label: string;
@@ -19,74 +26,77 @@ interface MobileActionsMenuProps {
 }
 
 export default function MobileActionsMenu({ actions }: MobileActionsMenuProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const isMobile = useIsMobile();
 
   if (!isMobile) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        {actions.map((action, i) =>
-          action.href ? (
-            <IconButton
+      <div className="flex justify-end">
+        {actions.map((action, i) => {
+          const colorClass = action.color === 'error'
+            ? 'text-destructive hover:text-destructive'
+            : action.color === 'primary'
+              ? 'text-primary hover:text-primary'
+              : 'text-muted-foreground hover:text-foreground';
+
+          const content = (
+            <button
               key={i}
-              component={Link}
-              href={action.href}
-              size="small"
-              color={action.color as any || 'default'}
-              title={action.label}
-              disabled={action.disabled}
-            >
-              {action.icon}
-            </IconButton>
-          ) : (
-            <IconButton
-              key={i}
-              size="small"
-              color={action.color as any || 'default'}
+              className={cn('p-1.5 rounded hover:bg-accent transition-colors', colorClass)}
               onClick={action.onClick}
               title={action.label}
               disabled={action.disabled}
             >
               {action.icon}
-            </IconButton>
-          )
-        )}
-      </Box>
+            </button>
+          );
+
+          if (action.href) {
+            return (
+              <Link key={i} href={action.href} className={cn('p-1.5 rounded hover:bg-accent transition-colors', colorClass)} title={action.label}>
+                {action.icon}
+              </Link>
+            );
+          }
+
+          return content;
+        })}
+      </div>
     );
   }
 
   return (
-    <>
-      <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
-        <MoreVert fontSize="small" />
-      </IconButton>
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        {actions.map((action, i) => (
-          <MenuItem
-            key={i}
-            onClick={() => {
-              setAnchorEl(null);
-              if (action.onClick) action.onClick();
-            }}
-            component={action.href ? Link : 'li'}
-            href={action.href || undefined}
-            disabled={action.disabled}
-            sx={{ minHeight: 44, color: action.color === 'error' ? 'error.main' : undefined }}
-          >
-            <ListItemIcon sx={{ color: action.color === 'error' ? 'error.main' : action.color === 'primary' ? 'primary.main' : undefined }}>
-              {action.icon}
-            </ListItemIcon>
-            <ListItemText>{action.label}</ListItemText>
-          </MenuItem>
-        ))}
-      </Menu>
-    </>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="p-1.5 rounded hover:bg-accent">
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {actions.map((action, i) => {
+          const colorClass = action.color === 'error' ? 'text-destructive' : '';
+          if (action.href) {
+            return (
+              <DropdownMenuItem key={i} asChild disabled={action.disabled} className={colorClass}>
+                <Link href={action.href}>
+                  <span className="mr-2">{action.icon}</span>
+                  {action.label}
+                </Link>
+              </DropdownMenuItem>
+            );
+          }
+          return (
+            <DropdownMenuItem
+              key={i}
+              onClick={action.onClick}
+              disabled={action.disabled}
+              className={colorClass}
+            >
+              <span className="mr-2">{action.icon}</span>
+              {action.label}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

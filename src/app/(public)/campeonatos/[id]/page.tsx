@@ -6,15 +6,15 @@ import { getEnrolledTeams } from '@/services/registrationService';
 import { getNewsByChampionship } from '@/services/newsPublicService';
 import { getPublicPhotos } from '@/services/photoPublicService';
 import {
-  Container, Typography, Box, Card, CardContent, Chip, Avatar,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Grid,
-  Button, Divider,
-} from '@mui/material';
-import {
-  EmojiEvents, LocationOn, CardGiftcard, Business, Description,
-  Category, SportsSoccer, Newspaper, ArrowForward, OpenInNew, Forum,
-} from '@mui/icons-material';
+  Trophy, MapPin, Gift, Building2, FileText,
+  Layers, CircleDot, Newspaper, ArrowRight, ExternalLink, MessageSquare,
+} from 'lucide-react';
 import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import ChampionshipMatchesClient from '@/components/public/ChampionshipMatchesClient';
 import NewsCard from '@/components/public/NewsCard';
 import PhotoGallery from '@/components/public/PhotoGallery';
@@ -34,7 +34,7 @@ export default async function ChampionshipDetailPage({ params }: Props) {
   const championship = await getChampionshipById(params.id);
   if (!championship) notFound();
 
-  const [standings, topScorers, enrolledTeams, relatedNews, photos, disciplinary, fairPlay] = await Promise.all([
+  const [standings, topScorers, , relatedNews, photos, disciplinary, fairPlay] = await Promise.all([
     getChampionshipStandings(params.id),
     getTopScorers(params.id),
     getEnrolledTeams(params.id),
@@ -47,331 +47,323 @@ export default async function ChampionshipDetailPage({ params }: Props) {
   const hasInfoCards = championship.prize || championship.location || championship.sponsor || championship.format || championship.category;
 
   return (
-    <Box>
+    <div>
       {/* Hero Banner */}
-      <Box
-        sx={{
+      <div
+        className="text-white py-10"
+        style={{
           background: championship.banner_url
             ? `linear-gradient(to bottom, rgba(230, 81, 0, 0.85) 0%, rgba(245, 124, 0, 0.9) 100%), url(${championship.banner_url}) center/cover no-repeat`
             : 'linear-gradient(135deg, #e65100 0%, #f57c00 100%)',
-          color: 'white',
-          py: 5,
         }}
       >
-        <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <EmojiEvents sx={{ fontSize: 48 }} />
-            <Box>
-              <Typography variant="h4" fontWeight={800}>{championship.name}</Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center gap-3">
+            <Trophy className="h-12 w-12 shrink-0" />
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold">{championship.name}</h1>
+              <p className="text-sm text-white/80">
                 {championship.category} | {championship.format} | {championship.year}
-              </Typography>
+              </p>
               {championship.description && (
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
-                  {championship.description}
-                </Typography>
+                <p className="text-sm text-white/70 mt-1">{championship.description}</p>
               )}
-            </Box>
-          </Box>
-        </Container>
-      </Box>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Info Cards */}
         {hasInfoCards && (
-          <Box sx={{ mb: 4 }}>
-            <Grid container spacing={2}>
+          <div className="mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {championship.location && (
-                <Grid item xs={6} sm={4} md={2}>
-                  <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
-                    <CardContent sx={{ py: 2 }}>
-                      <LocationOn sx={{ color: '#1976d2', mb: 0.5 }} />
-                      <Typography variant="caption" color="text.secondary" display="block">Local</Typography>
-                      <Typography variant="body2" fontWeight={600}>{championship.location}</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <Card className="text-center h-full">
+                  <CardContent className="p-3">
+                    <MapPin className="h-5 w-5 text-blue-600 mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Local</p>
+                    <p className="text-sm font-semibold">{championship.location}</p>
+                  </CardContent>
+                </Card>
               )}
               {championship.prize && (
-                <Grid item xs={6} sm={4} md={2}>
-                  <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
-                    <CardContent sx={{ py: 2 }}>
-                      <CardGiftcard sx={{ color: '#ffd600', mb: 0.5 }} />
-                      <Typography variant="caption" color="text.secondary" display="block">Premiacao</Typography>
-                      <Typography variant="body2" fontWeight={600}>{championship.prize}</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <Card className="text-center h-full">
+                  <CardContent className="p-3">
+                    <Gift className="h-5 w-5 text-yellow-500 mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Premiacao</p>
+                    <p className="text-sm font-semibold">{championship.prize}</p>
+                  </CardContent>
+                </Card>
               )}
               {championship.sponsor && (
-                <Grid item xs={6} sm={4} md={2}>
-                  <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
-                    <CardContent sx={{ py: 2 }}>
-                      <Business sx={{ color: '#2e7d32', mb: 0.5 }} />
-                      <Typography variant="caption" color="text.secondary" display="block">Patrocinador</Typography>
-                      <Typography variant="body2" fontWeight={600}>{championship.sponsor}</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <Card className="text-center h-full">
+                  <CardContent className="p-3">
+                    <Building2 className="h-5 w-5 text-green-600 mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Patrocinador</p>
+                    <p className="text-sm font-semibold">{championship.sponsor}</p>
+                  </CardContent>
+                </Card>
               )}
-              <Grid item xs={6} sm={4} md={2}>
-                <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
-                  <CardContent sx={{ py: 2 }}>
-                    <SportsSoccer sx={{ color: '#ed6c02', mb: 0.5 }} />
-                    <Typography variant="caption" color="text.secondary" display="block">Formato</Typography>
-                    <Typography variant="body2" fontWeight={600}>{championship.format}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={4} md={2}>
-                <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
-                  <CardContent sx={{ py: 2 }}>
-                    <Category sx={{ color: '#7b1fa2', mb: 0.5 }} />
-                    <Typography variant="caption" color="text.secondary" display="block">Categoria</Typography>
-                    <Typography variant="body2" fontWeight={600}>{championship.category}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
+              <Card className="text-center h-full">
+                <CardContent className="p-3">
+                  <CircleDot className="h-5 w-5 text-orange-600 mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Formato</p>
+                  <p className="text-sm font-semibold">{championship.format}</p>
+                </CardContent>
+              </Card>
+              <Card className="text-center h-full">
+                <CardContent className="p-3">
+                  <Layers className="h-5 w-5 text-purple-600 mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Categoria</p>
+                  <p className="text-sm font-semibold">{championship.category}</p>
+                </CardContent>
+              </Card>
               {championship.rules_url && (
-                <Grid item xs={6} sm={4} md={2}>
-                  <Card variant="outlined" sx={{ textAlign: 'center', height: '100%' }}>
-                    <CardContent sx={{ py: 2 }}>
-                      <Description sx={{ color: '#0288d1', mb: 0.5 }} />
-                      <Typography variant="caption" color="text.secondary" display="block">Regulamento</Typography>
-                      <Button
-                        component="a"
-                        href={championship.rules_url}
-                        target="_blank"
-                        rel="noopener"
-                        size="small"
-                        startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
-                        sx={{ fontSize: '0.75rem' }}
-                      >
+                <Card className="text-center h-full">
+                  <CardContent className="p-3">
+                    <FileText className="h-5 w-5 text-cyan-600 mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Regulamento</p>
+                    <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs">
+                      <a href={championship.rules_url} target="_blank" rel="noopener">
+                        <ExternalLink className="h-3 w-3 mr-1" />
                         Abrir PDF
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
-            </Grid>
-          </Box>
+            </div>
+          </div>
         )}
 
         {/* Classificacao */}
         {standings.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>CLASSIFICACAO</Typography>
-            <TableContainer component={Paper}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ width: 40 }}>#</TableCell>
-                    <TableCell>Time</TableCell>
-                    <TableCell align="center">P</TableCell>
-                    <TableCell align="center">J</TableCell>
-                    <TableCell align="center">V</TableCell>
-                    <TableCell align="center">E</TableCell>
-                    <TableCell align="center">D</TableCell>
-                    <TableCell align="center">GP</TableCell>
-                    <TableCell align="center">GC</TableCell>
-                    <TableCell align="center">SG</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-3 text-[#1a237e]">CLASSIFICACAO</h2>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b">
+                    <th className="text-left px-3 py-2 font-semibold w-10">#</th>
+                    <th className="text-left px-3 py-2 font-semibold">Time</th>
+                    <th className="text-center px-2 py-2 font-semibold">P</th>
+                    <th className="text-center px-2 py-2 font-semibold">J</th>
+                    <th className="text-center px-2 py-2 font-semibold">V</th>
+                    <th className="text-center px-2 py-2 font-semibold">E</th>
+                    <th className="text-center px-2 py-2 font-semibold">D</th>
+                    <th className="text-center px-2 py-2 font-semibold">GP</th>
+                    <th className="text-center px-2 py-2 font-semibold">GC</th>
+                    <th className="text-center px-2 py-2 font-semibold">SG</th>
+                  </tr>
+                </thead>
+                <tbody>
                   {standings.map((s, i) => {
-                    const posColor = i < 4 ? '#2e7d32' : (i >= standings.length - 2 ? '#d32f2f' : 'transparent');
+                    const borderColor = i < 4 ? 'border-l-green-600' : (i >= standings.length - 2 ? 'border-l-red-600' : 'border-l-transparent');
                     return (
-                    <TableRow key={s.team_id} hover sx={{ borderLeft: `4px solid ${posColor}` }}>
-                      <TableCell sx={{ fontWeight: 700 }}>{i + 1}</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Avatar src={s.logo_url || ''} sx={{ width: 24, height: 24 }}>{s.short_name?.[0]}</Avatar>
-                          <Typography variant="body2" fontWeight={600}>{s.team_name}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center"><Typography fontWeight={700}>{s.points}</Typography></TableCell>
-                      <TableCell align="center">{s.matches_played}</TableCell>
-                      <TableCell align="center">{s.wins}</TableCell>
-                      <TableCell align="center">{s.draws}</TableCell>
-                      <TableCell align="center">{s.losses}</TableCell>
-                      <TableCell align="center">{s.goals_for}</TableCell>
-                      <TableCell align="center">{s.goals_against}</TableCell>
-                      <TableCell align="center">{s.goals_for - s.goals_against}</TableCell>
-                    </TableRow>
+                      <tr key={s.team_id} className={`border-b border-l-4 ${borderColor} hover:bg-muted/30 transition-colors`}>
+                        <td className="px-3 py-2 font-bold">{i + 1}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={s.logo_url || ''} />
+                              <AvatarFallback className="text-[10px]">{s.short_name?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold">{s.team_name}</span>
+                          </div>
+                        </td>
+                        <td className="text-center px-2 py-2 font-bold">{s.points}</td>
+                        <td className="text-center px-2 py-2">{s.matches_played}</td>
+                        <td className="text-center px-2 py-2">{s.wins}</td>
+                        <td className="text-center px-2 py-2">{s.draws}</td>
+                        <td className="text-center px-2 py-2">{s.losses}</td>
+                        <td className="text-center px-2 py-2">{s.goals_for}</td>
+                        <td className="text-center px-2 py-2">{s.goals_against}</td>
+                        <td className="text-center px-2 py-2">{s.goals_for - s.goals_against}</td>
+                      </tr>
                     );
                   })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
 
         {/* Artilharia */}
         {topScorers.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>ARTILHARIA</Typography>
-            <Grid container spacing={2}>
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-3 text-[#1a237e]">ARTILHARIA</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {topScorers.map((s: any, i: number) => (
-                <Grid item xs={12} sm={6} md={4} key={s.player_id}>
-                  <Card variant="outlined">
-                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Typography variant="h5" fontWeight={800} sx={{ color: i < 3 ? '#ed6c02' : '#666', width: 36 }}>
-                        {i + 1}
-                      </Typography>
-                      <Avatar src={s.photo_url || ''} sx={{ width: 40, height: 40 }}>{s.player_name[0]}</Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body2" fontWeight={600}>{s.player_name}</Typography>
-                        <Typography variant="caption" color="text.secondary">{s.team_name}</Typography>
-                      </Box>
-                      <Chip label={`${s.goals} gol${s.goals > 1 ? 's' : ''}`} color="primary" size="small" />
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <Card key={s.player_id}>
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <span className={`text-xl font-extrabold w-8 ${i < 3 ? 'text-orange-600' : 'text-muted-foreground'}`}>
+                      {i + 1}
+                    </span>
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={s.photo_url || ''} />
+                      <AvatarFallback>{s.player_name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{s.player_name}</p>
+                      <p className="text-xs text-muted-foreground">{s.team_name}</p>
+                    </div>
+                    <Badge className="bg-blue-600 text-white">
+                      {s.goals} gol{s.goals > 1 ? 's' : ''}
+                    </Badge>
+                  </CardContent>
+                </Card>
               ))}
-            </Grid>
-          </Box>
+            </div>
+          </div>
         )}
 
         {/* Cartoes / Disciplinar */}
         {(disciplinary.length > 0 || fairPlay.length > 0) && (
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>CARTOES</Typography>
-            <Grid container spacing={3}>
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-3 text-[#1a237e]">CARTOES</h2>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               {disciplinary.length > 0 && (
-                <Grid item xs={12} md={7}>
-                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>Ranking Disciplinar</Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>#</TableCell>
-                          <TableCell>Jogador</TableCell>
-                          <TableCell>Time</TableCell>
-                          <TableCell align="center">AM</TableCell>
-                          <TableCell align="center">VM</TableCell>
-                          <TableCell align="center">Pts</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
+                <div className="md:col-span-7">
+                  <p className="text-sm font-semibold mb-2">Ranking Disciplinar</p>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 border-b">
+                          <th className="text-left px-3 py-2 font-semibold">#</th>
+                          <th className="text-left px-3 py-2 font-semibold">Jogador</th>
+                          <th className="text-left px-3 py-2 font-semibold">Time</th>
+                          <th className="text-center px-2 py-2 font-semibold">AM</th>
+                          <th className="text-center px-2 py-2 font-semibold">VM</th>
+                          <th className="text-center px-2 py-2 font-semibold">Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         {disciplinary.map((d, i) => (
-                          <TableRow key={d.player_id} hover>
-                            <TableCell>{i + 1}</TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Avatar src={d.photo_url || ''} sx={{ width: 24, height: 24 }}>{d.player_name[0]}</Avatar>
-                                <Typography variant="body2" fontWeight={600}>{d.player_name}</Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Avatar src={d.team_logo || ''} sx={{ width: 18, height: 18 }}>{d.team_name[0]}</Avatar>
-                                <Typography variant="caption">{d.team_name}</Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Chip label={d.yellow_cards} size="small" sx={{ bgcolor: '#ffd600', color: '#333', fontWeight: 700, minWidth: 28 }} />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Chip label={d.red_cards} size="small" sx={{ bgcolor: d.red_cards > 0 ? '#d32f2f' : '#eee', color: d.red_cards > 0 ? '#fff' : '#666', fontWeight: 700, minWidth: 28 }} />
-                            </TableCell>
-                            <TableCell align="center"><Typography fontWeight={700}>{d.penalty_points}</Typography></TableCell>
-                          </TableRow>
+                          <tr key={d.player_id} className="border-b hover:bg-muted/30 transition-colors">
+                            <td className="px-3 py-2">{i + 1}</td>
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-1.5">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={d.photo_url || ''} />
+                                  <AvatarFallback className="text-[10px]">{d.player_name[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="font-semibold">{d.player_name}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-1">
+                                <Avatar className="h-[18px] w-[18px]">
+                                  <AvatarImage src={d.team_logo || ''} />
+                                  <AvatarFallback className="text-[8px]">{d.team_name[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-xs">{d.team_name}</span>
+                              </div>
+                            </td>
+                            <td className="text-center px-2 py-2">
+                              <span className="inline-flex items-center justify-center h-6 min-w-7 rounded-full bg-yellow-400 text-xs font-bold text-gray-800">
+                                {d.yellow_cards}
+                              </span>
+                            </td>
+                            <td className="text-center px-2 py-2">
+                              <span className={`inline-flex items-center justify-center h-6 min-w-7 rounded-full text-xs font-bold ${d.red_cards > 0 ? 'bg-red-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                                {d.red_cards}
+                              </span>
+                            </td>
+                            <td className="text-center px-2 py-2 font-bold">{d.penalty_points}</td>
+                          </tr>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Grid>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
               {fairPlay.length > 0 && (
-                <Grid item xs={12} md={5}>
-                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>Fair Play por Time</Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Time</TableCell>
-                          <TableCell align="center">AM</TableCell>
-                          <TableCell align="center">VM</TableCell>
-                          <TableCell align="center">Pts</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
+                <div className="md:col-span-5">
+                  <p className="text-sm font-semibold mb-2">Fair Play por Time</p>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 border-b">
+                          <th className="text-left px-3 py-2 font-semibold">Time</th>
+                          <th className="text-center px-2 py-2 font-semibold">AM</th>
+                          <th className="text-center px-2 py-2 font-semibold">VM</th>
+                          <th className="text-center px-2 py-2 font-semibold">Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         {fairPlay.map((fp) => (
-                          <TableRow key={fp.team_id} hover>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Avatar src={fp.logo_url || ''} sx={{ width: 24, height: 24 }}>{fp.team_name[0]}</Avatar>
-                                <Typography variant="body2" fontWeight={600}>{fp.team_name}</Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell align="center">{fp.yellow_cards}</TableCell>
-                            <TableCell align="center">{fp.red_cards}</TableCell>
-                            <TableCell align="center"><Typography fontWeight={700}>{fp.penalty_points}</Typography></TableCell>
-                          </TableRow>
+                          <tr key={fp.team_id} className="border-b hover:bg-muted/30 transition-colors">
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-1.5">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={fp.logo_url || ''} />
+                                  <AvatarFallback className="text-[10px]">{fp.team_name[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="font-semibold">{fp.team_name}</span>
+                              </div>
+                            </td>
+                            <td className="text-center px-2 py-2">{fp.yellow_cards}</td>
+                            <td className="text-center px-2 py-2">{fp.red_cards}</td>
+                            <td className="text-center px-2 py-2 font-bold">{fp.penalty_points}</td>
+                          </tr>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Grid>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
-            </Grid>
-          </Box>
+            </div>
+          </div>
         )}
 
         {/* Partidas */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>PARTIDAS</Typography>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-3 text-[#1a237e]">PARTIDAS</h2>
           <ChampionshipMatchesClient championshipId={params.id} />
-        </Box>
+        </div>
 
-        <Divider sx={{ my: 4 }} />
+        <Separator className="my-6" />
 
         {/* Photo Gallery */}
         {photos.length > 0 && (
-          <Box sx={{ mb: 4 }}>
+          <div className="mb-6">
             <PhotoGallery photos={photos} title="FOTOS DO CAMPEONATO" />
-          </Box>
+          </div>
         )}
 
         {/* Related News */}
         {relatedNews.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-                <Newspaper sx={{ mr: 1, verticalAlign: 'middle' }} />
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-bold text-[#1a237e]">
+                <Newspaper className="h-5 w-5 inline-block mr-1 align-middle" />
                 NOTICIAS
-              </Typography>
-              <Button
-                component={Link}
-                href={`/noticias?campeonato=${params.id}`}
-                endIcon={<ArrowForward />}
-                size="small"
-                sx={{ color: '#1976d2' }}
-              >
-                Ver todas
+              </h2>
+              <Button variant="link" size="sm" asChild className="text-blue-600">
+                <Link href={`/noticias?campeonato=${params.id}`}>
+                  Ver todas
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Link>
               </Button>
-            </Box>
-            <Grid container spacing={2}>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               {relatedNews.map((article) => (
-                <Grid item xs={12} sm={6} md={3} key={article.id}>
-                  <NewsCard article={article} />
-                </Grid>
+                <NewsCard key={article.id} article={article} />
               ))}
-            </Grid>
-          </Box>
+            </div>
+          </div>
         )}
 
         {/* Fan Wall */}
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Forum sx={{ color: '#1a237e' }} />
-            <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-              MURAL DO TORCEDOR
-            </Typography>
-          </Box>
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="h-6 w-6 text-[#1a237e]" />
+            <h2 className="text-xl font-bold text-[#1a237e]">MURAL DO TORCEDOR</h2>
+          </div>
           <FanWall targetType="championship" targetId={params.id} />
-        </Box>
-      </Container>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

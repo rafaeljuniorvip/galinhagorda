@@ -2,13 +2,21 @@
 
 import { useState } from 'react';
 import {
-  Box, Container, Typography, Avatar, Chip, Card, CardContent, Grid,
-  MenuItem, TextField, Divider,
-} from '@mui/material';
+  CircleDot, Square, User,
+  Ruler, Dumbbell, MapPin,
+} from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
-  SportsSoccer, Square, Person,
-  Height, FitnessCenter, LocationOn,
-} from '@mui/icons-material';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Player, PlayerStats, PlayerRegistration } from '@/types';
 import { calculateAge, formatDate } from '@/lib/utils';
 import PlayerMatchHistory from './PlayerMatchHistory';
@@ -29,197 +37,181 @@ export default function PlayerBIDProfile({ player, stats, registrations }: Props
   const age = player.birth_date ? calculateAge(player.birth_date) : null;
 
   return (
-    <Box>
+    <div>
       {/* Header com fundo escuro */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
-          color: 'white',
-          py: { xs: 4, md: 6 },
-        }}
+      <div
+        className="text-white py-8 md:py-12"
+        style={{ background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)' }}
       >
-        <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'center', md: 'flex-start' }, gap: 4 }}>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             {/* Foto */}
-            <Avatar
-              src={player.photo_url || ''}
-              sx={{
-                width: { xs: 140, md: 180 },
-                height: { xs: 140, md: 180 },
-                border: '4px solid #ffd600',
-                fontSize: 64,
-                bgcolor: '#3949ab',
-              }}
-            >
-              {player.name[0]}
+            <Avatar className="h-[140px] w-[140px] md:h-[180px] md:w-[180px] border-4 border-[#ffd600]">
+              <AvatarImage src={player.photo_url || ''} />
+              <AvatarFallback className="bg-[#3949ab] text-white text-6xl font-bold">
+                {player.name[0]}
+              </AvatarFallback>
             </Avatar>
 
             {/* Info */}
-            <Box sx={{ textAlign: { xs: 'center', md: 'left' }, flex: 1 }}>
-              <Typography
-                variant="h3"
-                fontWeight={800}
-                sx={{
-                  fontSize: { xs: '2rem', md: '2.8rem' },
-                  color: '#ffd600',
-                  textTransform: 'uppercase',
-                  letterSpacing: 1,
-                }}
-              >
+            <div className="text-center md:text-left flex-1">
+              <h1 className="text-3xl md:text-[2.8rem] font-extrabold text-[#ffd600] uppercase tracking-wide leading-tight">
                 {player.name}
-              </Typography>
-              <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mb: 2 }}>
+              </h1>
+              <p className="text-lg text-white/85 mb-4">
                 {player.full_name}
-              </Typography>
+              </p>
 
               {/* Dados rapidos */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: { xs: 'center', md: 'flex-start' } }}>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                 {currentStats && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Avatar src={currentStats.team_logo || ''} sx={{ width: 28, height: 28 }}>{currentStats.team_name[0]}</Avatar>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>CLUBE ATUAL</Typography>
-                      <Typography variant="body2" fontWeight={700}>{currentStats.team_name}</Typography>
-                    </Box>
-                  </Box>
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-7 w-7">
+                      <AvatarImage src={currentStats.team_logo || ''} />
+                      <AvatarFallback className="text-[10px]">{currentStats.team_name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <span className="text-[10px] text-white/60 block uppercase">CLUBE ATUAL</span>
+                      <span className="text-sm font-bold">{currentStats.team_name}</span>
+                    </div>
+                  </div>
                 )}
 
                 {player.birth_date && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>NASCIMENTO</Typography>
-                    <Typography variant="body2" fontWeight={700}>{formatDate(player.birth_date)}</Typography>
-                  </Box>
+                  <div>
+                    <span className="text-[10px] text-white/60 block uppercase">NASCIMENTO</span>
+                    <span className="text-sm font-bold">{formatDate(player.birth_date)}</span>
+                  </div>
                 )}
 
                 {age && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>IDADE</Typography>
-                    <Typography variant="body2" fontWeight={700}>{age} anos</Typography>
-                  </Box>
+                  <div>
+                    <span className="text-[10px] text-white/60 block uppercase">IDADE</span>
+                    <span className="text-sm font-bold">{age} anos</span>
+                  </div>
                 )}
 
-                <Box>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>POSICAO</Typography>
-                  <Typography variant="body2" fontWeight={700}>{player.position}</Typography>
-                </Box>
+                <div>
+                  <span className="text-[10px] text-white/60 block uppercase">POSICAO</span>
+                  <span className="text-sm font-bold">{player.position}</span>
+                </div>
 
                 {currentReg?.bid_number && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>N BID</Typography>
-                    <Typography variant="body2" fontWeight={700}>{currentReg.bid_number}</Typography>
-                  </Box>
+                  <div>
+                    <span className="text-[10px] text-white/60 block uppercase">N BID</span>
+                    <span className="text-sm font-bold">{currentReg.bid_number}</span>
+                  </div>
                 )}
 
                 {currentReg?.shirt_number && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>CAMISA</Typography>
-                    <Typography variant="body2" fontWeight={700}>#{currentReg.shirt_number}</Typography>
-                  </Box>
+                  <div>
+                    <span className="text-[10px] text-white/60 block uppercase">CAMISA</span>
+                    <span className="text-sm font-bold">#{currentReg.shirt_number}</span>
+                  </div>
                 )}
-              </Box>
-            </Box>
-          </Box>
-        </Container>
-      </Box>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Info adicional do jogador */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
+        <div className="flex flex-wrap gap-2 mb-8">
           {player.height && (
-            <Chip icon={<Height />} label={`${player.height}m`} variant="outlined" />
+            <Badge variant="outline" className="gap-1">
+              <Ruler className="h-4 w-4" />
+              {player.height}m
+            </Badge>
           )}
           {player.weight && (
-            <Chip icon={<FitnessCenter />} label={`${player.weight}kg`} variant="outlined" />
+            <Badge variant="outline" className="gap-1">
+              <Dumbbell className="h-4 w-4" />
+              {player.weight}kg
+            </Badge>
           )}
           {player.dominant_foot && (
-            <Chip label={`Pe ${player.dominant_foot}`} variant="outlined" />
+            <Badge variant="outline">
+              Pe {player.dominant_foot}
+            </Badge>
           )}
-          <Chip icon={<LocationOn />} label={`${player.city}/${player.state}`} variant="outlined" />
-        </Box>
+          <Badge variant="outline" className="gap-1">
+            <MapPin className="h-4 w-4" />
+            {player.city}/{player.state}
+          </Badge>
+        </div>
 
         {/* Seletor de Campeonato */}
         {stats.length > 0 && (
           <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+              <h2 className="text-xl font-bold text-[#1a237e]">
                 ESTATISTICAS
-              </Typography>
+              </h2>
               {stats.length > 1 && (
-                <TextField
-                  select
-                  label="Campeonato"
-                  size="small"
-                  value={selectedChampionship}
-                  onChange={(e) => setSelectedChampionship(e.target.value)}
-                  sx={{ minWidth: 250 }}
-                >
-                  {stats.map(s => (
-                    <MenuItem key={s.championship_id} value={s.championship_id}>
-                      {s.championship_name} ({s.year})
-                    </MenuItem>
-                  ))}
-                </TextField>
+                <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="Campeonato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stats.map(s => (
+                      <SelectItem key={s.championship_id} value={s.championship_id}>
+                        {s.championship_name} ({s.year})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
-            </Box>
+            </div>
 
             {/* Cards de estatisticas */}
             {currentStats && (
-              <Grid container spacing={2} sx={{ mb: 4 }}>
-                <Grid item xs={6} sm={3}>
-                  <Card sx={{ textAlign: 'center', border: '2px solid #e0e0e0' }}>
-                    <CardContent sx={{ py: 3 }}>
-                      <SportsSoccer sx={{ fontSize: 28, color: '#1976d2', mb: 0.5 }} />
-                      <Typography variant="h3" fontWeight={800} sx={{ color: '#1a237e' }}>
-                        {String(currentStats.matches_played).padStart(2, '0')}
-                      </Typography>
-                      <Typography variant="caption" fontWeight={600} color="text.secondary">
-                        PARTIDAS
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Card sx={{ textAlign: 'center', border: '2px solid #e0e0e0' }}>
-                    <CardContent sx={{ py: 3 }}>
-                      <Box sx={{ width: 28, height: 28, mx: 'auto', mb: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <SportsSoccer sx={{ fontSize: 28, color: '#2e7d32' }} />
-                      </Box>
-                      <Typography variant="h3" fontWeight={800} sx={{ color: '#1a237e' }}>
-                        {String(currentStats.goals).padStart(2, '0')}
-                      </Typography>
-                      <Typography variant="caption" fontWeight={600} color="text.secondary">
-                        GOL
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Card sx={{ textAlign: 'center', border: '2px solid #e0e0e0' }}>
-                    <CardContent sx={{ py: 3 }}>
-                      <Square sx={{ fontSize: 28, color: '#ffd600', mb: 0.5 }} />
-                      <Typography variant="h3" fontWeight={800} sx={{ color: '#1a237e' }}>
-                        {String(currentStats.yellow_cards).padStart(2, '0')}
-                      </Typography>
-                      <Typography variant="caption" fontWeight={600} color="text.secondary">
-                        AMARELO
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Card sx={{ textAlign: 'center', border: '2px solid #e0e0e0' }}>
-                    <CardContent sx={{ py: 3 }}>
-                      <Square sx={{ fontSize: 28, color: '#d32f2f', mb: 0.5 }} />
-                      <Typography variant="h3" fontWeight={800} sx={{ color: '#1a237e' }}>
-                        {String(currentStats.red_cards).padStart(2, '0')}
-                      </Typography>
-                      <Typography variant="caption" fontWeight={600} color="text.secondary">
-                        VERMELHO
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                <Card className="text-center border-2 border-[#e0e0e0]">
+                  <CardContent className="py-6">
+                    <CircleDot className="h-7 w-7 text-[#1976d2] mx-auto mb-1" />
+                    <p className="text-4xl font-extrabold text-[#1a237e]">
+                      {String(currentStats.matches_played).padStart(2, '0')}
+                    </p>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      PARTIDAS
+                    </span>
+                  </CardContent>
+                </Card>
+                <Card className="text-center border-2 border-[#e0e0e0]">
+                  <CardContent className="py-6">
+                    <CircleDot className="h-7 w-7 text-[#2e7d32] mx-auto mb-1" />
+                    <p className="text-4xl font-extrabold text-[#1a237e]">
+                      {String(currentStats.goals).padStart(2, '0')}
+                    </p>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      GOL
+                    </span>
+                  </CardContent>
+                </Card>
+                <Card className="text-center border-2 border-[#e0e0e0]">
+                  <CardContent className="py-6">
+                    <Square className="h-7 w-7 text-[#ffd600] mx-auto mb-1" />
+                    <p className="text-4xl font-extrabold text-[#1a237e]">
+                      {String(currentStats.yellow_cards).padStart(2, '0')}
+                    </p>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      AMARELO
+                    </span>
+                  </CardContent>
+                </Card>
+                <Card className="text-center border-2 border-[#e0e0e0]">
+                  <CardContent className="py-6">
+                    <Square className="h-7 w-7 text-[#d32f2f] mx-auto mb-1" />
+                    <p className="text-4xl font-extrabold text-[#1a237e]">
+                      {String(currentStats.red_cards).padStart(2, '0')}
+                    </p>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      VERMELHO
+                    </span>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* Historico de partidas */}
@@ -230,43 +222,46 @@ export default function PlayerBIDProfile({ player, stats, registrations }: Props
         )}
 
         {stats.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 6 }}>
-            <Person sx={{ fontSize: 64, color: '#ccc' }} />
-            <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+          <div className="text-center py-12">
+            <User className="h-16 w-16 text-[#ccc] mx-auto" />
+            <p className="text-lg text-muted-foreground mt-4">
               Este jogador ainda nao possui inscricoes em campeonatos
-            </Typography>
-          </Box>
+            </p>
+          </div>
         )}
 
         {/* Historico de inscricoes */}
         {registrations.length > 0 && (
-          <Box sx={{ mt: 4 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
+          <div className="mt-8">
+            <Separator className="mb-6" />
+            <h3 className="text-lg font-bold text-[#1a237e] mb-4">
               HISTORICO DE INSCRICOES
-            </Typography>
-            <Grid container spacing={2}>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {registrations.map((r) => (
-                <Grid item xs={12} sm={6} md={4} key={r.id}>
-                  <Card variant="outlined">
-                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar src={r.team_logo || ''} sx={{ width: 40, height: 40 }}>{r.team_name?.[0]}</Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body2" fontWeight={600}>{r.team_name}</Typography>
-                        <Typography variant="caption" color="text.secondary">{r.championship_name}</Typography>
-                      </Box>
-                      <Box sx={{ textAlign: 'right' }}>
-                        {r.shirt_number && <Chip label={`#${r.shirt_number}`} size="small" />}
-                        <Typography variant="caption" display="block" color="text.secondary">{r.bid_number}</Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <Card key={r.id} className="border">
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={r.team_logo || ''} />
+                      <AvatarFallback>{r.team_name?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold">{r.team_name}</p>
+                      <span className="text-xs text-muted-foreground">{r.championship_name}</span>
+                    </div>
+                    <div className="text-right">
+                      {r.shirt_number && (
+                        <Badge variant="secondary" className="text-xs">#{r.shirt_number}</Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground block">{r.bid_number}</span>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
-            </Grid>
-          </Box>
+            </div>
+          </div>
         )}
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 }

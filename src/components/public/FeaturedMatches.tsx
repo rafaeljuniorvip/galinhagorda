@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import {
-  Box, Typography, Card, CardActionArea, Avatar, Chip, IconButton,
-} from '@mui/material';
-import { ChevronLeft, ChevronRight, FiberManualRecord } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Calendar, MapPin } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/cn';
 import Link from 'next/link';
 import { Match } from '@/types';
-import { formatDate } from '@/lib/utils';
 
 interface Props {
   initialMatches: Match[];
@@ -17,7 +17,6 @@ export default function FeaturedMatches({ initialMatches }: Props) {
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-refresh every 60 seconds for live scores
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -27,18 +26,16 @@ export default function FeaturedMatches({ initialMatches }: Props) {
           setMatches(data);
         }
       } catch {
-        // Silently fail, keep showing current data
+        // Silently fail
       }
     }, 60000);
-
     return () => clearInterval(interval);
   }, []);
 
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return;
-    const amount = 320;
     scrollRef.current.scrollBy({
-      left: direction === 'left' ? -amount : amount,
+      left: direction === 'left' ? -340 : 340,
       behavior: 'smooth',
     });
   };
@@ -46,181 +43,151 @@ export default function FeaturedMatches({ initialMatches }: Props) {
   if (matches.length === 0) return null;
 
   return (
-    <Box sx={{ position: 'relative' }}>
-      {/* Navigation arrows */}
+    <div className="relative">
       {matches.length > 3 && (
         <>
-          <IconButton
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => scroll('left')}
-            sx={{
-              position: 'absolute',
-              left: -16,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 2,
-              bgcolor: 'white',
-              boxShadow: 2,
-              display: { xs: 'none', md: 'flex' },
-              '&:hover': { bgcolor: '#f5f5f5' },
-            }}
+            className="absolute -left-4 top-1/2 -translate-y-1/2 z-[2] bg-white shadow-md hover:bg-gray-50 hidden md:flex rounded-full h-10 w-10"
           >
-            <ChevronLeft />
-          </IconButton>
-          <IconButton
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => scroll('right')}
-            sx={{
-              position: 'absolute',
-              right: -16,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 2,
-              bgcolor: 'white',
-              boxShadow: 2,
-              display: { xs: 'none', md: 'flex' },
-              '&:hover': { bgcolor: '#f5f5f5' },
-            }}
+            className="absolute -right-4 top-1/2 -translate-y-1/2 z-[2] bg-white shadow-md hover:bg-gray-50 hidden md:flex rounded-full h-10 w-10"
           >
-            <ChevronRight />
-          </IconButton>
+            <ChevronRight className="h-5 w-5" />
+          </Button>
         </>
       )}
 
-      {/* Scrollable strip */}
-      <Box
+      <div
         ref={scrollRef}
-        sx={{
-          display: 'flex',
-          gap: 2,
-          overflowX: 'auto',
-          pb: 1,
-          scrollSnapType: 'x mandatory',
-          '&::-webkit-scrollbar': { height: 6 },
-          '&::-webkit-scrollbar-thumb': {
-            bgcolor: 'rgba(0,0,0,0.2)',
-            borderRadius: 3,
-          },
-        }}
+        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin"
       >
         {matches.map((match) => {
           const isLive = match.status === 'Em Andamento';
           const isFinished = match.status === 'Finalizada';
+          const matchDate = match.match_date ? new Date(match.match_date) : null;
 
           return (
-            <Card
+            <div
               key={match.id}
-              sx={{
-                minWidth: 300,
-                maxWidth: 300,
-                flexShrink: 0,
-                scrollSnapAlign: 'start',
-                border: isLive ? '2px solid #d32f2f' : '1px solid #e0e0e0',
-                transition: 'transform 0.2s',
-                '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
-              }}
+              className={cn(
+                'min-w-[320px] max-w-[320px] flex-shrink-0 snap-start rounded-lg overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg',
+                isLive ? 'ring-2 ring-[#d32f2f]' : 'border border-border'
+              )}
             >
-              <CardActionArea
-                component={Link}
-                href={`/campeonatos/${match.championship_id}`}
-                sx={{ p: 2 }}
-              >
-                {/* Status */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 180 }}>
+              <Link href={`/partidas/${match.id}`} className="block no-underline text-inherit">
+                {/* Header */}
+                <div className="bg-[#0d1b2a] px-4 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] text-white/50 font-medium truncate max-w-[180px] uppercase tracking-wide">
                     {match.championship_name}
-                  </Typography>
-                  {isLive && (
-                    <Chip
-                      icon={<FiberManualRecord sx={{ fontSize: '10px !important', animation: 'pulse 1.5s infinite' }} />}
-                      label="AO VIVO"
-                      size="small"
-                      sx={{
-                        bgcolor: '#d32f2f',
-                        color: 'white',
-                        fontWeight: 700,
-                        fontSize: '0.65rem',
-                        height: 22,
-                        '@keyframes pulse': {
-                          '0%, 100%': { opacity: 1 },
-                          '50%': { opacity: 0.3 },
-                        },
-                      }}
-                    />
-                  )}
-                  {!isLive && (
-                    <Chip
-                      label={match.status}
-                      size="small"
-                      variant="outlined"
-                      sx={{ fontSize: '0.65rem', height: 22 }}
-                    />
-                  )}
-                </Box>
-
-                {/* Teams & Score */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                  {/* Home team */}
-                  <Box sx={{ flex: 1, textAlign: 'center' }}>
-                    <Avatar
-                      src={match.home_team_logo || ''}
-                      sx={{ width: 48, height: 48, mx: 'auto', mb: 0.5 }}
+                  </span>
+                  {isLive ? (
+                    <Badge className="bg-[#d32f2f] text-white font-bold text-[0.6rem] h-5 border-transparent hover:bg-[#d32f2f] gap-1">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-blink" />
+                      AO VIVO
+                    </Badge>
+                  ) : (
+                    <Badge
+                      className={cn(
+                        'text-[0.6rem] h-5 border-transparent font-semibold',
+                        isFinished
+                          ? 'bg-[#2e7d32] text-white'
+                          : 'bg-white/10 text-white/60'
+                      )}
                     >
-                      {match.home_team_short?.[0] || match.home_team_name?.[0]}
-                    </Avatar>
-                    <Typography variant="caption" fontWeight={600} noWrap display="block">
-                      {match.home_team_short || match.home_team_name}
-                    </Typography>
-                  </Box>
+                      {match.status}
+                    </Badge>
+                  )}
+                </div>
 
-                  {/* Score */}
-                  <Box sx={{ textAlign: 'center', px: 1 }}>
-                    {isFinished || isLive ? (
-                      <Typography
-                        variant="h5"
-                        fontWeight={800}
-                        sx={{ color: isLive ? '#d32f2f' : '#1a237e' }}
-                      >
-                        {match.home_score ?? 0} x {match.away_score ?? 0}
-                      </Typography>
-                    ) : (
-                      <Typography variant="body2" fontWeight={600} color="text.secondary">
-                        VS
-                      </Typography>
-                    )}
-                  </Box>
+                {/* Match Content */}
+                <div className="bg-white px-4 py-5">
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Home team */}
+                    <div className="flex-1 text-center">
+                      <Avatar className="h-14 w-14 mx-auto mb-2">
+                        <AvatarImage src={match.home_team_logo || ''} alt={match.home_team_name || ''} />
+                        <AvatarFallback className="text-base font-bold bg-muted">
+                          {match.home_team_short?.[0] || match.home_team_name?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-semibold block leading-tight">
+                        {match.home_team_short || match.home_team_name}
+                      </span>
+                    </div>
 
-                  {/* Away team */}
-                  <Box sx={{ flex: 1, textAlign: 'center' }}>
-                    <Avatar
-                      src={match.away_team_logo || ''}
-                      sx={{ width: 48, height: 48, mx: 'auto', mb: 0.5 }}
-                    >
-                      {match.away_team_short?.[0] || match.away_team_name?.[0]}
-                    </Avatar>
-                    <Typography variant="caption" fontWeight={600} noWrap display="block">
-                      {match.away_team_short || match.away_team_name}
-                    </Typography>
-                  </Box>
-                </Box>
+                    {/* Score */}
+                    <div className="shrink-0 text-center px-2">
+                      {isFinished || isLive ? (
+                        <div className="bg-[#0d1b2a] rounded-lg px-4 py-2 min-w-[80px]">
+                          <span
+                            className={cn(
+                              'text-2xl font-extrabold tabular-nums',
+                              isLive ? 'text-[#ef5350]' : 'text-white'
+                            )}
+                          >
+                            {match.home_score ?? 0} - {match.away_score ?? 0}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="bg-muted/60 rounded-lg px-4 py-2 min-w-[80px]">
+                          <span className="text-lg font-bold text-muted-foreground">VS</span>
+                        </div>
+                      )}
+                    </div>
 
-                {/* Date & Round */}
-                <Box sx={{ mt: 1.5, textAlign: 'center' }}>
+                    {/* Away team */}
+                    <div className="flex-1 text-center">
+                      <Avatar className="h-14 w-14 mx-auto mb-2">
+                        <AvatarImage src={match.away_team_logo || ''} alt={match.away_team_name || ''} />
+                        <AvatarFallback className="text-base font-bold bg-muted">
+                          {match.away_team_short?.[0] || match.away_team_name?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-semibold block leading-tight">
+                        {match.away_team_short || match.away_team_name}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="bg-[#f8f9fa] px-4 py-2 flex items-center justify-center gap-3 text-[11px] text-muted-foreground border-t border-border/30">
                   {match.match_round && (
-                    <Typography variant="caption" color="text.secondary">
-                      {match.match_round}
-                    </Typography>
+                    <span className="font-medium">{match.match_round}</span>
                   )}
-                  {match.match_date && (
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {formatDate(match.match_date)}
-                      {match.venue ? ` | ${match.venue}` : ''}
-                    </Typography>
+                  {match.match_round && matchDate && <span className="text-border">|</span>}
+                  {matchDate && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        {matchDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                        {!isFinished && ` ${matchDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
+                      </span>
+                    </div>
                   )}
-                </Box>
-              </CardActionArea>
-            </Card>
+                  {match.venue && (
+                    <>
+                      <span className="text-border">|</span>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        <span className="truncate max-w-[120px]">{match.venue}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </Link>
+            </div>
           );
         })}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

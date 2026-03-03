@@ -4,27 +4,11 @@ import { getMatchById } from '@/services/matchService';
 import { getEventsByMatch } from '@/services/matchEventService';
 import { getStreamingLinks } from '@/services/streamingService';
 import { getMatchLineups } from '@/services/lineupService';
-import {
-  Container,
-  Typography,
-  Box,
-  Avatar,
-  Chip,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  CardActionArea,
-} from '@mui/material';
-import {
-  Stadium,
-  CalendarMonth,
-  Gavel,
-  Star,
-  PlayCircleOutline,
-  OpenInNew,
-} from '@mui/icons-material';
+import { Calendar, MapPin, Gavel, Star, PlayCircle, ExternalLink } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import StreamingLinksDisplay from '@/components/public/StreamingLinksDisplay';
 import MatchLineupDisplay from '@/components/public/MatchLineupDisplay';
 import MatchTimeline from '@/components/public/MatchTimeline';
@@ -46,12 +30,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const statusConfig: Record<string, { color: string; bgcolor: string; label: string }> = {
-  Agendada: { color: '#546e7a', bgcolor: '#eceff1', label: 'Agendada' },
-  'Em Andamento': { color: '#ffffff', bgcolor: '#2e7d32', label: 'Em Andamento' },
-  Finalizada: { color: '#ffffff', bgcolor: '#1565c0', label: 'Finalizada' },
-  Adiada: { color: '#e65100', bgcolor: '#fff3e0', label: 'Adiada' },
-  Cancelada: { color: '#c62828', bgcolor: '#ffebee', label: 'Cancelada' },
-  WO: { color: '#c62828', bgcolor: '#ffebee', label: 'W.O.' },
+  Agendada: { color: 'text-gray-600', bgcolor: 'bg-gray-100', label: 'Agendada' },
+  'Em Andamento': { color: 'text-white', bgcolor: 'bg-green-700', label: 'Em Andamento' },
+  Finalizada: { color: 'text-white', bgcolor: 'bg-blue-700', label: 'Finalizada' },
+  Adiada: { color: 'text-orange-700', bgcolor: 'bg-orange-50', label: 'Adiada' },
+  Cancelada: { color: 'text-red-700', bgcolor: 'bg-red-50', label: 'Cancelada' },
+  WO: { color: 'text-red-700', bgcolor: 'bg-red-50', label: 'W.O.' },
 };
 
 export default async function MatchDetailPage({ params }: Props) {
@@ -68,274 +52,141 @@ export default async function MatchDetailPage({ params }: Props) {
   const isLive = match.status === 'Em Andamento';
   const hasAnyLiveStream = streamingLinks.some((l) => l.is_live);
 
-  // Compute simple stats from events
   const homeGoals = events.filter(
-    (e) =>
-      e.team_id === match.home_team_id &&
-      ['GOL', 'GOL_PENALTI'].includes(e.event_type)
+    (e) => e.team_id === match.home_team_id && ['GOL', 'GOL_PENALTI'].includes(e.event_type)
   ).length;
   const awayGoals = events.filter(
-    (e) =>
-      e.team_id === match.away_team_id &&
-      ['GOL', 'GOL_PENALTI'].includes(e.event_type)
+    (e) => e.team_id === match.away_team_id && ['GOL', 'GOL_PENALTI'].includes(e.event_type)
   ).length;
   const homeYellows = events.filter(
-    (e) =>
-      e.team_id === match.home_team_id &&
-      ['CARTAO_AMARELO', 'SEGUNDO_AMARELO'].includes(e.event_type)
+    (e) => e.team_id === match.home_team_id && ['CARTAO_AMARELO', 'SEGUNDO_AMARELO'].includes(e.event_type)
   ).length;
   const awayYellows = events.filter(
-    (e) =>
-      e.team_id === match.away_team_id &&
-      ['CARTAO_AMARELO', 'SEGUNDO_AMARELO'].includes(e.event_type)
+    (e) => e.team_id === match.away_team_id && ['CARTAO_AMARELO', 'SEGUNDO_AMARELO'].includes(e.event_type)
   ).length;
   const homeReds = events.filter(
-    (e) =>
-      e.team_id === match.home_team_id &&
-      ['CARTAO_VERMELHO'].includes(e.event_type)
+    (e) => e.team_id === match.home_team_id && ['CARTAO_VERMELHO'].includes(e.event_type)
   ).length;
   const awayReds = events.filter(
-    (e) =>
-      e.team_id === match.away_team_id &&
-      ['CARTAO_VERMELHO'].includes(e.event_type)
+    (e) => e.team_id === match.away_team_id && ['CARTAO_VERMELHO'].includes(e.event_type)
   ).length;
 
   const hasStats = events.length > 0;
 
   return (
-    <Box>
+    <div>
       {/* ===== HEADER SECTION ===== */}
-      <Box
-        sx={{
+      <div
+        className="text-white py-8 md:py-12 relative overflow-hidden"
+        style={{
           background: match.is_featured
             ? 'linear-gradient(135deg, #1a237e 0%, #0d47a1 40%, #01579b 100%)'
             : 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
-          color: 'white',
-          py: { xs: 4, md: 6 },
-          position: 'relative',
-          overflow: 'hidden',
         }}
       >
-        {/* Decorative bg pattern */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            opacity: 0.05,
-            backgroundImage:
-              'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 50%, white 1px, transparent 1px)',
+        {/* Decorative pattern */}
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 50%, white 1px, transparent 1px)',
             backgroundSize: '40px 40px',
           }}
         />
 
         {match.is_featured && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 4,
-              background: 'linear-gradient(90deg, #ffd600 0%, #ffab00 50%, #ffd600 100%)',
-            }}
-          />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-400" />
         )}
 
-        <Container maxWidth="lg" sx={{ position: 'relative' }}>
+        <div className="max-w-7xl mx-auto px-4 relative">
           {/* Championship & round info */}
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <div className="text-center mb-6">
             {match.is_featured && (
-              <Chip
-                icon={<Star sx={{ color: '#1a237e !important', fontSize: 16 }} />}
-                label="JOGO EM DESTAQUE"
-                size="small"
-                sx={{
-                  bgcolor: '#ffd600',
-                  color: '#1a237e',
-                  fontWeight: 700,
-                  mb: 1,
-                  fontSize: '0.7rem',
-                }}
-              />
+              <Badge className="bg-yellow-400 text-[#1a237e] font-bold text-[0.7rem] mb-2">
+                <Star className="h-3 w-3 mr-1" />
+                JOGO EM DESTAQUE
+              </Badge>
             )}
-            <Typography
-              variant="body2"
-              sx={{ color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}
-            >
+            <p className="text-sm text-white/70 tracking-wider uppercase">
               {match.championship_name}
               {match.match_round ? ` | ${match.match_round}` : ''}
-            </Typography>
-          </Box>
+            </p>
+          </div>
 
           {/* Teams and Score */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: { xs: 2, md: 4 },
-              mb: 3,
-            }}
-          >
+          <div className="flex items-center justify-center gap-4 md:gap-8 mb-6">
             {/* Home team */}
-            <Box sx={{ textAlign: 'center', flex: 1, maxWidth: 200 }}>
-              <Avatar
-                src={match.home_team_logo || ''}
-                sx={{
-                  width: { xs: 60, md: 80 },
-                  height: { xs: 60, md: 80 },
-                  mx: 'auto',
-                  mb: 1,
-                  bgcolor: 'rgba(255,255,255,0.15)',
-                  border: '3px solid rgba(255,255,255,0.2)',
-                }}
-              >
-                <Typography variant="h5" fontWeight={700}>
+            <div className="text-center flex-1 max-w-[200px]">
+              <Avatar className="h-[60px] w-[60px] md:h-[80px] md:w-[80px] mx-auto mb-2 border-[3px] border-white/20 bg-white/15">
+                <AvatarImage src={match.home_team_logo || ''} />
+                <AvatarFallback className="text-white text-xl font-bold bg-white/15">
                   {(match.home_team_short || match.home_team_name || '?')[0]}
-                </Typography>
+                </AvatarFallback>
               </Avatar>
-              <Typography
-                variant="subtitle1"
-                fontWeight={700}
-                sx={{ fontSize: { xs: '0.85rem', md: '1rem' } }}
-              >
-                {match.home_team_name}
-              </Typography>
+              <p className="font-bold text-sm md:text-base">{match.home_team_name}</p>
               {match.home_team_short && (
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                  {match.home_team_short}
-                </Typography>
+                <p className="text-xs text-white/60">{match.home_team_short}</p>
               )}
-            </Box>
+            </div>
 
             {/* Score */}
-            <Box sx={{ textAlign: 'center', minWidth: { xs: 90, md: 140 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                <Typography
-                  variant="h2"
-                  fontWeight={900}
-                  sx={{
-                    fontSize: { xs: '2.5rem', md: '4rem' },
-                    lineHeight: 1,
-                    textShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                  }}
-                >
+            <div className="text-center min-w-[90px] md:min-w-[140px]">
+              <div className="flex items-center justify-center gap-1">
+                <span className="text-[2.5rem] md:text-[4rem] font-black leading-none drop-shadow-lg">
                   {match.home_score ?? '-'}
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: 'rgba(255,255,255,0.5)',
-                    mx: { xs: 0.5, md: 1 },
-                    fontSize: { xs: '1.5rem', md: '2rem' },
-                  }}
-                >
-                  x
-                </Typography>
-                <Typography
-                  variant="h2"
-                  fontWeight={900}
-                  sx={{
-                    fontSize: { xs: '2.5rem', md: '4rem' },
-                    lineHeight: 1,
-                    textShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                  }}
-                >
+                </span>
+                <span className="text-2xl md:text-3xl text-white/50 mx-1">x</span>
+                <span className="text-[2.5rem] md:text-[4rem] font-black leading-none drop-shadow-lg">
                   {match.away_score ?? '-'}
-                </Typography>
-              </Box>
-              <Chip
-                label={status.label}
-                size="small"
-                sx={{
-                  mt: 1,
-                  color: status.color,
-                  bgcolor: isLive ? '#2e7d32' : status.bgcolor,
-                  fontWeight: 700,
-                  fontSize: '0.7rem',
-                  ...(isLive && {
-                    animation: 'statusPulse 2s infinite',
-                    '@keyframes statusPulse': {
-                      '0%, 100%': { opacity: 1 },
-                      '50%': { opacity: 0.7 },
-                    },
-                  }),
-                }}
-              />
-            </Box>
+                </span>
+              </div>
+              <Badge className={`mt-2 font-bold text-[0.7rem] ${status.bgcolor} ${status.color} ${isLive ? 'animate-pulse' : ''}`}>
+                {status.label}
+              </Badge>
+            </div>
 
             {/* Away team */}
-            <Box sx={{ textAlign: 'center', flex: 1, maxWidth: 200 }}>
-              <Avatar
-                src={match.away_team_logo || ''}
-                sx={{
-                  width: { xs: 60, md: 80 },
-                  height: { xs: 60, md: 80 },
-                  mx: 'auto',
-                  mb: 1,
-                  bgcolor: 'rgba(255,255,255,0.15)',
-                  border: '3px solid rgba(255,255,255,0.2)',
-                }}
-              >
-                <Typography variant="h5" fontWeight={700}>
+            <div className="text-center flex-1 max-w-[200px]">
+              <Avatar className="h-[60px] w-[60px] md:h-[80px] md:w-[80px] mx-auto mb-2 border-[3px] border-white/20 bg-white/15">
+                <AvatarImage src={match.away_team_logo || ''} />
+                <AvatarFallback className="text-white text-xl font-bold bg-white/15">
                   {(match.away_team_short || match.away_team_name || '?')[0]}
-                </Typography>
+                </AvatarFallback>
               </Avatar>
-              <Typography
-                variant="subtitle1"
-                fontWeight={700}
-                sx={{ fontSize: { xs: '0.85rem', md: '1rem' } }}
-              >
-                {match.away_team_name}
-              </Typography>
+              <p className="font-bold text-sm md:text-base">{match.away_team_name}</p>
               {match.away_team_short && (
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                  {match.away_team_short}
-                </Typography>
+                <p className="text-xs text-white/60">{match.away_team_short}</p>
               )}
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {/* Match info bar */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: { xs: 2, md: 4 },
-              flexWrap: 'wrap',
-              color: 'rgba(255,255,255,0.8)',
-            }}
-          >
+          <div className="flex items-center justify-center gap-4 md:gap-6 flex-wrap text-white/80 text-xs">
             {match.match_date && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <CalendarMonth sx={{ fontSize: 16 }} />
-                <Typography variant="caption">{formatDateTime(match.match_date)}</Typography>
-              </Box>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{formatDateTime(match.match_date)}</span>
+              </div>
             )}
             {match.venue && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Stadium sx={{ fontSize: 16 }} />
-                <Typography variant="caption">{match.venue}</Typography>
-              </Box>
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                <span>{match.venue}</span>
+              </div>
             )}
             {(match.referee_name || match.referee) && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Gavel sx={{ fontSize: 16 }} />
-                <Typography variant="caption">
+              <div className="flex items-center gap-1">
+                <Gavel className="h-3.5 w-3.5" />
+                <span>
                   {match.referee_name || match.referee}
                   {(match.assistant_referee_1_name || match.assistant_referee_1) && ` | ${match.assistant_referee_1_name || match.assistant_referee_1}`}
                   {(match.assistant_referee_2_name || match.assistant_referee_2) && ` | ${match.assistant_referee_2_name || match.assistant_referee_2}`}
-                </Typography>
-              </Box>
+                </span>
+              </div>
             )}
-          </Box>
+          </div>
 
           {/* Social Share */}
-          <Box sx={{ textAlign: 'center', mt: 2 }}>
+          <div className="text-center mt-3">
             <SocialShare
               homeTeam={match.home_team_name || ''}
               awayTeam={match.away_team_name || ''}
@@ -343,300 +194,190 @@ export default async function MatchDetailPage({ params }: Props) {
               awayScore={match.away_score}
               championship={match.championship_name}
             />
-          </Box>
+          </div>
 
-          {/* Live streaming indicator in header */}
+          {/* Live streaming indicator */}
           {(isLive || hasAnyLiveStream) && (
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Chip
-                label="TRANSMISSAO AO VIVO DISPONIVEL"
-                size="small"
-                sx={{
-                  bgcolor: 'rgba(211,47,47,0.9)',
-                  color: 'white',
-                  fontWeight: 700,
-                  fontSize: '0.65rem',
-                  animation: 'headerLivePulse 1.5s infinite',
-                  '@keyframes headerLivePulse': {
-                    '0%': { boxShadow: '0 0 0 0 rgba(211,47,47,0.5)' },
-                    '70%': { boxShadow: '0 0 0 8px rgba(211,47,47,0)' },
-                    '100%': { boxShadow: '0 0 0 0 rgba(211,47,47,0)' },
-                  },
-                }}
-              />
-            </Box>
+            <div className="text-center mt-3">
+              <Badge className="bg-red-600/90 text-white font-bold text-[0.65rem] animate-pulse">
+                TRANSMISSAO AO VIVO DISPONIVEL
+              </Badge>
+            </div>
           )}
-        </Container>
-      </Box>
+        </div>
+      </div>
 
       {/* ===== CONTENT SECTION ===== */}
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Grid container spacing={3}>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6">
           {/* Main column */}
-          <Grid item xs={12} md={8}>
+          <div>
             {/* Streaming Links */}
             {(streamingLinks.length > 0 || match.streaming_url) && (
-              <Box sx={{ mb: 4 }}>
+              <div className="mb-6">
                 <StreamingLinksDisplay
                   streamingLinks={streamingLinks}
                   mainStreamUrl={match.streaming_url}
                 />
-              </Box>
+              </div>
             )}
 
             {/* Match Timeline */}
             {events.length > 0 && (
-              <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
-                <MatchTimeline events={events} match={match} />
-              </Paper>
+              <Card className="mb-6">
+                <CardContent className="p-4 md:p-6">
+                  <MatchTimeline events={events} match={match} />
+                </CardContent>
+              </Card>
             )}
 
             {/* Lineups */}
             {(lineups.home.length > 0 || lineups.away.length > 0) && (
-              <Box sx={{ mb: 4 }}>
+              <div className="mb-6">
                 <MatchLineupDisplay
                   homeLineup={lineups.home}
                   awayLineup={lineups.away}
                   match={match}
                 />
-              </Box>
+              </div>
             )}
 
             {/* Highlights */}
             {match.highlights_url && (
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h6"
-                  fontWeight={700}
-                  gutterBottom
-                  sx={{ color: '#1a237e', display: 'flex', alignItems: 'center', gap: 1 }}
-                >
-                  <PlayCircleOutline fontSize="small" />
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-[#1a237e] mb-2 flex items-center gap-1.5">
+                  <PlayCircle className="h-5 w-5" />
                   MELHORES MOMENTOS
-                </Typography>
-                <Card variant="outlined" sx={{ borderRadius: 2 }}>
+                </h3>
+                <Card className="overflow-hidden">
                   {match.highlights_url.includes('youtube.com') ||
                   match.highlights_url.includes('youtu.be') ? (
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        paddingBottom: '56.25%',
-                        height: 0,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <Box
-                        component="iframe"
+                    <div className="relative pb-[56.25%] h-0 overflow-hidden">
+                      <iframe
                         src={getYouTubeEmbedUrl(match.highlights_url)}
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          border: 'none',
-                        }}
+                        className="absolute top-0 left-0 w-full h-full border-none"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         title="Melhores Momentos"
                       />
-                    </Box>
+                    </div>
                   ) : (
-                    <CardActionArea
+                    <a
                       href={match.highlights_url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 bg-gradient-to-br from-[#1a237e] to-[#283593] text-white hover:opacity-90 transition-opacity"
                     >
-                      <CardContent
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
-                          color: 'white',
-                        }}
-                      >
-                        <PlayCircleOutline sx={{ fontSize: 40 }} />
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle1" fontWeight={700}>
-                            Assistir Melhores Momentos
-                          </Typography>
-                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                            Clique para assistir
-                          </Typography>
-                        </Box>
-                        <OpenInNew />
-                      </CardContent>
-                    </CardActionArea>
+                      <PlayCircle className="h-10 w-10 shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-bold">Assistir Melhores Momentos</p>
+                        <p className="text-sm text-white/80">Clique para assistir</p>
+                      </div>
+                      <ExternalLink className="h-5 w-5" />
+                    </a>
                   )}
                 </Card>
-              </Box>
+              </div>
             )}
-          </Grid>
+          </div>
 
           {/* Sidebar */}
-          <Grid item xs={12} md={4}>
+          <div>
             {/* Match Stats */}
             {hasStats && (
-              <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
-                <Typography
-                  variant="h6"
-                  fontWeight={700}
-                  gutterBottom
-                  sx={{ color: '#1a237e', fontSize: '1rem' }}
-                >
-                  ESTATISTICAS
-                </Typography>
-
-                <StatRow
-                  label="Gols"
-                  home={homeGoals}
-                  away={awayGoals}
-                />
-                <StatRow
-                  label="Cartoes Amarelos"
-                  home={homeYellows}
-                  away={awayYellows}
-                />
-                <StatRow
-                  label="Cartoes Vermelhos"
-                  home={homeReds}
-                  away={awayReds}
-                />
-              </Paper>
+              <Card className="mb-4">
+                <CardContent className="p-4">
+                  <h3 className="font-bold text-[#1a237e] mb-3">ESTATISTICAS</h3>
+                  <StatRow label="Gols" home={homeGoals} away={awayGoals} />
+                  <StatRow label="Cartoes Amarelos" home={homeYellows} away={awayYellows} />
+                  <StatRow label="Cartoes Vermelhos" home={homeReds} away={awayReds} />
+                </CardContent>
+              </Card>
             )}
 
             {/* Match Details */}
-            <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
-              <Typography
-                variant="h6"
-                fontWeight={700}
-                gutterBottom
-                sx={{ color: '#1a237e', fontSize: '1rem' }}
-              >
-                DETALHES
-              </Typography>
-
-              <DetailRow label="Campeonato" value={match.championship_name} />
-              {match.match_round && <DetailRow label="Rodada" value={match.match_round} />}
-              {match.match_date && (
-                <DetailRow label="Data/Hora" value={formatDateTime(match.match_date)} />
-              )}
-              {match.venue && <DetailRow label="Local" value={match.venue} />}
-              {(match.referee_name || match.referee) && <DetailRow label="Arbitro" value={match.referee_name || match.referee} />}
-              {(match.assistant_referee_1_name || match.assistant_referee_1) && (
-                <DetailRow label="Assistente 1" value={match.assistant_referee_1_name || match.assistant_referee_1} />
-              )}
-              {(match.assistant_referee_2_name || match.assistant_referee_2) && (
-                <DetailRow label="Assistente 2" value={match.assistant_referee_2_name || match.assistant_referee_2} />
-              )}
-            </Paper>
+            <Card className="mb-4">
+              <CardContent className="p-4">
+                <h3 className="font-bold text-[#1a237e] mb-3">DETALHES</h3>
+                <DetailRow label="Campeonato" value={match.championship_name} />
+                {match.match_round && <DetailRow label="Rodada" value={match.match_round} />}
+                {match.match_date && <DetailRow label="Data/Hora" value={formatDateTime(match.match_date)} />}
+                {match.venue && <DetailRow label="Local" value={match.venue} />}
+                {(match.referee_name || match.referee) && <DetailRow label="Arbitro" value={match.referee_name || match.referee} />}
+                {(match.assistant_referee_1_name || match.assistant_referee_1) && (
+                  <DetailRow label="Assistente 1" value={match.assistant_referee_1_name || match.assistant_referee_1} />
+                )}
+                {(match.assistant_referee_2_name || match.assistant_referee_2) && (
+                  <DetailRow label="Assistente 2" value={match.assistant_referee_2_name || match.assistant_referee_2} />
+                )}
+              </CardContent>
+            </Card>
 
             {/* Observations */}
             {match.observations && (
-              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
-                <Typography
-                  variant="h6"
-                  fontWeight={700}
-                  gutterBottom
-                  sx={{ color: '#1a237e', fontSize: '1rem' }}
-                >
-                  OBSERVACOES
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-                  {match.observations}
-                </Typography>
-              </Paper>
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="font-bold text-[#1a237e] mb-3">OBSERVACOES</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
+                    {match.observations}
+                  </p>
+                </CardContent>
+              </Card>
             )}
-          </Grid>
-        </Grid>
+          </div>
+        </div>
 
         {/* Match Voting */}
         {(match.status === 'Finalizada' || match.voting_open) && (
-          <Box sx={{ mt: 4 }}>
+          <div className="mt-6">
             <MatchVoting matchId={params.id} />
-          </Box>
+          </div>
         )}
 
         {/* Fan Wall */}
-        <Box sx={{ mt: 4 }}>
+        <div className="mt-6">
           <FanWall targetType="match" targetId={params.id} />
-        </Box>
-      </Container>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }
 
 /* ---------- Helper components ---------- */
 
-function StatRow({
-  label,
-  home,
-  away,
-}: {
-  label: string;
-  home: number;
-  away: number;
-}) {
+function StatRow({ label, home, away }: { label: string; home: number; away: number }) {
   const total = home + away;
   const homePercent = total > 0 ? (home / total) * 100 : 50;
   const awayPercent = total > 0 ? (away / total) * 100 : 50;
 
   return (
-    <Box sx={{ mb: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-        <Typography variant="body2" fontWeight={700}>
-          {home}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {label}
-        </Typography>
-        <Typography variant="body2" fontWeight={700}>
-          {away}
-        </Typography>
-      </Box>
-      <Box sx={{ display: 'flex', gap: 0.5, height: 6, borderRadius: 3, overflow: 'hidden' }}>
-        <Box
-          sx={{
-            width: `${homePercent}%`,
-            bgcolor: '#1a237e',
-            borderRadius: '3px 0 0 3px',
-            transition: 'width 0.3s ease',
-          }}
+    <div className="mb-3">
+      <div className="flex justify-between mb-1">
+        <span className="text-sm font-bold">{home}</span>
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-sm font-bold">{away}</span>
+      </div>
+      <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden">
+        <div
+          className="bg-[#1a237e] rounded-l-full transition-all duration-300"
+          style={{ width: `${homePercent}%` }}
         />
-        <Box
-          sx={{
-            width: `${awayPercent}%`,
-            bgcolor: '#b71c1c',
-            borderRadius: '0 3px 3px 0',
-            transition: 'width 0.3s ease',
-          }}
+        <div
+          className="bg-red-800 rounded-r-full transition-all duration-300"
+          style={{ width: `${awayPercent}%` }}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        py: 0.75,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        '&:last-child': { borderBottom: 'none' },
-      }}
-    >
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body2" fontWeight={600} sx={{ textAlign: 'right', maxWidth: '60%' }}>
-        {value}
-      </Typography>
-    </Box>
+    <div className="flex justify-between py-1.5 border-b last:border-b-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-semibold text-right max-w-[60%]">{value}</span>
+    </div>
   );
 }
 

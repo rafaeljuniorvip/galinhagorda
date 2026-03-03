@@ -3,10 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Box, TextField, Button, Grid, MenuItem, Alert, Typography, Card, CardContent, FormControlLabel, Switch, Autocomplete } from '@mui/material';
-import { Save, ArrowBack } from '@mui/icons-material';
+import { Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Match, Championship, Team, Referee } from '@/types';
 import { MATCH_STATUS } from '@/lib/utils';
+import Combobox from '@/components/admin/Combobox';
+import PageHeader from '@/components/admin/PageHeader';
 
 interface Props { match?: Match; }
 
@@ -20,24 +29,14 @@ export default function MatchForm({ match }: Props) {
   const [referees, setReferees] = useState<Referee[]>([]);
 
   const [form, setForm] = useState({
-    championship_id: match?.championship_id || '',
-    home_team_id: match?.home_team_id || '',
-    away_team_id: match?.away_team_id || '',
-    home_score: match?.home_score?.toString() ?? '',
-    away_score: match?.away_score?.toString() ?? '',
+    championship_id: match?.championship_id || '', home_team_id: match?.home_team_id || '', away_team_id: match?.away_team_id || '',
+    home_score: match?.home_score?.toString() ?? '', away_score: match?.away_score?.toString() ?? '',
     match_date: match?.match_date ? new Date(match.match_date).toISOString().slice(0, 16) : '',
-    match_round: match?.match_round || '',
-    venue: match?.venue || '',
-    referee: match?.referee || '',
-    referee_id: match?.referee_id || '',
-    assistant_referee_1_id: match?.assistant_referee_1_id || '',
-    assistant_referee_2_id: match?.assistant_referee_2_id || '',
-    status: match?.status || 'Agendada',
-    observations: match?.observations || '',
-    streaming_url: match?.streaming_url || '',
-    highlights_url: match?.highlights_url || '',
-    is_featured: match?.is_featured ?? false,
-    voting_open: match?.voting_open ?? false,
+    match_round: match?.match_round || '', venue: match?.venue || '', referee: match?.referee || '',
+    referee_id: match?.referee_id || '', assistant_referee_1_id: match?.assistant_referee_1_id || '', assistant_referee_2_id: match?.assistant_referee_2_id || '',
+    status: match?.status || 'Agendada', observations: match?.observations || '',
+    streaming_url: match?.streaming_url || '', highlights_url: match?.highlights_url || '',
+    is_featured: match?.is_featured ?? false, voting_open: match?.voting_open ?? false,
     voting_deadline: match?.voting_deadline ? new Date(match.voting_deadline).toISOString().slice(0, 16) : '',
   });
 
@@ -49,14 +48,15 @@ export default function MatchForm({ match }: Props) {
     ]).then(([c, t, refs]) => { setChampionships(c); setTeams(t); setReferees(refs); });
   }, []);
 
-  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
   };
 
+  const refereeOptions = referees.map(r => ({ value: r.id, label: r.nickname ? `${r.name} (${r.nickname})` : r.name }));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSaving(true);
+    setError(''); setSaving(true);
     try {
       const selectedReferee = referees.find(r => r.id === form.referee_id);
       const selectedAR1 = referees.find(r => r.id === form.assistant_referee_1_id);
@@ -65,127 +65,103 @@ export default function MatchForm({ match }: Props) {
         ...form,
         home_score: form.home_score !== '' ? parseInt(form.home_score) : null,
         away_score: form.away_score !== '' ? parseInt(form.away_score) : null,
-        match_date: form.match_date || null,
-        match_round: form.match_round || null,
-        venue: form.venue || null,
+        match_date: form.match_date || null, match_round: form.match_round || null, venue: form.venue || null,
         referee: selectedReferee?.name || form.referee || null,
-        assistant_referee_1: selectedAR1?.name || null,
-        assistant_referee_2: selectedAR2?.name || null,
-        referee_id: form.referee_id || null,
-        assistant_referee_1_id: form.assistant_referee_1_id || null,
-        assistant_referee_2_id: form.assistant_referee_2_id || null,
-        observations: form.observations || null,
-        streaming_url: form.streaming_url || null,
-        highlights_url: form.highlights_url || null,
-        is_featured: form.is_featured,
-        voting_open: form.voting_open,
-        voting_deadline: form.voting_deadline || null,
+        assistant_referee_1: selectedAR1?.name || null, assistant_referee_2: selectedAR2?.name || null,
+        referee_id: form.referee_id || null, assistant_referee_1_id: form.assistant_referee_1_id || null, assistant_referee_2_id: form.assistant_referee_2_id || null,
+        observations: form.observations || null, streaming_url: form.streaming_url || null, highlights_url: form.highlights_url || null,
+        is_featured: form.is_featured, voting_open: form.voting_open, voting_deadline: form.voting_deadline || null,
       };
       const url = isEditing ? `/api/matches/${match.id}` : '/api/matches';
       const method = isEditing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (res.ok) { router.push('/admin/partidas'); }
+      if (res.ok) router.push('/admin/partidas');
       else { const d = await res.json(); setError(d.error || 'Erro ao salvar'); }
     } catch { setError('Erro ao salvar partida'); }
     finally { setSaving(false); }
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Button component={Link} href="/admin/partidas" startIcon={<ArrowBack />} color="inherit">Voltar</Button>
-        <Typography variant="h4" fontWeight={700}>{isEditing ? 'Editar Partida' : 'Nova Partida'}</Typography>
-      </Box>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+    <div>
+      <PageHeader title={isEditing ? 'Editar Partida' : 'Nova Partida'} backHref="/admin/partidas" />
+      {error && <Alert variant="destructive" className="mb-4"><AlertDescription>{error}</AlertDescription></Alert>}
       <Card>
-        <CardContent sx={{ p: 3 }}>
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField select label="Campeonato" required fullWidth value={form.championship_id} onChange={handleChange('championship_id')}>
-                  {championships.map(c => <MenuItem key={c.id} value={c.id}>{c.name} ({c.year})</MenuItem>)}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField label="Rodada" fullWidth value={form.match_round} onChange={handleChange('match_round')} placeholder="Ex: Rodada 1" />
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField select label="Status" fullWidth value={form.status} onChange={handleChange('status')}>
-                  {MATCH_STATUS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={5}>
-                <TextField select label="Time Mandante" required fullWidth value={form.home_team_id} onChange={handleChange('home_team_id')}>
-                  {teams.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-                </TextField>
-              </Grid>
-              <Grid item xs={6} md={1}><TextField label="Gols" type="number" fullWidth value={form.home_score} onChange={handleChange('home_score')} /></Grid>
-              <Grid item xs={6} md={1}><TextField label="Gols" type="number" fullWidth value={form.away_score} onChange={handleChange('away_score')} /></Grid>
-              <Grid item xs={12} md={5}>
-                <TextField select label="Time Visitante" required fullWidth value={form.away_team_id} onChange={handleChange('away_team_id')}>
-                  {teams.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={4}><TextField label="Data e Hora" type="datetime-local" fullWidth InputLabelProps={{ shrink: true }} value={form.match_date} onChange={handleChange('match_date')} /></Grid>
-              <Grid item xs={12} md={4}><TextField label="Local" fullWidth value={form.venue} onChange={handleChange('venue')} /></Grid>
-              <Grid item xs={12} md={4}>
-                <Autocomplete
-                  options={referees}
-                  getOptionLabel={(o) => o.nickname ? `${o.name} (${o.nickname})` : o.name}
-                  value={referees.find(r => r.id === form.referee_id) || null}
-                  onChange={(_, v) => setForm(prev => ({ ...prev, referee_id: v?.id || '', referee: v?.name || '' }))}
-                  renderInput={(params) => <TextField {...params} label="Arbitro" />}
-                  isOptionEqualToValue={(o, v) => o.id === v.id}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Autocomplete
-                  options={referees}
-                  getOptionLabel={(o) => o.nickname ? `${o.name} (${o.nickname})` : o.name}
-                  value={referees.find(r => r.id === form.assistant_referee_1_id) || null}
-                  onChange={(_, v) => setForm(prev => ({ ...prev, assistant_referee_1_id: v?.id || '' }))}
-                  renderInput={(params) => <TextField {...params} label="Assistente 1" />}
-                  isOptionEqualToValue={(o, v) => o.id === v.id}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Autocomplete
-                  options={referees}
-                  getOptionLabel={(o) => o.nickname ? `${o.name} (${o.nickname})` : o.name}
-                  value={referees.find(r => r.id === form.assistant_referee_2_id) || null}
-                  onChange={(_, v) => setForm(prev => ({ ...prev, assistant_referee_2_id: v?.id || '' }))}
-                  renderInput={(params) => <TextField {...params} label="Assistente 2" />}
-                  isOptionEqualToValue={(o, v) => o.id === v.id}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}><TextField label="URL Transmissao" fullWidth value={form.streaming_url} onChange={handleChange('streaming_url')} placeholder="https://..." /></Grid>
-              <Grid item xs={12} md={4}><TextField label="URL Melhores Momentos" fullWidth value={form.highlights_url} onChange={handleChange('highlights_url')} placeholder="https://..." /></Grid>
-              <Grid item xs={12} md={4}>
-                <TextField label="Prazo Votacao" type="datetime-local" fullWidth InputLabelProps={{ shrink: true }} value={form.voting_deadline} onChange={handleChange('voting_deadline')} />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Box sx={{ display: 'flex', gap: 2, pt: 1 }}>
-                  <FormControlLabel
-                    control={<Switch checked={form.is_featured} onChange={(e) => setForm(prev => ({ ...prev, is_featured: e.target.checked }))} />}
-                    label="Destaque"
-                  />
-                  <FormControlLabel
-                    control={<Switch checked={form.voting_open} onChange={(e) => setForm(prev => ({ ...prev, voting_open: e.target.checked }))} />}
-                    label="Votacao Aberta"
-                  />
-                </Box>
-              </Grid>
-              <Grid item xs={12}><TextField label="Observacoes" multiline rows={2} fullWidth value={form.observations} onChange={handleChange('observations')} /></Grid>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                  <Button component={Link} href="/admin/partidas" color="inherit">Cancelar</Button>
-                  <Button type="submit" variant="contained" startIcon={<Save />} disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button>
-                </Box>
-              </Grid>
-            </Grid>
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div className="md:col-span-6">
+              <Label>Campeonato *</Label>
+              <Select value={form.championship_id} onValueChange={(v) => setForm(prev => ({ ...prev, championship_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {championships.map(c => <SelectItem key={c.id} value={c.id}>{c.name} ({c.year})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-3"><Label>Rodada</Label><Input value={form.match_round} onChange={handleChange('match_round')} placeholder="Ex: Rodada 1" /></div>
+            <div className="md:col-span-3">
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(v) => setForm(prev => ({ ...prev, status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MATCH_STATUS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-5">
+              <Label>Time Mandante *</Label>
+              <Select value={form.home_team_id} onValueChange={(v) => setForm(prev => ({ ...prev, home_team_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-1"><Label>Gols</Label><Input type="number" value={form.home_score} onChange={handleChange('home_score')} /></div>
+            <div className="md:col-span-1"><Label>Gols</Label><Input type="number" value={form.away_score} onChange={handleChange('away_score')} /></div>
+            <div className="md:col-span-5">
+              <Label>Time Visitante *</Label>
+              <Select value={form.away_team_id} onValueChange={(v) => setForm(prev => ({ ...prev, away_team_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-4"><Label>Data e Hora</Label><Input type="datetime-local" value={form.match_date} onChange={handleChange('match_date')} /></div>
+            <div className="md:col-span-4"><Label>Local</Label><Input value={form.venue} onChange={handleChange('venue')} /></div>
+            <div className="md:col-span-4">
+              <Label>Arbitro</Label>
+              <Combobox options={refereeOptions} value={form.referee_id} onChange={(v) => setForm(prev => ({ ...prev, referee_id: v, referee: referees.find(r => r.id === v)?.name || '' }))} placeholder="Selecione arbitro" searchPlaceholder="Buscar arbitro..." />
+            </div>
+            <div className="md:col-span-4">
+              <Label>Assistente 1</Label>
+              <Combobox options={refereeOptions} value={form.assistant_referee_1_id} onChange={(v) => setForm(prev => ({ ...prev, assistant_referee_1_id: v }))} placeholder="Selecione assistente" searchPlaceholder="Buscar arbitro..." />
+            </div>
+            <div className="md:col-span-4">
+              <Label>Assistente 2</Label>
+              <Combobox options={refereeOptions} value={form.assistant_referee_2_id} onChange={(v) => setForm(prev => ({ ...prev, assistant_referee_2_id: v }))} placeholder="Selecione assistente" searchPlaceholder="Buscar arbitro..." />
+            </div>
+            <div className="md:col-span-4"><Label>URL Transmissao</Label><Input value={form.streaming_url} onChange={handleChange('streaming_url')} placeholder="https://..." /></div>
+            <div className="md:col-span-4"><Label>URL Melhores Momentos</Label><Input value={form.highlights_url} onChange={handleChange('highlights_url')} placeholder="https://..." /></div>
+            <div className="md:col-span-4"><Label>Prazo Votacao</Label><Input type="datetime-local" value={form.voting_deadline} onChange={handleChange('voting_deadline')} /></div>
+            <div className="md:col-span-4 flex gap-6 pt-6">
+              <div className="flex items-center gap-2">
+                <Switch checked={form.is_featured} onCheckedChange={(v) => setForm(prev => ({ ...prev, is_featured: v }))} />
+                <Label>Destaque</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={form.voting_open} onCheckedChange={(v) => setForm(prev => ({ ...prev, voting_open: v }))} />
+                <Label>Votacao Aberta</Label>
+              </div>
+            </div>
+            <div className="md:col-span-12"><Label>Observacoes</Label><Textarea rows={2} value={form.observations} onChange={handleChange('observations')} /></div>
+            <div className="md:col-span-12 flex justify-end gap-2">
+              <Link href="/admin/partidas"><Button variant="outline" type="button">Cancelar</Button></Link>
+              <Button type="submit" disabled={saving}><Save className="h-4 w-4 mr-2" />{saving ? 'Salvando...' : 'Salvar'}</Button>
+            </div>
           </form>
         </CardContent>
       </Card>
-    </Box>
+    </div>
   );
 }

@@ -4,15 +4,13 @@ import { getTeamById } from '@/services/teamService';
 import { getMany } from '@/lib/db';
 import { getPublicPhotos } from '@/services/photoPublicService';
 import { Match } from '@/types';
-import {
-  Container, Typography, Box, Avatar, Card, CardContent, Grid, Chip, Table,
-  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Button, Divider,
-} from '@mui/material';
-import {
-  Instagram, Forum, EmojiEvents, SportsSoccer, OpenInNew,
-} from '@mui/icons-material';
+import { Instagram, MessageSquare, Trophy } from 'lucide-react';
 import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import PhotoGallery from '@/components/public/PhotoGallery';
 import MatchResultCard from '@/components/public/MatchResultCard';
 import FanWall from '@/components/public/FanWall';
@@ -31,7 +29,6 @@ export default async function TeamDetailPage({ params }: Props) {
   const team = await getTeamById(params.id);
   if (!team) notFound();
 
-  // Get players registered for this team across championships
   const players = await getMany(
     `SELECT DISTINCT p.id, p.name, p.position, p.photo_url, pr.shirt_number, pr.bid_number, c.name AS championship_name
      FROM player_registrations pr
@@ -42,7 +39,6 @@ export default async function TeamDetailPage({ params }: Props) {
     [params.id]
   );
 
-  // Get team stats in current championships (W/D/L record)
   const teamStats = await getMany(
     `SELECT
       c.id AS championship_id,
@@ -74,7 +70,6 @@ export default async function TeamDetailPage({ params }: Props) {
     [params.id]
   );
 
-  // Get photos, recent results, upcoming matches, top scorer
   const [photos, recentResults, upcomingMatches, topScorer] = await Promise.all([
     getPublicPhotos('team', params.id),
     getMany<Match>(
@@ -119,242 +114,227 @@ export default async function TeamDetailPage({ params }: Props) {
   ]);
 
   return (
-    <Box>
-      <Box sx={{ background: `linear-gradient(135deg, ${team.primary_color || '#1a237e'} 0%, #283593 100%)`, color: 'white', py: 6 }}>
-        <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexDirection: { xs: 'column', md: 'row' }, textAlign: { xs: 'center', md: 'left' } }}>
-            <Avatar src={team.logo_url || ''} sx={{ width: 120, height: 120, border: '4px solid white', bgcolor: 'rgba(255,255,255,0.2)', fontSize: 48 }}>
-              {team.short_name?.[0] || team.name[0]}
+    <div>
+      {/* Hero Banner */}
+      <div
+        className="text-white py-12"
+        style={{ background: `linear-gradient(135deg, ${team.primary_color || '#1a237e'} 0%, #283593 100%)` }}
+      >
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center gap-4 flex-col md:flex-row text-center md:text-left">
+            <Avatar className="h-[120px] w-[120px] border-4 border-white text-5xl shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+              <AvatarImage src={team.logo_url || ''} />
+              <AvatarFallback className="text-white text-4xl font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+                {team.short_name?.[0] || team.name[0]}
+              </AvatarFallback>
             </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h3" fontWeight={800}>{team.name}</Typography>
-              {team.short_name && <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.8)' }}>{team.short_name}</Typography>}
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
+            <div className="flex-1">
+              <h1 className="text-3xl font-extrabold">{team.name}</h1>
+              {team.short_name && <p className="text-lg text-white/80">{team.short_name}</p>}
+              <p className="text-sm text-white/70 mt-1">
                 {team.city}/{team.state} {team.founded_year ? `| Fundado em ${team.founded_year}` : ''}
-              </Typography>
-              {/* Instagram link */}
+              </p>
               {team.instagram && (
                 <Button
-                  component="a"
-                  href={team.instagram.startsWith('http') ? team.instagram : `https://instagram.com/${team.instagram.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener"
-                  startIcon={<Instagram />}
-                  sx={{
-                    color: 'white',
-                    mt: 1,
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
-                  }}
+                  variant="ghost"
+                  asChild
+                  className="text-white hover:bg-white/10 mt-1 -ml-3"
                 >
-                  {team.instagram.startsWith('http') ? 'Instagram' : team.instagram}
+                  <a
+                    href={team.instagram.startsWith('http') ? team.instagram : `https://instagram.com/${team.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <Instagram className="h-4 w-4 mr-1" />
+                    {team.instagram.startsWith('http') ? 'Instagram' : team.instagram}
+                  </a>
                 </Button>
               )}
-            </Box>
-          </Box>
-        </Container>
-      </Box>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Bio */}
         {team.bio && (
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
-              SOBRE O TIME
-            </Typography>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="body1" sx={{ lineHeight: 1.8, color: '#444' }}>
-                  {team.bio}
-                </Typography>
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-3 text-[#1a237e]">SOBRE O TIME</h2>
+            <Card>
+              <CardContent className="p-4">
+                <p className="leading-7 text-muted-foreground">{team.bio}</p>
               </CardContent>
             </Card>
-          </Box>
+          </div>
         )}
 
         {/* Team Stats by Championship */}
         {teamStats.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
-              <EmojiEvents sx={{ mr: 1, verticalAlign: 'middle', color: '#ed6c02' }} />
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-3 text-[#1a237e]">
+              <Trophy className="h-5 w-5 inline-block mr-1 text-orange-600 align-middle" />
               HISTORICO NOS CAMPEONATOS
-            </Typography>
-            <Grid container spacing={2}>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {teamStats.map((s: any) => (
-                <Grid item xs={12} sm={6} md={4} key={s.championship_id}>
-                  <Card
-                    variant="outlined"
-                    component={Link}
-                    href={`/campeonatos/${s.championship_id}`}
-                    sx={{ textDecoration: 'none', '&:hover': { boxShadow: 3 } }}
-                  >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="body2" fontWeight={700}>{s.championship_name}</Typography>
-                        <Chip
-                          label={s.status}
-                          size="small"
-                          color={s.status === 'Em Andamento' ? 'success' : s.status === 'Finalizado' ? 'default' : 'primary'}
-                          variant="outlined"
-                          sx={{ fontSize: '0.65rem' }}
-                        />
-                      </Box>
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                        {s.year}
-                      </Typography>
+                <Link key={s.championship_id} href={`/campeonatos/${s.championship_id}`}>
+                  <Card className="h-full hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-sm font-bold">{s.championship_name}</p>
+                        <Badge
+                          variant="outline"
+                          className={
+                            s.status === 'Em Andamento' ? 'border-green-300 text-green-700 text-[0.65rem]' :
+                            s.status === 'Finalizado' ? 'text-[0.65rem]' :
+                            'border-blue-300 text-blue-700 text-[0.65rem]'
+                          }
+                        >
+                          {s.status}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">{s.year}</p>
                       {s.matches_played > 0 ? (
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                          <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6" fontWeight={800} sx={{ color: '#1a237e' }}>{s.matches_played}</Typography>
-                            <Typography variant="caption" color="text.secondary">Jogos</Typography>
-                          </Box>
-                          <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6" fontWeight={800} sx={{ color: '#2e7d32' }}>{s.wins}</Typography>
-                            <Typography variant="caption" color="text.secondary">V</Typography>
-                          </Box>
-                          <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6" fontWeight={800} sx={{ color: '#ed6c02' }}>{s.draws}</Typography>
-                            <Typography variant="caption" color="text.secondary">E</Typography>
-                          </Box>
-                          <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6" fontWeight={800} sx={{ color: '#d32f2f' }}>{s.losses}</Typography>
-                            <Typography variant="caption" color="text.secondary">D</Typography>
-                          </Box>
-                          <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6" fontWeight={800} sx={{ color: '#1976d2' }}>{s.goals_for}</Typography>
-                            <Typography variant="caption" color="text.secondary">GP</Typography>
-                          </Box>
-                          <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6" fontWeight={800} sx={{ color: '#999' }}>{s.goals_against}</Typography>
-                            <Typography variant="caption" color="text.secondary">GC</Typography>
-                          </Box>
-                        </Box>
+                        <div className="flex gap-3">
+                          <div className="text-center">
+                            <p className="text-lg font-extrabold text-[#1a237e]">{s.matches_played}</p>
+                            <p className="text-xs text-muted-foreground">Jogos</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-lg font-extrabold text-green-700">{s.wins}</p>
+                            <p className="text-xs text-muted-foreground">V</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-lg font-extrabold text-orange-600">{s.draws}</p>
+                            <p className="text-xs text-muted-foreground">E</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-lg font-extrabold text-red-600">{s.losses}</p>
+                            <p className="text-xs text-muted-foreground">D</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-lg font-extrabold text-blue-600">{s.goals_for}</p>
+                            <p className="text-xs text-muted-foreground">GP</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-lg font-extrabold text-gray-400">{s.goals_against}</p>
+                            <p className="text-xs text-muted-foreground">GC</p>
+                          </div>
+                        </div>
                       ) : (
-                        <Typography variant="caption" color="text.secondary">
-                          Nenhuma partida disputada
-                        </Typography>
+                        <p className="text-xs text-muted-foreground">Nenhuma partida disputada</p>
                       )}
                     </CardContent>
                   </Card>
-                </Grid>
+                </Link>
               ))}
-            </Grid>
-          </Box>
+            </div>
+          </div>
         )}
 
         {/* Elenco */}
-        <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
-          ELENCO
-        </Typography>
+        <h2 className="text-xl font-bold mb-3 text-[#1a237e]">ELENCO</h2>
         {players.length > 0 ? (
-          <TableContainer component={Paper} sx={{ mb: 4 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Jogador</TableCell>
-                  <TableCell>Posicao</TableCell>
-                  <TableCell>N</TableCell>
-                  <TableCell>BID</TableCell>
-                  <TableCell>Campeonato</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+          <div className="border rounded-lg overflow-hidden mb-6">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/50 border-b">
+                  <th className="text-left px-4 py-2 font-semibold">Jogador</th>
+                  <th className="text-left px-4 py-2 font-semibold">Posicao</th>
+                  <th className="text-left px-4 py-2 font-semibold">N</th>
+                  <th className="text-left px-4 py-2 font-semibold">BID</th>
+                  <th className="text-left px-4 py-2 font-semibold">Campeonato</th>
+                </tr>
+              </thead>
+              <tbody>
                 {players.map((p: any, i: number) => (
-                  <TableRow key={`${p.id}-${i}`} hover component={Link} href={`/jogadores/${p.id}`} sx={{ textDecoration: 'none', cursor: 'pointer' }}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar src={p.photo_url || ''} sx={{ width: 32, height: 32 }}>{p.name[0]}</Avatar>
-                        <Typography variant="body2" fontWeight={600}>{p.name}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell><Chip label={p.position} size="small" /></TableCell>
-                    <TableCell>{p.shirt_number || '-'}</TableCell>
-                    <TableCell>{p.bid_number || '-'}</TableCell>
-                    <TableCell><Typography variant="caption">{p.championship_name}</Typography></TableCell>
-                  </TableRow>
+                  <tr key={`${p.id}-${i}`} className="border-b hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-2">
+                      <Link href={`/jogadores/${p.id}`} className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={p.photo_url || ''} />
+                          <AvatarFallback className="text-xs">{p.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-semibold">{p.name}</span>
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2">
+                      <Badge variant="outline">{p.position}</Badge>
+                    </td>
+                    <td className="px-4 py-2">{p.shirt_number || '-'}</td>
+                    <td className="px-4 py-2">{p.bid_number || '-'}</td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground">{p.championship_name}</td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <Box sx={{ mb: 4 }}>
-            <Typography color="text.secondary">Nenhum jogador inscrito</Typography>
-          </Box>
+          <p className="text-muted-foreground mb-6">Nenhum jogador inscrito</p>
         )}
 
         {/* Recent Results & Upcoming Matches */}
         {(recentResults.length > 0 || upcomingMatches.length > 0 || topScorer.length > 0) && (
-          <Box sx={{ mb: 4 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Grid container spacing={3}>
+          <div className="mb-6">
+            <Separator className="mb-6" />
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               {recentResults.length > 0 && (
-                <Grid item xs={12} md={topScorer.length > 0 ? 5 : 6}>
-                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
-                    ULTIMOS RESULTADOS
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <div className={topScorer.length > 0 ? 'md:col-span-5' : 'md:col-span-6'}>
+                  <h3 className="text-lg font-bold mb-3 text-[#1a237e]">ULTIMOS RESULTADOS</h3>
+                  <div className="flex flex-col gap-2">
                     {recentResults.map((m) => (
                       <MatchResultCard key={m.id} match={m} highlightTeamId={params.id} />
                     ))}
-                  </Box>
-                </Grid>
+                  </div>
+                </div>
               )}
               {upcomingMatches.length > 0 && (
-                <Grid item xs={12} md={topScorer.length > 0 ? 4 : 6}>
-                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
-                    PROXIMOS JOGOS
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <div className={topScorer.length > 0 ? 'md:col-span-4' : 'md:col-span-6'}>
+                  <h3 className="text-lg font-bold mb-3 text-[#1a237e]">PROXIMOS JOGOS</h3>
+                  <div className="flex flex-col gap-2">
                     {upcomingMatches.map((m) => (
                       <MatchResultCard key={m.id} match={m} />
                     ))}
-                  </Box>
-                </Grid>
+                  </div>
+                </div>
               )}
               {topScorer.length > 0 && (
-                <Grid item xs={12} md={3}>
-                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
-                    ARTILHEIRO
-                  </Typography>
-                  <Card variant="outlined" sx={{ textAlign: 'center', p: 2 }}>
-                    <Avatar
-                      src={topScorer[0].photo_url || ''}
-                      sx={{ width: 72, height: 72, mx: 'auto', mb: 1, border: '3px solid #ffd600' }}
-                    >
-                      {topScorer[0].name[0]}
+                <div className="md:col-span-3">
+                  <h3 className="text-lg font-bold mb-3 text-[#1a237e]">ARTILHEIRO</h3>
+                  <Card className="text-center p-4">
+                    <Avatar className="h-[72px] w-[72px] mx-auto mb-2 border-[3px] border-yellow-400">
+                      <AvatarImage src={topScorer[0].photo_url || ''} />
+                      <AvatarFallback>{topScorer[0].name[0]}</AvatarFallback>
                     </Avatar>
-                    <Typography variant="body1" fontWeight={700}>{topScorer[0].name}</Typography>
-                    <Chip
-                      label={`${topScorer[0].goals} gol${topScorer[0].goals > 1 ? 's' : ''}`}
-                      size="small"
-                      sx={{ mt: 1, bgcolor: '#ffd600', color: '#1a237e', fontWeight: 700 }}
-                    />
+                    <p className="font-bold">{topScorer[0].name}</p>
+                    <Badge className="mt-1 bg-yellow-400 text-[#1a237e] font-bold">
+                      {topScorer[0].goals} gol{topScorer[0].goals > 1 ? 's' : ''}
+                    </Badge>
                   </Card>
-                </Grid>
+                </div>
               )}
-            </Grid>
-          </Box>
+            </div>
+          </div>
         )}
 
         {/* Photo Gallery */}
         {photos.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            <Divider sx={{ mb: 3 }} />
+          <div className="mb-6">
+            <Separator className="mb-6" />
             <PhotoGallery photos={photos} title="FOTOS" />
-          </Box>
+          </div>
         )}
 
         {/* Fan Wall */}
-        <Box sx={{ mb: 4 }}>
-          <Divider sx={{ mb: 3 }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Forum sx={{ color: '#1a237e' }} />
-            <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-              MURAL DO TORCEDOR
-            </Typography>
-          </Box>
+        <div className="mb-6">
+          <Separator className="mb-6" />
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="h-6 w-6 text-[#1a237e]" />
+            <h2 className="text-xl font-bold text-[#1a237e]">MURAL DO TORCEDOR</h2>
+          </div>
           <FanWall targetType="team" targetId={params.id} />
-        </Box>
-      </Container>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

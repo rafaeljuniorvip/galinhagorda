@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Box, Typography, Card, CardContent, Grid, Avatar, Chip, Skeleton,
-} from '@mui/material';
-import { CalendarMonth, LocationOn } from '@mui/icons-material';
+import { Calendar, MapPin } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Match } from '@/types';
 import { formatDateTime } from '@/lib/utils';
 
@@ -34,80 +35,84 @@ export default function PlayerMatchHistory({ playerId, championshipId }: Props) 
 
   if (loading) {
     return (
-      <Grid container spacing={2}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {[1, 2, 3].map(i => (
-          <Grid item xs={12} sm={6} md={4} key={i}>
-            <Skeleton variant="rounded" height={120} />
-          </Grid>
+          <Skeleton key={i} className="h-[120px] rounded-lg" />
         ))}
-      </Grid>
+      </div>
     );
   }
 
   if (matches.length === 0) return null;
 
   return (
-    <Box>
-      <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
+    <div>
+      <h3 className="text-lg font-bold text-[#1a237e] mb-4">
         RESULTADOS DOS JOGOS
-      </Typography>
-      <Grid container spacing={2}>
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {matches.filter(m => m.status === 'Finalizada').map((match) => (
-          <Grid item xs={12} sm={6} md={4} key={match.id}>
-            <Card variant="outlined" sx={{ '&:hover': { borderColor: '#1976d2' } }}>
-              <CardContent>
-                {/* Placar */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 2 }}>
-                  <Box sx={{ textAlign: 'center', flex: 1 }}>
-                    <Avatar src={match.home_team_logo || ''} sx={{ width: 32, height: 32, mx: 'auto', mb: 0.5 }}>
+          <Card key={match.id} className="border hover:border-[#1976d2] transition-colors">
+            <CardContent className="p-4">
+              {/* Placar */}
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="text-center flex-1">
+                  <Avatar className="h-8 w-8 mx-auto mb-1">
+                    <AvatarImage src={match.home_team_logo || ''} />
+                    <AvatarFallback className="text-xs">
                       {match.home_team_short?.[0]}
-                    </Avatar>
-                    <Typography variant="caption" fontWeight={600} noWrap>
-                      {match.home_team_short || match.home_team_name}
-                    </Typography>
-                  </Box>
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs font-semibold truncate block">
+                    {match.home_team_short || match.home_team_name}
+                  </span>
+                </div>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="h5" fontWeight={800}>{match.home_score}</Typography>
-                    <Typography variant="body2" color="text.secondary">x</Typography>
-                    <Typography variant="h5" fontWeight={800}>{match.away_score}</Typography>
-                  </Box>
+                <div className="flex items-center gap-1">
+                  <span className="text-xl font-extrabold">{match.home_score}</span>
+                  <span className="text-sm text-muted-foreground">x</span>
+                  <span className="text-xl font-extrabold">{match.away_score}</span>
+                </div>
 
-                  <Box sx={{ textAlign: 'center', flex: 1 }}>
-                    <Avatar src={match.away_team_logo || ''} sx={{ width: 32, height: 32, mx: 'auto', mb: 0.5 }}>
+                <div className="text-center flex-1">
+                  <Avatar className="h-8 w-8 mx-auto mb-1">
+                    <AvatarImage src={match.away_team_logo || ''} />
+                    <AvatarFallback className="text-xs">
                       {match.away_team_short?.[0]}
-                    </Avatar>
-                    <Typography variant="caption" fontWeight={600} noWrap>
-                      {match.away_team_short || match.away_team_name}
-                    </Typography>
-                  </Box>
-                </Box>
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs font-semibold truncate block">
+                    {match.away_team_short || match.away_team_name}
+                  </span>
+                </div>
+              </div>
 
-                {/* Info */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center' }}>
-                  {match.match_date && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <CalendarMonth sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <Typography variant="caption" color="text.secondary">
-                        {formatDateTime(match.match_date)}
-                      </Typography>
-                    </Box>
-                  )}
-                  {match.venue && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <LocationOn sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <Typography variant="caption" color="text.secondary">{match.venue}</Typography>
-                    </Box>
-                  )}
-                  {match.match_round && (
-                    <Chip label={match.match_round} size="small" variant="outlined" sx={{ mt: 0.5 }} />
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+              {/* Info */}
+              <div className="flex flex-col gap-1 items-center">
+                {match.match_date && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {formatDateTime(match.match_date)}
+                    </span>
+                  </div>
+                )}
+                {match.venue && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{match.venue}</span>
+                  </div>
+                )}
+                {match.match_round && (
+                  <Badge variant="outline" className="mt-1 text-xs">
+                    {match.match_round}
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         ))}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   );
 }

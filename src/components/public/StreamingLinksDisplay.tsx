@@ -1,20 +1,8 @@
 'use client';
 
-import {
-  Box,
-  Card,
-  CardActionArea,
-  CardContent,
-  Grid,
-  Typography,
-  Chip,
-} from '@mui/material';
-import {
-  PlayArrow,
-  LiveTv,
-  OndemandVideo,
-  OpenInNew,
-} from '@mui/icons-material';
+import { PlayCircle, Radio, MonitorPlay, ExternalLink } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { StreamingLink } from '@/types';
 
 interface Props {
@@ -24,36 +12,36 @@ interface Props {
 
 const platformConfig: Record<
   string,
-  { color: string; gradient: string; icon: React.ReactNode; label: string }
+  { color: string; gradient: string; iconClass: string; label: string }
 > = {
   youtube: {
     color: '#FF0000',
     gradient: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
-    icon: <PlayArrow sx={{ fontSize: 36 }} />,
+    iconClass: 'youtube',
     label: 'YouTube',
   },
   facebook: {
     color: '#1877F2',
     gradient: 'linear-gradient(135deg, #1877F2 0%, #0D5BB5 100%)',
-    icon: <LiveTv sx={{ fontSize: 36 }} />,
+    iconClass: 'facebook',
     label: 'Facebook',
   },
   instagram: {
     color: '#E4405F',
     gradient: 'linear-gradient(135deg, #833AB4 0%, #E4405F 50%, #FCAF45 100%)',
-    icon: <OndemandVideo sx={{ fontSize: 36 }} />,
+    iconClass: 'instagram',
     label: 'Instagram',
   },
   twitch: {
     color: '#9146FF',
     gradient: 'linear-gradient(135deg, #9146FF 0%, #6441A5 100%)',
-    icon: <LiveTv sx={{ fontSize: 36 }} />,
+    iconClass: 'twitch',
     label: 'Twitch',
   },
   default: {
     color: '#546e7a',
     gradient: 'linear-gradient(135deg, #546e7a 0%, #37474f 100%)',
-    icon: <OndemandVideo sx={{ fontSize: 36 }} />,
+    iconClass: 'default',
     label: 'Transmissao',
   },
 };
@@ -63,140 +51,96 @@ function getPlatformConfig(platform: string) {
   return platformConfig[key] || platformConfig.default;
 }
 
+function PlatformIcon({ iconClass }: { iconClass: string }) {
+  switch (iconClass) {
+    case 'youtube':
+      return <PlayCircle className="h-9 w-9" />;
+    case 'facebook':
+    case 'twitch':
+      return <Radio className="h-9 w-9" />;
+    case 'instagram':
+    case 'default':
+    default:
+      return <MonitorPlay className="h-9 w-9" />;
+  }
+}
+
 export default function StreamingLinksDisplay({ streamingLinks, mainStreamUrl }: Props) {
   const hasLinks = streamingLinks.length > 0 || mainStreamUrl;
   if (!hasLinks) return null;
 
   return (
-    <Box>
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        gutterBottom
-        sx={{ color: '#1a237e', display: 'flex', alignItems: 'center', gap: 1 }}
-      >
-        <LiveTv fontSize="small" />
+    <div>
+      <h3 className="text-lg font-bold text-[#1a237e] mb-2 flex items-center gap-2">
+        <Radio className="h-5 w-5" />
         TRANSMISSAO
-      </Typography>
+      </h3>
 
       {mainStreamUrl && (
-        <Card
-          sx={{
-            mb: 2,
-            background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)',
-            color: 'white',
-            overflow: 'hidden',
-          }}
+        <a
+          href={mainStreamUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mb-4"
         >
-          <CardActionArea
-            href={mainStreamUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{ p: 0 }}
+          <Card className="overflow-hidden border-0 text-white transition-transform hover:-translate-y-0.5 hover:shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #1a237e 0%, #283593 100%)' }}
           >
-            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <LiveTv sx={{ fontSize: 40 }} />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Transmissao Principal
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                  Clique para assistir
-                </Typography>
-              </Box>
-              <OpenInNew />
+            <CardContent className="flex items-center gap-4 p-4">
+              <Radio className="h-10 w-10" />
+              <div className="flex-1">
+                <p className="text-base font-bold">Transmissao Principal</p>
+                <p className="text-sm opacity-80">Clique para assistir</p>
+              </div>
+              <ExternalLink className="h-5 w-5" />
             </CardContent>
-          </CardActionArea>
-        </Card>
+          </Card>
+        </a>
       )}
 
-      <Grid container spacing={2}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {streamingLinks.map((link) => {
           const config = getPlatformConfig(link.platform);
           return (
-            <Grid item xs={12} sm={6} md={4} key={link.id}>
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
               <Card
-                sx={{
+                className="relative overflow-visible border-0 text-white transition-all duration-200 hover:-translate-y-0.5"
+                style={{
                   background: config.gradient,
-                  color: 'white',
-                  position: 'relative',
-                  overflow: 'visible',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: `0 8px 24px ${config.color}40`,
-                  },
+                  ['--platform-color' as string]: config.color,
                 }}
               >
                 {link.is_live && (
-                  <Chip
-                    label="AO VIVO"
-                    size="small"
-                    sx={{
-                      position: 'absolute',
-                      top: -10,
-                      right: 12,
-                      bgcolor: '#d32f2f',
-                      color: 'white',
-                      fontWeight: 700,
-                      fontSize: '0.7rem',
-                      animation: 'pulse 1.5s infinite',
-                      '@keyframes pulse': {
-                        '0%': { boxShadow: '0 0 0 0 rgba(211,47,47,0.6)' },
-                        '70%': { boxShadow: '0 0 0 8px rgba(211,47,47,0)' },
-                        '100%': { boxShadow: '0 0 0 0 rgba(211,47,47,0)' },
-                      },
-                      '&::before': {
-                        content: '""',
-                        display: 'inline-block',
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        bgcolor: 'white',
-                        mr: 0.5,
-                        animation: 'blink 1s infinite',
-                      },
-                      '@keyframes blink': {
-                        '0%, 100%': { opacity: 1 },
-                        '50%': { opacity: 0.3 },
-                      },
-                    }}
-                  />
-                )}
-                <CardActionArea
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <CardContent
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      py: 2.5,
-                    }}
+                  <Badge
+                    className="absolute -top-2.5 right-3 bg-[#d32f2f] text-white border-transparent font-bold text-[0.7rem] animate-live-pulse hover:bg-[#d32f2f]"
                   >
-                    {config.icon}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="subtitle2" fontWeight={700}>
-                        {link.label || config.label}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ opacity: 0.8, display: 'block' }}
-                        noWrap
-                      >
-                        {link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
-                      </Typography>
-                    </Box>
-                    <OpenInNew sx={{ fontSize: 18, opacity: 0.7 }} />
-                  </CardContent>
-                </CardActionArea>
+                    <span className="inline-block w-2 h-2 rounded-full bg-white mr-1 animate-blink" />
+                    AO VIVO
+                  </Badge>
+                )}
+                <CardContent className="flex items-center gap-4 py-5 px-4">
+                  <PlatformIcon iconClass={config.iconClass} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold">
+                      {link.label || config.label}
+                    </p>
+                    <span className="text-xs opacity-80 block truncate">
+                      {link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                    </span>
+                  </div>
+                  <ExternalLink className="h-4 w-4 opacity-70" />
+                </CardContent>
               </Card>
-            </Grid>
+            </a>
           );
         })}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   );
 }

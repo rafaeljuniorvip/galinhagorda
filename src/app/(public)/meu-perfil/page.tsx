@@ -4,15 +4,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
-  Container, Typography, Box, Paper, Grid, TextField, Button, Avatar,
-  Chip, CircularProgress, Alert, Snackbar, Divider, List, ListItem,
-  ListItemText, ListItemIcon, IconButton, Autocomplete, Card, CardContent,
-} from '@mui/material';
-import {
-  Person, Edit, Save, Cancel, SportsSoccer, Shield, Star,
-  Notifications as NotificationsIcon, MarkEmailRead, Search,
-  Link as LinkIcon,
-} from '@mui/icons-material';
+  User, Pencil, Save, X, CircleDot, Shield, Star,
+  Bell, MailCheck, Search, Link as LinkIcon, Loader2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 
 interface PlayerOption {
   id: string;
@@ -62,18 +65,18 @@ const roleLabels: Record<string, string> = {
   fan: 'Torcedor',
 };
 
-const roleColors: Record<string, string> = {
-  admin: '#d32f2f',
-  team_owner: '#1976d2',
-  player: '#388e3c',
-  fan: '#ffd600',
+const roleStyles: Record<string, string> = {
+  admin: 'bg-red-600 text-white',
+  team_owner: 'bg-blue-600 text-white',
+  player: 'bg-green-600 text-white',
+  fan: 'bg-yellow-400 text-gray-800',
 };
 
 const roleIcons: Record<string, React.ReactNode> = {
-  admin: <Star />,
-  team_owner: <Shield />,
-  player: <SportsSoccer />,
-  fan: <Person />,
+  admin: <Star className="h-3.5 w-3.5" />,
+  team_owner: <Shield className="h-3.5 w-3.5" />,
+  player: <CircleDot className="h-3.5 w-3.5" />,
+  fan: <User className="h-3.5 w-3.5" />,
 };
 
 export default function MeuPerfilPage() {
@@ -85,7 +88,6 @@ export default function MeuPerfilPage() {
   const [form, setForm] = useState({ name: '', bio: '', phone: '', city: '', state: '' });
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -156,14 +158,13 @@ export default function MeuPerfilPage() {
         const data = await res.json();
         setProfile(data.user);
         setEditing(false);
-        setSnackbar({ open: true, message: 'Perfil atualizado com sucesso!', severity: 'success' });
-        // Trigger session update to reflect changes
+        toast.success('Perfil atualizado com sucesso!');
         await updateSession();
       } else {
-        setSnackbar({ open: true, message: 'Erro ao atualizar perfil.', severity: 'error' });
+        toast.error('Erro ao atualizar perfil.');
       }
     } catch {
-      setSnackbar({ open: true, message: 'Erro de conexao.', severity: 'error' });
+      toast.error('Erro de conexao.');
     } finally {
       setSaving(false);
     }
@@ -199,13 +200,13 @@ export default function MeuPerfilPage() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data.user);
-        setSnackbar({ open: true, message: `Vinculado ao jogador ${player.name}!`, severity: 'success' });
+        toast.success(`Vinculado ao jogador ${player.name}!`);
         await updateSession();
       } else {
-        setSnackbar({ open: true, message: 'Erro ao vincular jogador.', severity: 'error' });
+        toast.error('Erro ao vincular jogador.');
       }
     } catch {
-      setSnackbar({ open: true, message: 'Erro de conexao.', severity: 'error' });
+      toast.error('Erro de conexao.');
     }
   };
 
@@ -239,13 +240,13 @@ export default function MeuPerfilPage() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data.user);
-        setSnackbar({ open: true, message: `Vinculado ao time ${team.name}!`, severity: 'success' });
+        toast.success(`Vinculado ao time ${team.name}!`);
         await updateSession();
       } else {
-        setSnackbar({ open: true, message: 'Erro ao vincular time.', severity: 'error' });
+        toast.error('Erro ao vincular time.');
       }
     } catch {
-      setSnackbar({ open: true, message: 'Erro de conexao.', severity: 'error' });
+      toast.error('Erro de conexao.');
     }
   };
 
@@ -281,9 +282,9 @@ export default function MeuPerfilPage() {
 
   if (status === 'loading' || loadingProfile) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
@@ -294,395 +295,318 @@ export default function MeuPerfilPage() {
   const role = profile.role || 'fan';
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Meu Perfil
-      </Typography>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Meu Perfil</h1>
 
-      <Grid container spacing={3}>
+      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4">
         {/* Profile Card */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Avatar
-              src={profile.avatar_url || undefined}
-              sx={{ width: 100, height: 100, mx: 'auto', mb: 2, border: '3px solid #1a237e' }}
-            >
-              {profile.name?.charAt(0)?.toUpperCase()}
+        <Card className="text-center">
+          <CardContent className="p-6">
+            <Avatar className="h-[100px] w-[100px] mx-auto mb-3 border-[3px] border-[#1a237e]">
+              <AvatarImage src={profile.avatar_url || undefined} />
+              <AvatarFallback className="text-3xl">
+                {profile.name?.charAt(0)?.toUpperCase()}
+              </AvatarFallback>
             </Avatar>
-            <Typography variant="h6" fontWeight={700}>
-              {profile.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {profile.email}
-            </Typography>
-            <Chip
-              icon={roleIcons[role] as React.ReactElement}
-              label={roleLabels[role] || 'Torcedor'}
-              sx={{
-                backgroundColor: roleColors[role] || '#ffd600',
-                color: role === 'fan' ? '#333' : 'white',
-                fontWeight: 600,
-              }}
-            />
+            <h2 className="text-lg font-bold">{profile.name}</h2>
+            <p className="text-sm text-muted-foreground mb-2">{profile.email}</p>
+            <Badge className={`${roleStyles[role] || roleStyles.fan} gap-1`}>
+              {roleIcons[role]}
+              {roleLabels[role] || 'Torcedor'}
+            </Badge>
             {profile.city && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              <p className="text-sm text-muted-foreground mt-2">
                 {profile.city}{profile.state ? ` - ${profile.state}` : ''}
-              </Typography>
+              </p>
             )}
             {profile.bio && (
-              <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: '#666' }}>
-                {profile.bio}
-              </Typography>
+              <p className="text-sm italic text-muted-foreground mt-2">{profile.bio}</p>
             )}
-          </Paper>
-        </Grid>
+          </CardContent>
+        </Card>
 
-        {/* Edit Form */}
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Informacoes Pessoais
-              </Typography>
-              {!editing ? (
-                <Button
-                  startIcon={<Edit />}
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setEditing(true)}
-                >
-                  Editar
-                </Button>
-              ) : (
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    startIcon={<Cancel />}
-                    size="small"
-                    onClick={() => {
-                      setEditing(false);
-                      setForm({
-                        name: profile.name || '',
-                        bio: profile.bio || '',
-                        phone: profile.phone || '',
-                        city: profile.city || '',
-                        state: profile.state || '',
-                      });
-                    }}
-                  >
-                    Cancelar
+        {/* Right Column */}
+        <div className="space-y-4">
+          {/* Edit Form */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-semibold">Informacoes Pessoais</h3>
+                {!editing ? (
+                  <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Editar
                   </Button>
-                  <Button
-                    startIcon={saving ? <CircularProgress size={16} /> : <Save />}
-                    variant="contained"
-                    size="small"
-                    onClick={handleSave}
-                    disabled={saving}
-                  >
-                    Salvar
-                  </Button>
-                </Box>
-              )}
-            </Box>
+                ) : (
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditing(false);
+                        setForm({
+                          name: profile.name || '',
+                          bio: profile.bio || '',
+                          phone: profile.phone || '',
+                          city: profile.city || '',
+                          state: profile.state || '',
+                        });
+                      }}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={handleSave} disabled={saving}>
+                      {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                      Salvar
+                    </Button>
+                  </div>
+                )}
+              </div>
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Nome"
-                  fullWidth
-                  size="small"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  disabled={!editing}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Telefone"
-                  fullWidth
-                  size="small"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  disabled={!editing}
-                  placeholder="(00) 00000-0000"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Cidade"
-                  fullWidth
-                  size="small"
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  disabled={!editing}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Estado"
-                  fullWidth
-                  size="small"
-                  value={form.state}
-                  onChange={(e) => setForm({ ...form, state: e.target.value })}
-                  disabled={!editing}
-                  placeholder="MG"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Bio"
-                  fullWidth
-                  size="small"
-                  multiline
-                  rows={3}
-                  value={form.bio}
-                  onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                  disabled={!editing}
-                  placeholder="Conte um pouco sobre voce..."
-                />
-              </Grid>
-            </Grid>
-          </Paper>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Nome</Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    disabled={!editing}
+                  />
+                </div>
+                <div>
+                  <Label>Telefone</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    disabled={!editing}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div>
+                  <Label>Cidade</Label>
+                  <Input
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    disabled={!editing}
+                  />
+                </div>
+                <div>
+                  <Label>Estado</Label>
+                  <Input
+                    value={form.state}
+                    onChange={(e) => setForm({ ...form, state: e.target.value })}
+                    disabled={!editing}
+                    placeholder="MG"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>Bio</Label>
+                  <Textarea
+                    rows={3}
+                    value={form.bio}
+                    onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                    disabled={!editing}
+                    placeholder="Conte um pouco sobre voce..."
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Link Player */}
           {!profile.linked_player_id && (
-            <Paper sx={{ p: 3, mt: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <SportsSoccer sx={{ color: '#388e3c' }} />
-                <Typography variant="h6" fontWeight={600}>
-                  Vincular Perfil de Jogador
-                </Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Se voce e um jogador inscrito no campeonato, vincule seu perfil para ter acesso
-                a informacoes exclusivas e estatisticas.
-              </Typography>
-              <Autocomplete
-                freeSolo
-                options={playerOptions}
-                getOptionLabel={(option) =>
-                  typeof option === 'string' ? option : `${option.name} (${option.position})`
-                }
-                loading={playerLoading}
-                inputValue={playerSearch}
-                onInputChange={(_e, value) => handleSearchPlayers(value)}
-                onChange={(_e, value) => {
-                  if (value && typeof value !== 'string') {
-                    handleLinkPlayer(value);
-                  }
-                }}
-                renderOption={(props, option) => (
-                  <li {...props} key={option.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar src={option.photo_url || undefined} sx={{ width: 32, height: 32 }}>
-                        {option.name?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight={600}>{option.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {option.position} {option.full_name !== option.name ? `- ${option.full_name}` : ''}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </li>
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CircleDot className="h-5 w-5 text-green-600" />
+                  <h3 className="font-semibold">Vincular Perfil de Jogador</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Se voce e um jogador inscrito no campeonato, vincule seu perfil para ter acesso
+                  a informacoes exclusivas e estatisticas.
+                </p>
+                <div className="relative">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="pl-9"
                     placeholder="Buscar jogador por nome..."
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: <Search sx={{ color: 'action.active', mr: 1 }} />,
-                    }}
+                    value={playerSearch}
+                    onChange={(e) => handleSearchPlayers(e.target.value)}
                   />
+                </div>
+                {playerLoading && <p className="text-xs text-muted-foreground mt-1">Buscando...</p>}
+                {playerOptions.length > 0 && (
+                  <div className="mt-2 border rounded-md max-h-[200px] overflow-y-auto">
+                    {playerOptions.map((opt) => (
+                      <button
+                        key={opt.id}
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted text-left transition-colors"
+                        onClick={() => handleLinkPlayer(opt)}
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={opt.photo_url || undefined} />
+                          <AvatarFallback className="text-xs">{opt.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-semibold">{opt.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {opt.position} {opt.full_name !== opt.name ? `- ${opt.full_name}` : ''}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
-              />
-            </Paper>
+              </CardContent>
+            </Card>
           )}
 
           {profile.linked_player_id && (
-            <Paper sx={{ p: 3, mt: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LinkIcon sx={{ color: '#388e3c' }} />
-                <Typography variant="body2" color="text.secondary">
-                  Perfil de jogador vinculado
-                </Typography>
-                <Chip label="Jogador" size="small" color="success" variant="outlined" />
-              </Box>
-            </Paper>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4 text-green-600" />
+                  <p className="text-sm text-muted-foreground">Perfil de jogador vinculado</p>
+                  <Badge variant="outline" className="border-green-600 text-green-700">Jogador</Badge>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Link Team */}
           {!profile.linked_team_id && (
-            <Paper sx={{ p: 3, mt: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <Shield sx={{ color: '#1976d2' }} />
-                <Typography variant="h6" fontWeight={600}>
-                  Vincular Time
-                </Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Se voce e dono ou responsavel por um time, vincule-o ao seu perfil para
-                gerenciar informacoes e receber notificacoes.
-              </Typography>
-              <Autocomplete
-                freeSolo
-                options={teamOptions}
-                getOptionLabel={(option) =>
-                  typeof option === 'string' ? option : option.name
-                }
-                loading={teamLoading}
-                inputValue={teamSearch}
-                onInputChange={(_e, value) => handleSearchTeams(value)}
-                onChange={(_e, value) => {
-                  if (value && typeof value !== 'string') {
-                    handleLinkTeam(value);
-                  }
-                }}
-                renderOption={(props, option) => (
-                  <li {...props} key={option.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar src={option.logo_url || undefined} sx={{ width: 32, height: 32 }}>
-                        {option.name?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight={600}>{option.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {option.city}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </li>
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-semibold">Vincular Time</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Se voce e dono ou responsavel por um time, vincule-o ao seu perfil para
+                  gerenciar informacoes e receber notificacoes.
+                </p>
+                <div className="relative">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="pl-9"
                     placeholder="Buscar time por nome..."
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: <Search sx={{ color: 'action.active', mr: 1 }} />,
-                    }}
+                    value={teamSearch}
+                    onChange={(e) => handleSearchTeams(e.target.value)}
                   />
+                </div>
+                {teamLoading && <p className="text-xs text-muted-foreground mt-1">Buscando...</p>}
+                {teamOptions.length > 0 && (
+                  <div className="mt-2 border rounded-md max-h-[200px] overflow-y-auto">
+                    {teamOptions.map((opt) => (
+                      <button
+                        key={opt.id}
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted text-left transition-colors"
+                        onClick={() => handleLinkTeam(opt)}
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={opt.logo_url || undefined} />
+                          <AvatarFallback className="text-xs">{opt.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-semibold">{opt.name}</p>
+                          <p className="text-xs text-muted-foreground">{opt.city}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
-              />
-            </Paper>
+              </CardContent>
+            </Card>
           )}
 
           {profile.linked_team_id && (
-            <Paper sx={{ p: 3, mt: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LinkIcon sx={{ color: '#1976d2' }} />
-                <Typography variant="body2" color="text.secondary">
-                  Time vinculado ao perfil
-                </Typography>
-                <Chip label="Dono de Time" size="small" color="primary" variant="outlined" />
-              </Box>
-            </Paper>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4 text-blue-600" />
+                  <p className="text-sm text-muted-foreground">Time vinculado ao perfil</p>
+                  <Badge variant="outline" className="border-blue-600 text-blue-700">Dono de Time</Badge>
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </Grid>
+        </div>
 
-        {/* Notifications */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <NotificationsIcon sx={{ color: '#1a237e' }} />
-                <Typography variant="h6" fontWeight={600}>
-                  Notificacoes
-                </Typography>
+        {/* Notifications - Full width */}
+        <div className="md:col-span-2">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-[#1a237e]" />
+                  <h3 className="font-semibold">Notificacoes</h3>
+                  {unreadCount > 0 && (
+                    <Badge variant="destructive" className="h-5 text-xs px-1.5">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </div>
                 {unreadCount > 0 && (
-                  <Chip
-                    label={unreadCount}
-                    size="small"
-                    color="error"
-                    sx={{ height: 22, fontSize: '0.75rem' }}
-                  />
+                  <Button variant="ghost" size="sm" onClick={handleMarkAllRead}>
+                    <MailCheck className="h-4 w-4 mr-1" />
+                    Marcar todas como lidas
+                  </Button>
                 )}
-              </Box>
-              {unreadCount > 0 && (
-                <Button
-                  startIcon={<MarkEmailRead />}
-                  size="small"
-                  onClick={handleMarkAllRead}
-                >
-                  Marcar todas como lidas
-                </Button>
-              )}
-            </Box>
+              </div>
 
-            {notifications.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-                Nenhuma notificacao no momento.
-              </Typography>
-            ) : (
-              <List disablePadding>
-                {notifications.map((notification, index) => (
-                  <Box key={notification.id}>
-                    {index > 0 && <Divider />}
-                    <ListItem
-                      sx={{
-                        backgroundColor: notification.is_read ? 'transparent' : 'rgba(25, 118, 210, 0.04)',
-                        borderLeft: notification.is_read ? 'none' : '3px solid #1976d2',
-                      }}
-                      secondaryAction={
-                        !notification.is_read ? (
-                          <IconButton
-                            size="small"
+              {notifications.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Nenhuma notificacao no momento.
+                </p>
+              ) : (
+                <div>
+                  {notifications.map((notification, index) => (
+                    <div key={notification.id}>
+                      {index > 0 && <Separator />}
+                      <div
+                        className={`flex items-start justify-between py-3 px-2 ${
+                          notification.is_read
+                            ? ''
+                            : 'bg-blue-50 border-l-[3px] border-l-blue-600'
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${notification.is_read ? '' : 'font-semibold'}`}>
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(notification.created_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
+                        {!notification.is_read && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="shrink-0 ml-2"
                             onClick={() => handleMarkRead(notification.id)}
                             title="Marcar como lida"
                           >
-                            <MarkEmailRead fontSize="small" />
-                          </IconButton>
-                        ) : null
-                      }
-                    >
-                      <ListItemText
-                        primary={
-                          <Typography variant="body2" fontWeight={notification.is_read ? 400 : 600}>
-                            {notification.title}
-                          </Typography>
-                        }
-                        secondary={
-                          <>
-                            <Typography variant="caption" component="span" display="block">
-                              {notification.message}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(notification.created_at).toLocaleDateString('pt-BR', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </Typography>
-                          </>
-                        }
-                      />
-                    </ListItem>
-                  </Box>
-                ))}
-              </List>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          variant="filled"
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Container>
+                            <MailCheck className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 }

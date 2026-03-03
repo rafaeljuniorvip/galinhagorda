@@ -1,15 +1,12 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import {
-  Box, Container, Typography, Grid, Chip, Avatar, Divider, IconButton, Button,
-  Card, CardContent,
-} from '@mui/material';
-import {
-  CalendarMonth, Visibility, Person, Share, ArrowBack,
-} from '@mui/icons-material';
 import Link from 'next/link';
+import { ArrowLeft, Calendar, Eye, User, Share2 } from 'lucide-react';
 import { getNewsBySlug, getRelatedNews } from '@/services/newsPublicService';
-import { formatDate, formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import NewsCard from '@/components/public/NewsCard';
 
 export const dynamic = 'force-dynamic';
@@ -41,205 +38,154 @@ export default async function NewsDetailPage({ params }: Props) {
 
   const relatedNews = await getRelatedNews(article.id, 3);
 
-  // Build share URLs
-  const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/noticias/${article.slug}`
-    : `/noticias/${article.slug}`;
+  const shareUrl = `/noticias/${article.slug}`;
   const shareText = encodeURIComponent(article.title);
 
   return (
-    <Box>
+    <div>
       {/* Cover Image Hero */}
-      <Box
-        sx={{
-          width: '100%',
-          height: { xs: 250, md: 400 },
+      <div
+        className="w-full h-[250px] md:h-[400px] flex items-end"
+        style={{
           background: article.cover_image
             ? `linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%), url(${article.cover_image}) center/cover no-repeat`
             : 'linear-gradient(135deg, #1a237e 0%, #1565c0 100%)',
-          display: 'flex',
-          alignItems: 'flex-end',
         }}
       >
-        <Container maxWidth="lg" sx={{ pb: 4 }}>
+        <div className="max-w-7xl mx-auto px-4 pb-8 w-full">
           <Button
-            component={Link}
-            href="/noticias"
-            startIcon={<ArrowBack />}
-            sx={{ color: 'white', mb: 2, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+            variant="ghost"
+            asChild
+            className="text-white hover:bg-white/10 mb-3"
           >
-            Voltar para noticias
+            <Link href="/noticias">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Voltar para noticias
+            </Link>
           </Button>
           {article.championship_name && (
-            <Chip
-              label={article.championship_name}
-              size="small"
-              sx={{
-                bgcolor: '#ffd600',
-                color: '#1a237e',
-                fontWeight: 700,
-                mb: 1,
-                display: 'block',
-                width: 'fit-content',
-              }}
-            />
+            <Badge className="bg-yellow-400 text-[#1a237e] font-bold mb-2 block w-fit">
+              {article.championship_name}
+            </Badge>
           )}
-          <Typography
-            variant="h3"
-            fontWeight={800}
-            sx={{
-              color: 'white',
-              fontSize: { xs: '1.6rem', md: '2.4rem' },
-              textShadow: '0 2px 8px rgba(0,0,0,0.4)',
-              maxWidth: 800,
-            }}
-          >
+          <h1 className="text-2xl md:text-4xl font-extrabold text-white max-w-[800px] drop-shadow-lg">
             {article.title}
-          </Typography>
-        </Container>
-      </Box>
+          </h1>
+        </div>
+      </div>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Grid container spacing={4}>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-8">
           {/* Main Content */}
-          <Grid item xs={12} md={8}>
+          <div>
             {/* Meta info */}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 3, mb: 3 }}>
+            <div className="flex flex-wrap items-center gap-4 mb-4">
               {article.author_name && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Person sx={{ fontSize: 18, color: 'text.secondary' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {article.author_name}
-                  </Typography>
-                </Box>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  {article.author_name}
+                </div>
               )}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CalendarMonth sx={{ fontSize: 18, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">
-                  {formatDateTime(article.published_at)}
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Visibility sx={{ fontSize: 18, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">
-                  {article.views_count} visualizacoes
-                </Typography>
-              </Box>
-            </Box>
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                {formatDateTime(article.published_at)}
+              </div>
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Eye className="h-4 w-4" />
+                {article.views_count} visualizacoes
+              </div>
+            </div>
 
             {/* Summary */}
             {article.summary && (
-              <Typography
-                variant="h6"
-                sx={{
-                  color: '#555',
-                  fontWeight: 400,
-                  fontStyle: 'italic',
-                  mb: 3,
-                  borderLeft: '4px solid #1976d2',
-                  pl: 2,
-                }}
-              >
+              <p className="text-lg text-muted-foreground italic mb-4 border-l-4 border-blue-600 pl-3">
                 {article.summary}
-              </Typography>
+              </p>
             )}
 
-            <Divider sx={{ mb: 3 }} />
+            <Separator className="mb-4" />
 
             {/* Content */}
-            <Box
-              sx={{
-                '& p': { mb: 2, lineHeight: 1.8, fontSize: '1.05rem', color: '#333' },
-                '& h2': { mt: 4, mb: 2, fontWeight: 700, color: '#1a237e' },
-                '& h3': { mt: 3, mb: 1.5, fontWeight: 600, color: '#1a237e' },
-                '& img': { maxWidth: '100%', borderRadius: 1, my: 2 },
-                '& ul, & ol': { pl: 3, mb: 2 },
-                '& li': { mb: 0.5, lineHeight: 1.7 },
-                '& blockquote': {
-                  borderLeft: '4px solid #ffd600',
-                  pl: 2,
-                  py: 1,
-                  my: 2,
-                  bgcolor: '#f5f5f5',
-                  borderRadius: '0 4px 4px 0',
-                },
-              }}
+            <div
+              className="prose prose-lg max-w-none
+                [&_p]:mb-4 [&_p]:leading-7 [&_p]:text-foreground
+                [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:font-bold [&_h2]:text-[#1a237e]
+                [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:font-semibold [&_h3]:text-[#1a237e]
+                [&_img]:max-w-full [&_img]:rounded [&_img]:my-4
+                [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:pl-6 [&_ol]:mb-4
+                [&_li]:mb-1 [&_li]:leading-7
+                [&_blockquote]:border-l-4 [&_blockquote]:border-yellow-400 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:bg-muted [&_blockquote]:rounded-r"
               dangerouslySetInnerHTML={{ __html: article.content }}
             />
 
-            <Divider sx={{ my: 4 }} />
+            <Separator className="my-6" />
 
             {/* Share Buttons */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-              <Share sx={{ color: 'text.secondary' }} />
-              <Typography variant="body2" fontWeight={600} color="text.secondary">
-                Compartilhar:
-              </Typography>
+            <div className="flex items-center gap-3 mb-6">
+              <Share2 className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm font-semibold text-muted-foreground">Compartilhar:</span>
               <Button
-                component="a"
-                href={`https://api.whatsapp.com/send?text=${shareText}%20${encodeURIComponent(shareUrl)}`}
-                target="_blank"
-                rel="noopener"
-                size="small"
-                variant="outlined"
-                sx={{
-                  color: '#25D366',
-                  borderColor: '#25D366',
-                  '&:hover': { bgcolor: '#25D366', color: 'white', borderColor: '#25D366' },
-                }}
+                variant="outline"
+                size="sm"
+                asChild
+                className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
               >
-                WhatsApp
+                <a
+                  href={`https://api.whatsapp.com/send?text=${shareText}%20${encodeURIComponent(shareUrl)}`}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  WhatsApp
+                </a>
               </Button>
               <Button
-                component="a"
-                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
-                target="_blank"
-                rel="noopener"
-                size="small"
-                variant="outlined"
-                sx={{
-                  color: '#1877F2',
-                  borderColor: '#1877F2',
-                  '&:hover': { bgcolor: '#1877F2', color: 'white', borderColor: '#1877F2' },
-                }}
+                variant="outline"
+                size="sm"
+                asChild
+                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
               >
-                Facebook
+                <a
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Facebook
+                </a>
               </Button>
               <Button
-                component="a"
-                href={`https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(shareUrl)}`}
-                target="_blank"
-                rel="noopener"
-                size="small"
-                variant="outlined"
-                sx={{
-                  color: '#1DA1F2',
-                  borderColor: '#1DA1F2',
-                  '&:hover': { bgcolor: '#1DA1F2', color: 'white', borderColor: '#1DA1F2' },
-                }}
+                variant="outline"
+                size="sm"
+                asChild
+                className="border-sky-500 text-sky-500 hover:bg-sky-500 hover:text-white"
               >
-                Twitter
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(shareUrl)}`}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Twitter
+                </a>
               </Button>
-            </Box>
-          </Grid>
+            </div>
+          </div>
 
           {/* Sidebar - Related News */}
-          <Grid item xs={12} md={4}>
+          <div>
             {relatedNews.length > 0 && (
-              <Box>
-                <Typography variant="h6" fontWeight={700} sx={{ color: '#1a237e', mb: 2 }}>
+              <div>
+                <h3 className="text-lg font-bold text-[#1a237e] mb-3">
                   NOTICIAS RELACIONADAS
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                </h3>
+                <div className="flex flex-col gap-3">
                   {relatedNews.map((related) => (
                     <NewsCard key={related.id} article={related} />
                   ))}
-                </Box>
-              </Box>
+                </div>
+              </div>
             )}
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

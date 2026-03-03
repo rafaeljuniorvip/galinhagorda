@@ -1,6 +1,7 @@
 'use client';
 
-import { Box, Typography, Paper, Chip } from '@mui/material';
+import { cn } from '@/lib/cn';
+import { Badge } from '@/components/ui/badge';
 import { MatchEvent, Match } from '@/types';
 
 interface Props {
@@ -26,11 +27,11 @@ function getEventConfig(type: string) {
 export default function MatchTimeline({ events, match }: Props) {
   if (events.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography color="text.secondary">
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
           Nenhum evento registrado para esta partida
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
@@ -44,123 +45,81 @@ export default function MatchTimeline({ events, match }: Props) {
     const isHome = event.team_id === match.home_team_id;
 
     return (
-      <Box
+      <div
         key={event.id}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          mb: 1.5,
-          flexDirection: isHome ? 'row' : 'row-reverse',
-        }}
+        className={cn(
+          'flex items-center gap-2 mb-3',
+          isHome ? 'flex-row' : 'flex-row-reverse'
+        )}
       >
         {/* Event info */}
-        <Paper
-          elevation={0}
-          sx={{
-            flex: 1,
-            p: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            bgcolor: isHome ? 'rgba(26,35,126,0.04)' : 'rgba(183,28,28,0.04)',
-            borderRadius: 2,
-            flexDirection: isHome ? 'row' : 'row-reverse',
-            transition: 'background-color 0.2s',
-            '&:hover': {
-              bgcolor: isHome ? 'rgba(26,35,126,0.08)' : 'rgba(183,28,28,0.08)',
-            },
-          }}
+        <div
+          className={cn(
+            'flex-1 p-3 flex items-center gap-2 rounded-lg transition-colors',
+            isHome ? 'flex-row' : 'flex-row-reverse',
+            isHome
+              ? 'bg-[#1a237e]/[0.04] hover:bg-[#1a237e]/[0.08]'
+              : 'bg-[#b71c1c]/[0.04] hover:bg-[#b71c1c]/[0.08]'
+          )}
         >
-          <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>{config.icon}</Typography>
-          <Box sx={{ flex: 1, textAlign: isHome ? 'left' : 'right' }}>
-            <Typography variant="body2" fontWeight={600}>
-              {event.player_name}
-            </Typography>
+          <span className="text-xl leading-none">{config.icon}</span>
+          <div className={cn('flex-1', isHome ? 'text-left' : 'text-right')}>
+            <p className="text-sm font-semibold">{event.player_name}</p>
             {event.notes && (
-              <Typography variant="caption" color="text.secondary">
-                {event.notes}
-              </Typography>
+              <p className="text-xs text-muted-foreground">{event.notes}</p>
             )}
-          </Box>
-        </Paper>
+          </div>
+        </div>
 
         {/* Minute badge */}
-        <Chip
-          label={event.minute ? `${event.minute}'` : '-'}
-          size="small"
-          sx={{
-            minWidth: 44,
-            fontWeight: 700,
-            bgcolor: config.color,
-            color: 'white',
-            fontSize: '0.75rem',
-          }}
-        />
+        <Badge
+          className="min-w-[44px] justify-center font-bold text-xs text-white"
+          style={{ backgroundColor: config.color }}
+        >
+          {event.minute ? `${event.minute}'` : '-'}
+        </Badge>
 
         {/* Spacer for the other side */}
-        <Box sx={{ flex: 1 }} />
-      </Box>
+        <div className="flex-1" />
+      </div>
     );
   };
 
   const renderHalfSection = (title: string, halfEvents: MatchEvent[]) => {
     if (halfEvents.length === 0) return null;
     return (
-      <Box sx={{ mb: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            mb: 2,
-          }}
-        >
-          <Box sx={{ flex: 1, height: 1, bgcolor: 'divider' }} />
-          <Chip
-            label={title}
-            size="small"
-            variant="outlined"
-            sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-          />
-          <Box sx={{ flex: 1, height: 1, bgcolor: 'divider' }} />
-        </Box>
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex-1 h-px bg-border" />
+          <Badge variant="outline" className="font-semibold text-[0.7rem]">
+            {title}
+          </Badge>
+          <div className="flex-1 h-px bg-border" />
+        </div>
         {halfEvents.map(renderEvent)}
-      </Box>
+      </div>
     );
   };
 
   return (
-    <Box>
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        gutterBottom
-        sx={{ color: '#1a237e' }}
-      >
+    <div>
+      <h3 className="text-lg font-bold text-[#1a237e] mb-2">
         LANCE A LANCE
-      </Typography>
+      </h3>
 
       {/* Team headers */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          mb: 2,
-          px: 1,
-        }}
-      >
-        <Typography variant="body2" fontWeight={700} color="primary">
+      <div className="flex justify-between mb-4 px-2">
+        <span className="text-sm font-bold text-[#1a237e]">
           {match.home_team_short || match.home_team_name}
-        </Typography>
-        <Typography variant="body2" fontWeight={700} sx={{ color: '#b71c1c' }}>
+        </span>
+        <span className="text-sm font-bold text-[#b71c1c]">
           {match.away_team_short || match.away_team_name}
-        </Typography>
-      </Box>
+        </span>
+      </div>
 
       {renderHalfSection('1o TEMPO', firstHalf)}
       {renderHalfSection('2o TEMPO', secondHalf)}
       {renderHalfSection('OUTROS', other)}
-    </Box>
+    </div>
   );
 }

@@ -1,15 +1,10 @@
 'use client';
 
-import {
-  Box,
-  Typography,
-  Avatar,
-  Paper,
-  Grid,
-  Chip,
-  Divider,
-} from '@mui/material';
-import { Groups, Person } from '@mui/icons-material';
+import { cn } from '@/lib/cn';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Shield, User } from 'lucide-react';
 import { MatchLineup, Match } from '@/types';
 
 interface Props {
@@ -64,48 +59,27 @@ function groupPlayersByPosition(players: MatchLineup[]) {
 
 function PlayerRow({ player }: { player: MatchLineup }) {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        py: 0.75,
-        px: 1,
-        borderRadius: 1,
-        transition: 'background-color 0.15s',
-        '&:hover': { bgcolor: 'action.hover' },
-      }}
-    >
-      <Avatar
-        src={player.player_photo || ''}
-        sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}
-      >
-        <Person sx={{ fontSize: 18, color: '#9e9e9e' }} />
+    <div className="flex items-center gap-3 py-1.5 px-2 rounded transition-colors hover:bg-accent">
+      <Avatar className="h-8 w-8 bg-gray-200">
+        <AvatarImage src={player.player_photo || ''} alt={player.player_name || 'Jogador'} />
+        <AvatarFallback className="bg-gray-200">
+          <User className="h-4 w-4 text-gray-400" />
+        </AvatarFallback>
       </Avatar>
       {player.shirt_number != null && (
-        <Typography
-          variant="body2"
-          fontWeight={800}
-          sx={{
-            minWidth: 24,
-            textAlign: 'center',
-            color: '#1a237e',
-          }}
-        >
+        <span className="text-sm font-extrabold min-w-[24px] text-center text-[#1a237e]">
           {player.shirt_number}
-        </Typography>
+        </span>
       )}
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={600} noWrap>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold truncate">
           {player.player_name || 'Jogador'}
-        </Typography>
+        </p>
         {player.position && (
-          <Typography variant="caption" color="text.secondary">
-            {player.position}
-          </Typography>
+          <p className="text-xs text-muted-foreground">{player.position}</p>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
 
@@ -124,91 +98,60 @@ function TeamLineup({
 
   if (lineup.length === 0) {
     return (
-      <Paper
-        variant="outlined"
-        sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}
-      >
-        <Typography color="text.secondary" variant="body2">
-          Escalacao nao definida
-        </Typography>
-      </Paper>
+      <div className="border rounded-lg p-6 text-center">
+        <p className="text-sm text-muted-foreground">Escalacao nao definida</p>
+      </div>
     );
   }
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+    <div className="border rounded-lg overflow-hidden">
       {/* Team header */}
-      <Box
-        sx={{
-          background: teamColor,
-          color: 'white',
-          px: 2,
-          py: 1.5,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-        }}
+      <div
+        className="px-4 py-3 flex items-center gap-3 text-white"
+        style={{ background: teamColor }}
       >
-        <Avatar
-          src={teamLogo || ''}
-          sx={{ width: 28, height: 28, bgcolor: 'rgba(255,255,255,0.2)' }}
-        >
-          <Groups sx={{ fontSize: 16 }} />
+        <Avatar className="h-7 w-7 bg-white/20">
+          <AvatarImage src={teamLogo || ''} alt={teamName} />
+          <AvatarFallback className="bg-white/20">
+            <Shield className="h-4 w-4 text-white" />
+          </AvatarFallback>
         </Avatar>
-        <Typography variant="subtitle2" fontWeight={700}>
-          {teamName}
-        </Typography>
-        <Chip
-          label={`${lineup.filter((p) => p.is_starter).length} titulares`}
-          size="small"
-          sx={{
-            ml: 'auto',
-            bgcolor: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            fontSize: '0.65rem',
-          }}
-        />
-      </Box>
+        <span className="text-sm font-bold">{teamName}</span>
+        <Badge className="ml-auto bg-white/20 text-white border-transparent text-[0.65rem] hover:bg-white/30">
+          {lineup.filter((p) => p.is_starter).length} titulares
+        </Badge>
+      </div>
 
       {/* Starters by position group */}
-      <Box sx={{ p: 1.5 }}>
+      <div className="p-3">
         {grouped.map((group, i) => (
-          <Box key={group.label} sx={{ mb: i < grouped.length - 1 ? 1 : 0 }}>
-            <Typography
-              variant="caption"
-              fontWeight={700}
-              color="text.secondary"
-              sx={{ px: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}
-            >
+          <div key={group.label} className={cn(i < grouped.length - 1 ? 'mb-2' : '')}>
+            <p className="text-xs font-bold text-muted-foreground px-2 uppercase tracking-wide">
               {group.label}
-            </Typography>
+            </p>
             {group.players.map((player) => (
               <PlayerRow key={player.id} player={player} />
             ))}
-          </Box>
+          </div>
         ))}
-      </Box>
+      </div>
 
       {/* Substitutes */}
       {substitutes.length > 0 && (
         <>
-          <Divider />
-          <Box sx={{ p: 1.5 }}>
-            <Typography
-              variant="caption"
-              fontWeight={700}
-              color="text.secondary"
-              sx={{ px: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}
-            >
+          <Separator />
+          <div className="p-3">
+            <p className="text-xs font-bold text-muted-foreground px-2 uppercase tracking-wide">
               Reservas
-            </Typography>
+            </p>
             {substitutes.map((player) => (
               <PlayerRow key={player.id} player={player} />
             ))}
-          </Box>
+          </div>
         </>
       )}
-    </Paper>
+    </div>
   );
 }
 
@@ -222,35 +165,26 @@ export default function MatchLineupDisplay({
   if (!hasLineup) return null;
 
   return (
-    <Box>
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        gutterBottom
-        sx={{ color: '#1a237e', display: 'flex', alignItems: 'center', gap: 1 }}
-      >
-        <Groups fontSize="small" />
+    <div>
+      <h3 className="text-lg font-bold text-[#1a237e] mb-2 flex items-center gap-2">
+        <Shield className="h-5 w-5" />
         ESCALACAO
-      </Typography>
+      </h3>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <TeamLineup
-            lineup={homeLineup}
-            teamName={match.home_team_name || 'Mandante'}
-            teamLogo={match.home_team_logo}
-            teamColor="linear-gradient(135deg, #1a237e 0%, #283593 100%)"
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TeamLineup
-            lineup={awayLineup}
-            teamName={match.away_team_name || 'Visitante'}
-            teamLogo={match.away_team_logo}
-            teamColor="linear-gradient(135deg, #b71c1c 0%, #c62828 100%)"
-          />
-        </Grid>
-      </Grid>
-    </Box>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TeamLineup
+          lineup={homeLineup}
+          teamName={match.home_team_name || 'Mandante'}
+          teamLogo={match.home_team_logo}
+          teamColor="linear-gradient(135deg, #1a237e 0%, #283593 100%)"
+        />
+        <TeamLineup
+          lineup={awayLineup}
+          teamName={match.away_team_name || 'Visitante'}
+          teamLogo={match.away_team_logo}
+          teamColor="linear-gradient(135deg, #b71c1c 0%, #c62828 100%)"
+        />
+      </div>
+    </div>
   );
 }

@@ -1,14 +1,14 @@
-import {
-  Box, Container, Typography, Grid, Card, CardContent, CardActionArea, Button,
-  Avatar, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip,
-} from '@mui/material';
-import { People, Groups, EmojiEvents, SportsSoccer, Newspaper, ArrowForward } from '@mui/icons-material';
+import { CircleDot, Users, Users2, Trophy, Newspaper, ArrowRight, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getMany, getOne } from '@/lib/db';
 import { Championship, Match, NewsArticle } from '@/types';
 import { getChampionshipStandings, getTopScorers } from '@/services/statsService';
 import { getPublishedNews } from '@/services/newsPublicService';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/cn';
 import FeaturedMatches from '@/components/public/FeaturedMatches';
 import NewsCard from '@/components/public/NewsCard';
 import MatchResultCard from '@/components/public/MatchResultCard';
@@ -22,67 +22,27 @@ export const metadata: Metadata = {
 
 async function getActiveChampionship(): Promise<Championship | null> {
   return getOne<Championship>(
-    `SELECT * FROM championships
-     WHERE active = true AND status IN ('Em Andamento', 'Inscricoes Abertas')
-     ORDER BY
-       CASE WHEN status = 'Em Andamento' THEN 0 ELSE 1 END,
-       year DESC
-     LIMIT 1`
+    `SELECT * FROM championships WHERE active = true AND status IN ('Em Andamento', 'Inscricoes Abertas') ORDER BY CASE WHEN status = 'Em Andamento' THEN 0 ELSE 1 END, year DESC LIMIT 1`
   );
 }
 
 async function getRecentResults(champId: string): Promise<Match[]> {
   return getMany<Match>(
-    `SELECT m.*,
-      ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short,
-      at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short,
-      c.name AS championship_name
-     FROM matches m
-     JOIN teams ht ON ht.id = m.home_team_id
-     JOIN teams at ON at.id = m.away_team_id
-     JOIN championships c ON c.id = m.championship_id
-     WHERE m.championship_id = $1 AND m.status = 'Finalizada'
-     ORDER BY m.match_date DESC NULLS LAST
-     LIMIT 6`,
+    `SELECT m.*, ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short, at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short, c.name AS championship_name FROM matches m JOIN teams ht ON ht.id = m.home_team_id JOIN teams at ON at.id = m.away_team_id JOIN championships c ON c.id = m.championship_id WHERE m.championship_id = $1 AND m.status = 'Finalizada' ORDER BY m.match_date DESC NULLS LAST LIMIT 6`,
     [champId]
   );
 }
 
 async function getUpcomingMatches(champId: string): Promise<Match[]> {
   return getMany<Match>(
-    `SELECT m.*,
-      ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short,
-      at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short,
-      c.name AS championship_name
-     FROM matches m
-     JOIN teams ht ON ht.id = m.home_team_id
-     JOIN teams at ON at.id = m.away_team_id
-     JOIN championships c ON c.id = m.championship_id
-     WHERE m.championship_id = $1 AND m.status = 'Agendada'
-     ORDER BY m.match_date ASC NULLS LAST
-     LIMIT 6`,
+    `SELECT m.*, ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short, at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short, c.name AS championship_name FROM matches m JOIN teams ht ON ht.id = m.home_team_id JOIN teams at ON at.id = m.away_team_id JOIN championships c ON c.id = m.championship_id WHERE m.championship_id = $1 AND m.status = 'Agendada' ORDER BY m.match_date ASC NULLS LAST LIMIT 6`,
     [champId]
   );
 }
 
 async function getFeaturedMatchesData(): Promise<Match[]> {
   return getMany<Match>(
-    `SELECT m.*,
-      ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short,
-      at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short,
-      c.name AS championship_name
-     FROM matches m
-     JOIN teams ht ON ht.id = m.home_team_id
-     JOIN teams at ON at.id = m.away_team_id
-     JOIN championships c ON c.id = m.championship_id
-     WHERE m.is_featured = true OR m.status = 'Em Andamento'
-        OR (m.status = 'Finalizada' AND m.match_date >= NOW() - INTERVAL '7 days')
-     ORDER BY
-       CASE WHEN m.status = 'Em Andamento' THEN 0
-            WHEN m.is_featured = true THEN 1
-            ELSE 2 END,
-       m.match_date DESC NULLS LAST
-     LIMIT 10`
+    `SELECT m.*, ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short, at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short, c.name AS championship_name FROM matches m JOIN teams ht ON ht.id = m.home_team_id JOIN teams at ON at.id = m.away_team_id JOIN championships c ON c.id = m.championship_id WHERE m.is_featured = true OR m.status = 'Em Andamento' OR (m.status = 'Finalizada' AND m.match_date >= NOW() - INTERVAL '7 days') ORDER BY CASE WHEN m.status = 'Em Andamento' THEN 0 WHEN m.is_featured = true THEN 1 ELSE 2 END, m.match_date DESC NULLS LAST LIMIT 10`
   );
 }
 
@@ -93,7 +53,6 @@ export default async function HomePage() {
     getPublishedNews(1, 4),
   ]);
 
-  // Load standings, top scorers, results and upcoming if there's an active championship
   let standings: any[] = [];
   let topScorers: any[] = [];
   let recentResults: Match[] = [];
@@ -110,319 +69,269 @@ export default async function HomePage() {
   const latestNews = newsResult.news;
 
   return (
-    <Box>
+    <div>
       {/* Hero */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565c0 100%)',
-          color: 'white',
-          py: { xs: 6, md: 10 },
-          textAlign: 'center',
-        }}
-      >
-        <Container maxWidth="md">
-          <SportsSoccer sx={{ fontSize: 64, color: '#ffd600', mb: 2 }} />
-          <Typography variant="h2" fontWeight={800} sx={{ fontSize: { xs: '2rem', md: '3rem' }, mb: 1 }}>
-            GALINHA GORDA
-          </Typography>
-          <Typography variant="h6" sx={{ color: '#ffd600', mb: 1, fontWeight: 600 }}>
-            Itapecerica - MG
-          </Typography>
-          {activeChampionship ? (
-            <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', maxWidth: 500, mx: 'auto', mb: 1 }}>
-              {activeChampionship.name} {activeChampionship.year}
-            </Typography>
-          ) : null}
-          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)', maxWidth: 500, mx: 'auto', mb: 4 }}>
-            Sistema oficial de gestao de campeonatos de futebol.
-            Consulte jogadores, times, tabelas e resultados.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Button
-              component={Link}
-              href="/jogadores"
-              variant="contained"
-              size="large"
-              sx={{ bgcolor: '#ffd600', color: '#1a237e', fontWeight: 700, '&:hover': { bgcolor: '#ffca28' } }}
-            >
-              Ver Jogadores
+      <div className="bg-gradient-to-br from-[#0d1b2a] via-[#1a237e] to-[#1565c0] text-white py-12 md:py-20 text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        <div className="max-w-2xl mx-auto px-4 relative">
+          <CircleDot className="h-16 w-16 text-[#ffd600] mx-auto mb-4" />
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight">GALINHA GORDA</h1>
+          <p className="text-[#ffd600] text-lg font-semibold mb-2">Itapecerica - MG</p>
+          {activeChampionship && (
+            <p className="text-white/90 mb-1">{activeChampionship.name} {activeChampionship.year}</p>
+          )}
+          <p className="text-white/70 max-w-md mx-auto mb-8">
+            Sistema oficial de gestao de campeonatos de futebol. Consulte jogadores, times, tabelas e resultados.
+          </p>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <Button asChild size="lg" className="bg-[#ffd600] text-[#0d1b2a] font-bold hover:bg-[#ffd600]/90">
+              <Link href="/jogadores">Ver Jogadores</Link>
             </Button>
-            <Button
-              component={Link}
-              href="/campeonatos"
-              variant="outlined"
-              size="large"
-              sx={{ borderColor: 'white', color: 'white', '&:hover': { borderColor: '#ffd600', color: '#ffd600' } }}
-            >
-              Campeonatos
+            <Button asChild variant="outline" size="lg" className="border-white/30 text-white hover:border-[#ffd600] hover:text-[#ffd600] bg-white/5">
+              <Link href="/campeonatos">Campeonatos</Link>
             </Button>
-          </Box>
-        </Container>
-      </Box>
+          </div>
+        </div>
+      </div>
 
       {/* Featured Matches */}
       {featuredMatches.length > 0 && (
-        <Box sx={{ bgcolor: '#f5f5f5', py: 4 }}>
-          <Container maxWidth="lg">
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-                <SportsSoccer sx={{ mr: 1, verticalAlign: 'middle', color: '#ed6c02' }} />
-                PARTIDAS EM DESTAQUE
-              </Typography>
-            </Box>
+        <div className="bg-muted py-8">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-1 h-7 bg-[#d32f2f] rounded-full" />
+              <h2 className="text-lg font-bold text-[#0d1b2a] uppercase tracking-wide">Partidas em Destaque</h2>
+            </div>
             <FeaturedMatches initialMatches={featuredMatches} />
-          </Container>
-        </Box>
+          </div>
+        </div>
       )}
 
       {/* Latest News */}
       {latestNews.length > 0 && (
-        <Box sx={{ py: 5 }}>
-          <Container maxWidth="lg">
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-                <Newspaper sx={{ mr: 1, verticalAlign: 'middle', color: '#1976d2' }} />
-                ULTIMAS NOTICIAS
-              </Typography>
-              <Button
-                component={Link}
-                href="/noticias"
-                endIcon={<ArrowForward />}
-                sx={{ color: '#1976d2', fontWeight: 600 }}
-              >
-                Ver todas
+        <div className="py-10">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-7 bg-[#1a237e] rounded-full" />
+                <h2 className="text-lg font-bold text-[#0d1b2a] uppercase tracking-wide">Ultimas Noticias</h2>
+              </div>
+              <Button variant="link" asChild className="text-[#1a237e] font-semibold">
+                <Link href="/noticias">Ver todas<ArrowRight className="h-4 w-4 ml-1" /></Link>
               </Button>
-            </Box>
-            <Grid container spacing={3}>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {latestNews.map((article, index) => (
-                <Grid item xs={12} sm={6} md={index === 0 ? 6 : 3} key={article.id}>
+                <div key={article.id} className={index === 0 ? 'sm:col-span-2' : ''}>
                   <NewsCard article={article} featured={index === 0} />
-                </Grid>
+                </div>
               ))}
-            </Grid>
-          </Container>
-        </Box>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Recent Results & Upcoming Matches */}
-      {activeChampionship && (recentResults.length > 0 || upcomingMatches.length > 0) && (
-        <Box sx={{ py: 4 }}>
-          <Container maxWidth="lg">
-            <Grid container spacing={4}>
-              {recentResults.length > 0 && (
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-                      <SportsSoccer sx={{ mr: 1, verticalAlign: 'middle', color: '#2e7d32' }} />
-                      ULTIMOS RESULTADOS
-                    </Typography>
-                  </Box>
-                  <Grid container spacing={1.5}>
-                    {recentResults.map((m) => (
-                      <Grid item xs={12} sm={6} key={m.id}>
-                        <MatchResultCard match={m} />
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Grid>
-              )}
-              {upcomingMatches.length > 0 && (
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-                      <SportsSoccer sx={{ mr: 1, verticalAlign: 'middle', color: '#1976d2' }} />
-                      PROXIMOS JOGOS
-                    </Typography>
-                  </Box>
-                  <Grid container spacing={1.5}>
-                    {upcomingMatches.map((m) => (
-                      <Grid item xs={12} sm={6} key={m.id}>
-                        <MatchResultCard match={m} />
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Grid>
-              )}
-            </Grid>
-          </Container>
-        </Box>
-      )}
+      {activeChampionship && (recentResults.length > 0 || upcomingMatches.length > 0) && (() => {
+        const hasBoth = recentResults.length > 0 && upcomingMatches.length > 0;
+        return (
+          <div className="bg-muted py-10">
+            <div className="max-w-7xl mx-auto px-4">
+              <div className={cn(
+                'grid grid-cols-1 gap-8',
+                hasBoth ? 'md:grid-cols-2' : 'max-w-3xl mx-auto'
+              )}>
+                {recentResults.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-1 h-7 bg-[#2e7d32] rounded-full" />
+                      <h2 className="text-lg font-bold text-[#0d1b2a] uppercase tracking-wide">Ultimos Resultados</h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {recentResults.map((m) => <MatchResultCard key={m.id} match={m} />)}
+                    </div>
+                  </div>
+                )}
+                {upcomingMatches.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-1 h-7 bg-[#1a237e] rounded-full" />
+                      <h2 className="text-lg font-bold text-[#0d1b2a] uppercase tracking-wide">Proximos Jogos</h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {upcomingMatches.map((m) => <MatchResultCard key={m.id} match={m} />)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
-      {/* Standings & Top Scorers side by side */}
-      {activeChampionship && (standings.length > 0 || topScorers.length > 0) && (
-        <Box sx={{ bgcolor: '#f5f5f5', py: 5 }}>
-          <Container maxWidth="lg">
-            <Grid container spacing={4}>
-              {/* Quick Standings */}
+      {/* Standings & Top Scorers */}
+      {activeChampionship && (standings.length > 0 || topScorers.length > 0) && (() => {
+        const hasBothStats = standings.length > 0 && topScorers.length > 0;
+        return (
+        <div className="py-10">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className={cn(
+              'grid grid-cols-1 gap-8',
+              hasBothStats ? 'md:grid-cols-12' : 'max-w-4xl mx-auto'
+            )}>
+              {/* Standings */}
               {standings.length > 0 && (
-                <Grid item xs={12} md={7}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-                      <EmojiEvents sx={{ mr: 1, verticalAlign: 'middle', color: '#ed6c02' }} />
-                      CLASSIFICACAO
-                    </Typography>
-                    <Button
-                      component={Link}
-                      href={`/campeonatos/${activeChampionship.id}`}
-                      endIcon={<ArrowForward />}
-                      size="small"
-                      sx={{ color: '#1976d2', fontWeight: 600 }}
-                    >
-                      Ver completa
+                <div className={hasBothStats ? 'md:col-span-7' : ''}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-1 h-7 bg-[#1a237e] rounded-full" />
+                      <h2 className="text-lg font-bold text-[#0d1b2a] uppercase tracking-wide">Classificacao</h2>
+                    </div>
+                    <Button variant="link" asChild size="sm" className="text-[#1a237e] font-semibold">
+                      <Link href={`/campeonatos/${activeChampionship.id}`}>Ver completa<ArrowRight className="h-4 w-4 ml-1" /></Link>
                     </Button>
-                  </Box>
-                  <TableContainer component={Paper} elevation={1}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: '#1a237e' }}>
-                          <TableCell sx={{ color: 'white', fontWeight: 700, width: 40 }}>#</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 700 }}>Time</TableCell>
-                          <TableCell align="center" sx={{ color: 'white', fontWeight: 700 }}>P</TableCell>
-                          <TableCell align="center" sx={{ color: 'white', fontWeight: 700 }}>J</TableCell>
-                          <TableCell align="center" sx={{ color: 'white', fontWeight: 700 }}>V</TableCell>
-                          <TableCell align="center" sx={{ color: 'white', fontWeight: 700 }}>E</TableCell>
-                          <TableCell align="center" sx={{ color: 'white', fontWeight: 700 }}>D</TableCell>
-                          <TableCell align="center" sx={{ color: 'white', fontWeight: 700 }}>SG</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
+                  </div>
+                  <div className="rounded-lg overflow-hidden border border-border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-[#0d1b2a] text-white text-xs">
+                          <th className="px-3 py-2.5 text-left font-semibold w-10">#</th>
+                          <th className="px-3 py-2.5 text-left font-semibold">Time</th>
+                          <th className="px-3 py-2.5 text-center font-semibold">P</th>
+                          <th className="px-3 py-2.5 text-center font-semibold">J</th>
+                          <th className="px-3 py-2.5 text-center font-semibold">V</th>
+                          <th className="px-3 py-2.5 text-center font-semibold">E</th>
+                          <th className="px-3 py-2.5 text-center font-semibold">D</th>
+                          <th className="px-3 py-2.5 text-center font-semibold">SG</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         {standings.slice(0, 5).map((s, i) => (
-                          <TableRow key={s.team_id} hover>
-                            <TableCell>
-                              <Typography
-                                fontWeight={700}
-                                sx={{
-                                  color: i < 4 ? '#2e7d32' : '#666',
-                                  bgcolor: i < 4 ? '#e8f5e9' : 'transparent',
-                                  width: 24,
-                                  height: 24,
-                                  borderRadius: '50%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '0.85rem',
-                                }}
-                              >
+                          <tr key={s.team_id} className={cn('border-b border-border/50', i % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]')}>
+                            <td className="px-3 py-2.5">
+                              <span className={cn(
+                                'inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold',
+                                i < 4 ? 'bg-[#2e7d32] text-white' : 'bg-gray-200 text-gray-600'
+                              )}>
                                 {i + 1}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Avatar src={s.logo_url || ''} sx={{ width: 24, height: 24 }}>
-                                  {s.short_name?.[0]}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={s.logo_url || ''} />
+                                  <AvatarFallback className="text-[9px] font-bold">{s.short_name?.[0]}</AvatarFallback>
                                 </Avatar>
-                                <Typography variant="body2" fontWeight={600}>{s.team_name}</Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Typography fontWeight={700} sx={{ color: '#1a237e' }}>{s.points}</Typography>
-                            </TableCell>
-                            <TableCell align="center">{s.matches_played}</TableCell>
-                            <TableCell align="center">{s.wins}</TableCell>
-                            <TableCell align="center">{s.draws}</TableCell>
-                            <TableCell align="center">{s.losses}</TableCell>
-                            <TableCell align="center">{s.goals_for - s.goals_against}</TableCell>
-                          </TableRow>
+                                <span className="font-semibold text-[#0d1b2a]">{s.team_name}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 text-center font-extrabold text-[#1a237e]">{s.points}</td>
+                            <td className="px-3 py-2.5 text-center text-muted-foreground">{s.matches_played}</td>
+                            <td className="px-3 py-2.5 text-center text-muted-foreground">{s.wins}</td>
+                            <td className="px-3 py-2.5 text-center text-muted-foreground">{s.draws}</td>
+                            <td className="px-3 py-2.5 text-center text-muted-foreground">{s.losses}</td>
+                            <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_for - s.goals_against}</td>
+                          </tr>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Grid>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
 
               {/* Top Scorers */}
               {topScorers.length > 0 && (
-                <Grid item xs={12} md={5}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-                      <SportsSoccer sx={{ mr: 1, verticalAlign: 'middle', color: '#2e7d32' }} />
-                      ARTILHARIA
-                    </Typography>
-                    <Button
-                      component={Link}
-                      href={`/campeonatos/${activeChampionship.id}`}
-                      endIcon={<ArrowForward />}
-                      size="small"
-                      sx={{ color: '#1976d2', fontWeight: 600 }}
-                    >
-                      Ver todos
+                <div className={hasBothStats ? 'md:col-span-5' : ''}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-1 h-7 bg-[#ffd600] rounded-full" />
+                      <h2 className="text-lg font-bold text-[#0d1b2a] uppercase tracking-wide">Artilharia</h2>
+                    </div>
+                    <Button variant="link" asChild size="sm" className="text-[#1a237e] font-semibold">
+                      <Link href={`/campeonatos/${activeChampionship.id}`}>Ver todos<ArrowRight className="h-4 w-4 ml-1" /></Link>
                     </Button>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  </div>
+                  <div className="rounded-lg overflow-hidden border border-border">
+                    {/* Header */}
+                    <div className="bg-[#0d1b2a] px-4 py-2.5">
+                      <span className="text-[11px] text-white/50 font-medium uppercase tracking-wide">Top Goleadores</span>
+                    </div>
                     {topScorers.map((s: any, i: number) => (
-                      <Card key={s.player_id} variant="outlined" sx={{ bgcolor: i === 0 ? '#fff8e1' : 'white' }}>
-                        <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '12px !important' }}>
-                          <Typography
-                            variant="h6"
-                            fontWeight={800}
-                            sx={{
-                              color: i === 0 ? '#ffd600' : i < 3 ? '#ed6c02' : '#999',
-                              width: 30,
-                              textAlign: 'center',
-                            }}
-                          >
-                            {i + 1}
-                          </Typography>
-                          <Avatar src={s.photo_url || ''} sx={{ width: 40, height: 40 }}>
-                            {s.player_name[0]}
-                          </Avatar>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" fontWeight={600} noWrap>
-                              {s.player_name}
-                            </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Avatar src={s.team_logo || ''} sx={{ width: 16, height: 16 }}>
-                                {s.team_name[0]}
-                              </Avatar>
-                              <Typography variant="caption" color="text.secondary" noWrap>
-                                {s.team_name}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          <Chip
-                            label={`${s.goals} gol${s.goals > 1 ? 's' : ''}`}
-                            size="small"
-                            sx={{
-                              bgcolor: i === 0 ? '#ffd600' : '#1976d2',
-                              color: i === 0 ? '#1a237e' : 'white',
-                              fontWeight: 700,
-                            }}
-                          />
-                        </CardContent>
-                      </Card>
+                      <div
+                        key={s.player_id}
+                        className={cn(
+                          'flex items-center gap-3 px-4 py-3',
+                          i % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]',
+                          i !== topScorers.length - 1 && 'border-b border-border/50'
+                        )}
+                      >
+                        <span className={cn(
+                          'text-base font-extrabold w-6 text-center tabular-nums',
+                          i === 0 ? 'text-[#ffd600]' : i < 3 ? 'text-amber-600' : 'text-muted-foreground'
+                        )}>
+                          {i + 1}
+                        </span>
+                        <Avatar className="h-10 w-10 ring-1 ring-border">
+                          <AvatarImage src={s.photo_url || ''} />
+                          <AvatarFallback className="font-bold bg-muted">{s.player_name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-[#0d1b2a] leading-tight">{s.player_name}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Avatar className="h-4 w-4">
+                              <AvatarImage src={s.team_logo || ''} />
+                              <AvatarFallback className="text-[7px]">{s.team_name[0]}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-[11px] text-muted-foreground">{s.team_name}</span>
+                          </div>
+                        </div>
+                        <div className={cn(
+                          'px-2.5 py-1 rounded-md text-sm font-extrabold tabular-nums',
+                          i === 0 ? 'bg-[#ffd600] text-[#0d1b2a]' : 'bg-[#1a237e] text-white'
+                        )}>
+                          {s.goals}
+                        </div>
+                      </div>
                     ))}
-                  </Box>
-                </Grid>
+                  </div>
+                </div>
               )}
-            </Grid>
-          </Container>
-        </Box>
-      )}
+            </div>
+          </div>
+        </div>
+        );
+      })()}
 
       {/* Quick Links */}
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Grid container spacing={3}>
-          {[
-            { title: 'Jogadores', desc: 'Consulte o BID e perfil completo dos atletas inscritos', icon: <People sx={{ fontSize: 48, color: '#1976d2' }} />, href: '/jogadores' },
-            { title: 'Times', desc: 'Veja todos os times participantes dos campeonatos', icon: <Groups sx={{ fontSize: 48, color: '#2e7d32' }} />, href: '/times' },
-            { title: 'Campeonatos', desc: 'Acompanhe tabelas, classificacao e resultados', icon: <EmojiEvents sx={{ fontSize: 48, color: '#ed6c02' }} />, href: '/campeonatos' },
-          ].map((item) => (
-            <Grid item xs={12} md={4} key={item.title}>
-              <Card sx={{ height: '100%' }}>
-                <CardActionArea component={Link} href={item.href} sx={{ p: 3, textAlign: 'center', height: '100%' }}>
-                  {item.icon}
-                  <Typography variant="h5" fontWeight={700} sx={{ mt: 2, mb: 1 }}>
-                    {item.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {item.desc}
-                  </Typography>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    </Box>
+      <div className="bg-muted py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { title: 'Jogadores', desc: 'Consulte o BID e perfil completo dos atletas inscritos', icon: Users, bg: 'bg-[#1a237e]', href: '/jogadores' },
+              { title: 'Times', desc: 'Veja todos os times participantes dos campeonatos', icon: Users2, bg: 'bg-[#2e7d32]', href: '/times' },
+              { title: 'Campeonatos', desc: 'Acompanhe tabelas, classificacao e resultados', icon: Trophy, bg: 'bg-[#b8860b]', href: '/campeonatos' },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.title} href={item.href} className="group">
+                  <div className="h-full rounded-lg overflow-hidden border border-border bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                    <div className="p-6 flex items-center gap-4">
+                      <div className={cn('h-12 w-12 rounded-full flex items-center justify-center shrink-0', item.bg)}>
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-bold text-[#0d1b2a] mb-0.5">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground leading-snug">{item.desc}</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-[#1a237e] transition-colors shrink-0" />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

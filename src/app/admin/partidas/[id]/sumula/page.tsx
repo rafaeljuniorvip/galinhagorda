@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Box, Button, CircularProgress } from '@mui/material';
-import { Print, ArrowBack } from '@mui/icons-material';
+import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Match, MatchEvent, MatchLineup, Championship, PlayerRegistration } from '@/types';
 
@@ -82,9 +82,7 @@ export default function SumulaPage() {
   const [registrations, setRegistrations] = useState<PlayerRegistration[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && !isAdmin) router.push('/admin/login');
-  }, [isAdmin, authLoading, router]);
+  useEffect(() => { if (!authLoading && !isAdmin) router.push('/admin/login'); }, [isAdmin, authLoading, router]);
 
   const loadData = useCallback(async () => {
     setLoadingData(true);
@@ -94,8 +92,7 @@ export default function SumulaPage() {
       fetch(`/api/matches/${params.id}/lineups`),
     ]);
     if (matchRes.ok) {
-      const m = await matchRes.json();
-      setMatch(m);
+      const m = await matchRes.json(); setMatch(m);
       const [champRes, regRes] = await Promise.all([
         fetch(`/api/championships/${m.championship_id}`),
         fetch(`/api/championships/${m.championship_id}/registrations`),
@@ -108,19 +105,10 @@ export default function SumulaPage() {
     setLoadingData(false);
   }, [params.id]);
 
-  useEffect(() => {
-    if (user) loadData();
-  }, [user, loadData]);
+  useEffect(() => { if (user) loadData(); }, [user, loadData]);
 
   if (authLoading || !isAdmin) return null;
-
-  if (loadingData || !match) {
-    return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loadingData || !match) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   // Build BID map: player_id -> bid_number
   const bidMap = new Map<string, string>();
@@ -138,101 +126,60 @@ export default function SumulaPage() {
   const goals = events.filter(e => ['GOL', 'GOL_PENALTI', 'GOL_CONTRA'].includes(e.event_type));
   const yellows = events.filter(e => ['CARTAO_AMARELO', 'SEGUNDO_AMARELO'].includes(e.event_type));
   const reds = events.filter(e => e.event_type === 'CARTAO_VERMELHO');
-  const substitutions = events.filter(e =>
-    ['SUBSTITUICAO_ENTRADA', 'SUBSTITUICAO_SAIDA'].includes(e.event_type)
-  );
+  const substitutions = events.filter(e => ['SUBSTITUICAO_ENTRADA', 'SUBSTITUICAO_SAIDA'].includes(e.event_type));
 
-  // Pair substitutions: group SAI + ENTRA by minute + team
+  // Pair substitutions
   const subPairs: { out: MatchEvent; inn: MatchEvent; half: string; minute: number | null; teamId: string }[] = [];
   const subOuts = substitutions.filter(s => s.event_type === 'SUBSTITUICAO_SAIDA');
   const subIns = substitutions.filter(s => s.event_type === 'SUBSTITUICAO_ENTRADA');
   subOuts.forEach(out => {
-    const inn = subIns.find(i =>
-      i.team_id === out.team_id && i.half === out.half && i.minute === out.minute
-      && !subPairs.some(p => p.inn.id === i.id)
-    );
-    if (inn) {
-      subPairs.push({ out, inn, half: out.half || '', minute: out.minute, teamId: out.team_id });
-    }
+    const inn = subIns.find(i => i.team_id === out.team_id && i.half === out.half && i.minute === out.minute && !subPairs.some(p => p.inn.id === i.id));
+    if (inn) subPairs.push({ out, inn, half: out.half || '', minute: out.minute, teamId: out.team_id });
   });
 
-  // Goals by half
   const goals1T = goals.filter(g => g.half === '1T');
   const goals2T = goals.filter(g => g.half === '2T');
 
-  // Referee names (prefer joined name, fallback to text field)
   const refereeName = match.referee_name || match.referee || '';
   const assistant1Name = match.assistant_referee_1_name || match.assistant_referee_1 || '';
   const assistant2Name = match.assistant_referee_2_name || match.assistant_referee_2 || '';
 
-  // Fill player rows to a minimum of 23 lines per team
   const LINEUP_ROWS = 23;
-
   function buildPlayerRows(starters: MatchLineup[], subs: MatchLineup[]) {
     const all = [...starters, ...subs];
-    const rows: { num: string; name: string; bid: string }[] = all.map(l => ({
-      num: l.shirt_number != null ? String(l.shirt_number) : '',
-      name: l.player_name || '',
-      bid: bidMap.get(l.player_id) || '',
-    }));
-    while (rows.length < LINEUP_ROWS) {
-      rows.push({ num: '', name: '', bid: '' });
-    }
+    const rows: { num: string; name: string; bid: string }[] = all.map(l => ({ num: l.shirt_number != null ? String(l.shirt_number) : '', name: l.player_name || '', bid: bidMap.get(l.player_id) || '' }));
+    while (rows.length < LINEUP_ROWS) rows.push({ num: '', name: '', bid: '' });
     return rows;
   }
 
   const homeRows = buildPlayerRows(homeStarters, homeSubs);
   const awayRows = buildPlayerRows(awayStarters, awaySubs);
 
-  // Substitution rows per team (max 5 each)
   const SUB_ROWS = 5;
   function buildSubRows(teamId: string) {
     const teamSubs = subPairs.filter(s => s.teamId === teamId);
-    const rows: { out: string; inn: string; time: string }[] = teamSubs.map(s => ({
-      out: s.out.player_name || '',
-      inn: s.inn.player_name || '',
-      time: s.half && s.minute != null ? `${s.half} ${s.minute}'` : '',
-    }));
-    while (rows.length < SUB_ROWS) {
-      rows.push({ out: '', inn: '', time: '' });
-    }
+    const rows: { out: string; inn: string; time: string }[] = teamSubs.map(s => ({ out: s.out.player_name || '', inn: s.inn.player_name || '', time: s.half && s.minute != null ? `${s.half} ${s.minute}'` : '' }));
+    while (rows.length < SUB_ROWS) rows.push({ out: '', inn: '', time: '' });
     return rows.slice(0, SUB_ROWS);
   }
 
   const homeSubRows = buildSubRows(match.home_team_id);
   const awaySubRows = buildSubRows(match.away_team_id);
 
-  // Card rows for page 2
   const CARD_ROWS = 6;
   function buildCardRows(cards: MatchEvent[]) {
-    const rows: { player: string; team: string; half: string; minute: string; reason: string }[] =
-      cards.map(c => ({
-        player: c.player_name || '',
-        team: c.team_name || '',
-        half: c.half || '',
-        minute: c.minute != null ? `${c.minute}'` : '',
-        reason: c.notes || '',
-      }));
-    while (rows.length < CARD_ROWS) {
-      rows.push({ player: '', team: '', half: '', minute: '', reason: '' });
-    }
+    const rows: { player: string; team: string; half: string; minute: string; reason: string }[] = cards.map(c => ({ player: c.player_name || '', team: c.team_name || '', half: c.half || '', minute: c.minute != null ? `${c.minute}'` : '', reason: c.notes || '' }));
+    while (rows.length < CARD_ROWS) rows.push({ player: '', team: '', half: '', minute: '', reason: '' });
     return rows.slice(0, CARD_ROWS);
   }
 
   const yellowRows = buildCardRows(yellows);
   const redRows = buildCardRows(reds);
 
-  // Goal movement rows
   const GOAL_MOVE_ROWS = 4;
   function buildGoalRows(goalList: MatchEvent[]) {
-    const rows: { player: string; team: string; minute: string }[] = goalList.map(g => ({
-      player: g.player_name || '',
-      team: g.team_name || '',
-      minute: g.minute != null ? `${g.minute}'` : '',
-    }));
-    while (rows.length < GOAL_MOVE_ROWS) {
-      rows.push({ player: '', team: '', minute: '' });
-    }
+    const rows: { player: string; team: string; minute: string }[] = goalList.map(g => ({ player: g.player_name || '', team: g.team_name || '', minute: g.minute != null ? `${g.minute}'` : '' }));
+    while (rows.length < GOAL_MOVE_ROWS) rows.push({ player: '', team: '', minute: '' });
     return rows.slice(0, GOAL_MOVE_ROWS);
   }
 
@@ -256,14 +203,10 @@ export default function SumulaPage() {
       `}</style>
 
       {/* Print & Back buttons */}
-      <Box className="no-print" sx={{ mb: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => router.back()}>
-          Voltar
-        </Button>
-        <Button variant="contained" startIcon={<Print />} onClick={() => window.print()}>
-          Imprimir Sumula
-        </Button>
-      </Box>
+      <div className="no-print mb-3 flex gap-2 justify-end">
+        <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="h-4 w-4 mr-1" />Voltar</Button>
+        <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" />Imprimir Sumula</Button>
+      </div>
 
       {/* =================== PAGE 1 - ESCALAÇÕES =================== */}
       <div className="sumula-page" style={PAGE_STYLE}>
@@ -288,19 +231,11 @@ export default function SumulaPage() {
           <tbody>
             <tr>
               <td style={{ ...HEADER_CELL, width: '80px' }}>DISPUTANTES</td>
-              <td style={{ ...CELL, textAlign: 'center', fontSize: '10px', fontWeight: 'bold' }}>
-                {match.home_team_name || ''}
-              </td>
-              <td style={{ ...CELL_CENTER, width: '30px', fontSize: '12px', fontWeight: 'bold' }}>
-                ({match.home_score ?? ' '})
-              </td>
+              <td style={{ ...CELL, textAlign: 'center', fontSize: '10px', fontWeight: 'bold' }}>{match.home_team_name || ''}</td>
+              <td style={{ ...CELL_CENTER, width: '30px', fontSize: '12px', fontWeight: 'bold' }}>({match.home_score ?? ' '})</td>
               <td style={{ ...CELL_CENTER, width: '20px', fontSize: '10px', fontWeight: 'bold' }}>X</td>
-              <td style={{ ...CELL_CENTER, width: '30px', fontSize: '12px', fontWeight: 'bold' }}>
-                ({match.away_score ?? ' '})
-              </td>
-              <td style={{ ...CELL, textAlign: 'center', fontSize: '10px', fontWeight: 'bold' }}>
-                {match.away_team_name || ''}
-              </td>
+              <td style={{ ...CELL_CENTER, width: '30px', fontSize: '12px', fontWeight: 'bold' }}>({match.away_score ?? ' '})</td>
+              <td style={{ ...CELL, textAlign: 'center', fontSize: '10px', fontWeight: 'bold' }}>{match.away_team_name || ''}</td>
             </tr>
           </tbody>
         </table>
@@ -344,9 +279,7 @@ export default function SumulaPage() {
             <table style={TABLE_STYLE}>
               <thead>
                 <tr>
-                  <td colSpan={3} style={{ ...HEADER_CELL, fontSize: '9px', backgroundColor: '#d0d0d0' }}>
-                    {match.home_team_name || 'EQUIPE A'}
-                  </td>
+                  <td colSpan={3} style={{ ...HEADER_CELL, fontSize: '9px', backgroundColor: '#d0d0d0' }}>{match.home_team_name || 'EQUIPE A'}</td>
                 </tr>
                 <tr>
                   <td style={{ ...HEADER_CELL, width: '25px' }}>N°</td>
@@ -371,9 +304,7 @@ export default function SumulaPage() {
             <table style={TABLE_STYLE}>
               <thead>
                 <tr>
-                  <td colSpan={3} style={{ ...HEADER_CELL, fontSize: '9px', backgroundColor: '#d0d0d0' }}>
-                    {match.away_team_name || 'EQUIPE B'}
-                  </td>
+                  <td colSpan={3} style={{ ...HEADER_CELL, fontSize: '9px', backgroundColor: '#d0d0d0' }}>{match.away_team_name || 'EQUIPE B'}</td>
                 </tr>
                 <tr>
                   <td style={{ ...HEADER_CELL, width: '25px' }}>N°</td>
@@ -422,9 +353,7 @@ export default function SumulaPage() {
             <table style={TABLE_STYLE}>
               <thead>
                 <tr>
-                  <td colSpan={3} style={{ ...HEADER_CELL, fontSize: '8px', backgroundColor: '#d0d0d0' }}>
-                    {match.home_team_name || 'EQUIPE A'}
-                  </td>
+                  <td colSpan={3} style={{ ...HEADER_CELL, fontSize: '8px', backgroundColor: '#d0d0d0' }}>{match.home_team_name || 'EQUIPE A'}</td>
                 </tr>
                 <tr>
                   <td style={HEADER_CELL}>SAI</td>
@@ -448,9 +377,7 @@ export default function SumulaPage() {
             <table style={TABLE_STYLE}>
               <thead>
                 <tr>
-                  <td colSpan={3} style={{ ...HEADER_CELL, fontSize: '8px', backgroundColor: '#d0d0d0' }}>
-                    {match.away_team_name || 'EQUIPE B'}
-                  </td>
+                  <td colSpan={3} style={{ ...HEADER_CELL, fontSize: '8px', backgroundColor: '#d0d0d0' }}>{match.away_team_name || 'EQUIPE B'}</td>
                 </tr>
                 <tr>
                   <td style={HEADER_CELL}>SAI</td>
@@ -529,19 +456,11 @@ export default function SumulaPage() {
           <tbody>
             <tr>
               <td style={{ ...HEADER_CELL }}>1° TEMPO</td>
-              <td style={BLANK_LINE}></td>
-              <td style={BLANK_LINE}></td>
-              <td style={BLANK_LINE}></td>
-              <td style={BLANK_LINE}></td>
-              <td style={BLANK_LINE}></td>
+              <td style={BLANK_LINE}></td><td style={BLANK_LINE}></td><td style={BLANK_LINE}></td><td style={BLANK_LINE}></td><td style={BLANK_LINE}></td>
             </tr>
             <tr>
               <td style={{ ...HEADER_CELL }}>2° TEMPO</td>
-              <td style={BLANK_LINE}></td>
-              <td style={BLANK_LINE}></td>
-              <td style={BLANK_LINE}></td>
-              <td style={BLANK_LINE}></td>
-              <td style={BLANK_LINE}></td>
+              <td style={BLANK_LINE}></td><td style={BLANK_LINE}></td><td style={BLANK_LINE}></td><td style={BLANK_LINE}></td><td style={BLANK_LINE}></td>
             </tr>
           </tbody>
         </table>
@@ -561,18 +480,11 @@ export default function SumulaPage() {
         {/* MOVIMENTO DO PLACAR */}
         <div style={SECTION_TITLE}>MOVIMENTO DO PLACAR</div>
         <div style={{ display: 'flex', gap: '0px' }}>
-          {/* 1º Tempo */}
           <div style={{ flex: 1 }}>
             <table style={TABLE_STYLE}>
               <thead>
-                <tr>
-                  <td colSpan={3} style={{ ...HEADER_CELL, backgroundColor: '#d0d0d0' }}>1° TEMPO</td>
-                </tr>
-                <tr>
-                  <td style={HEADER_CELL}>JOGADOR</td>
-                  <td style={HEADER_CELL}>EQUIPE</td>
-                  <td style={{ ...HEADER_CELL, width: '40px' }}>MIN</td>
-                </tr>
+                <tr><td colSpan={3} style={{ ...HEADER_CELL, backgroundColor: '#d0d0d0' }}>1° TEMPO</td></tr>
+                <tr><td style={HEADER_CELL}>JOGADOR</td><td style={HEADER_CELL}>EQUIPE</td><td style={{ ...HEADER_CELL, width: '40px' }}>MIN</td></tr>
               </thead>
               <tbody>
                 {goals1TRows.map((r, i) => (
@@ -585,18 +497,11 @@ export default function SumulaPage() {
               </tbody>
             </table>
           </div>
-          {/* 2º Tempo */}
           <div style={{ flex: 1 }}>
             <table style={TABLE_STYLE}>
               <thead>
-                <tr>
-                  <td colSpan={3} style={{ ...HEADER_CELL, backgroundColor: '#d0d0d0' }}>2° TEMPO</td>
-                </tr>
-                <tr>
-                  <td style={HEADER_CELL}>JOGADOR</td>
-                  <td style={HEADER_CELL}>EQUIPE</td>
-                  <td style={{ ...HEADER_CELL, width: '40px' }}>MIN</td>
-                </tr>
+                <tr><td colSpan={3} style={{ ...HEADER_CELL, backgroundColor: '#d0d0d0' }}>2° TEMPO</td></tr>
+                <tr><td style={HEADER_CELL}>JOGADOR</td><td style={HEADER_CELL}>EQUIPE</td><td style={{ ...HEADER_CELL, width: '40px' }}>MIN</td></tr>
               </thead>
               <tbody>
                 {goals2TRows.map((r, i) => (
@@ -666,23 +571,17 @@ export default function SumulaPage() {
         <table style={TABLE_STYLE}>
           <tbody>
             {Array.from({ length: 5 }).map((_, i) => (
-              <tr key={i}>
-                <td style={BLANK_LINE}>{i === 0 && match.observations ? match.observations : ''}</td>
-              </tr>
+              <tr key={i}><td style={BLANK_LINE}>{i === 0 && match.observations ? match.observations : ''}</td></tr>
             ))}
           </tbody>
         </table>
 
         {/* RELATÓRIO COMPLEMENTAR */}
-        <div style={{ ...SECTION_TITLE, marginTop: '8px' }}>
-          RELATORIO COMPLEMENTAR DO ARBITRO (se necessario, usar folha anexa)
-        </div>
+        <div style={{ ...SECTION_TITLE, marginTop: '8px' }}>RELATORIO COMPLEMENTAR DO ARBITRO (se necessario, usar folha anexa)</div>
         <table style={TABLE_STYLE}>
           <tbody>
             {Array.from({ length: 4 }).map((_, i) => (
-              <tr key={i}>
-                <td style={BLANK_LINE}></td>
-              </tr>
+              <tr key={i}><td style={BLANK_LINE}></td></tr>
             ))}
           </tbody>
         </table>
@@ -691,23 +590,17 @@ export default function SumulaPage() {
         <div style={{ marginTop: '12px', display: 'flex', gap: '20px' }}>
           <div style={{ flex: 1 }}>
             <div style={{ borderBottom: '1px solid #000', height: '30px' }}></div>
-            <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>
-              ASSINATURA DO ARBITRO
-            </div>
+            <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>ASSINATURA DO ARBITRO</div>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ borderBottom: '1px solid #000', height: '30px' }}></div>
-                <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>
-                  DATA DA ENTREGA
-                </div>
+                <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>DATA DA ENTREGA</div>
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ borderBottom: '1px solid #000', height: '30px' }}></div>
-                <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>
-                  HORA DA ENTREGA
-                </div>
+                <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>HORA DA ENTREGA</div>
               </div>
             </div>
           </div>
@@ -717,21 +610,15 @@ export default function SumulaPage() {
         <div style={{ marginTop: '10px', display: 'flex', gap: '20px' }}>
           <div style={{ flex: 1 }}>
             <div style={{ borderBottom: '1px solid #000', height: '30px' }}></div>
-            <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>
-              REPR. {match.home_team_name?.toUpperCase()}
-            </div>
+            <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>REPR. {match.home_team_name?.toUpperCase()}</div>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ borderBottom: '1px solid #000', height: '30px' }}></div>
-            <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>
-              REPR. {match.away_team_name?.toUpperCase()}
-            </div>
+            <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>REPR. {match.away_team_name?.toUpperCase()}</div>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ borderBottom: '1px solid #000', height: '30px' }}></div>
-            <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>
-              DELEGADO / COMISSARIO
-            </div>
+            <div style={{ textAlign: 'center', fontSize: '8px', fontWeight: 'bold', marginTop: '2px' }}>DELEGADO / COMISSARIO</div>
           </div>
         </div>
 

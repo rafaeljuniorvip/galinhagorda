@@ -2,17 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Chip, TablePagination,
-  TextField, MenuItem, Alert, Avatar,
-} from '@mui/material';
-import {
-  Delete, CheckCircle, Cancel, PushPin, PushPinOutlined,
-} from '@mui/icons-material';
+import { Trash2, CheckCircle, XCircle, Pin, PinOff } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { FanMessage } from '@/types';
 import { formatDateTime } from '@/lib/utils';
+import PageHeader from '@/components/admin/PageHeader';
+import Pagination from '@/components/admin/Pagination';
+import StatusBadge from '@/components/admin/StatusBadge';
 import MobileActionsMenu from '@/components/admin/MobileActionsMenu';
 
 const TARGET_TYPE_LABELS: Record<string, string> = {
@@ -27,17 +29,15 @@ export default function AdminMensagensPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<FanMessage[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
-  const [approvedFilter, setApprovedFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [approvedFilter, setApprovedFilter] = useState('all');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    if (!loading && !isAdmin) router.push('/admin/login');
-  }, [isAdmin, loading, router]);
+  useEffect(() => { if (!loading && !isAdmin) router.push('/admin/login'); }, [isAdmin, loading, router]);
 
   const loadMessages = useCallback(async () => {
-    const params = new URLSearchParams({ all: 'true', page: String(page + 1), limit: '20' });
+    const params = new URLSearchParams({ all: 'true', page: String(page), limit: '20' });
     if (approvedFilter === 'approved') params.set('approved', 'true');
     if (approvedFilter === 'pending') params.set('approved', 'false');
     const res = await fetch(`/api/messages?${params}`);
@@ -48,165 +48,105 @@ export default function AdminMensagensPage() {
     }
   }, [page, approvedFilter]);
 
-  useEffect(() => {
-    if (user) loadMessages();
-  }, [user, loadMessages]);
+  useEffect(() => { if (user) loadMessages(); }, [user, loadMessages]);
 
   const handleToggleApproval = async (id: string) => {
-    setError('');
-    setSuccess('');
-    const res = await fetch(`/api/messages/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'toggleApproval' }),
-    });
-    if (res.ok) {
-      setSuccess('Status atualizado!');
-      loadMessages();
-    } else {
-      setError('Erro ao atualizar status');
-    }
+    setError(''); setSuccess('');
+    const res = await fetch(`/api/messages/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'toggleApproval' }) });
+    if (res.ok) { setSuccess('Status atualizado!'); loadMessages(); } else { setError('Erro ao atualizar status'); }
   };
 
   const handleTogglePin = async (id: string) => {
-    setError('');
-    setSuccess('');
-    const res = await fetch(`/api/messages/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'togglePin' }),
-    });
-    if (res.ok) {
-      setSuccess('Fixacao atualizada!');
-      loadMessages();
-    } else {
-      setError('Erro ao atualizar fixacao');
-    }
+    setError(''); setSuccess('');
+    const res = await fetch(`/api/messages/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'togglePin' }) });
+    if (res.ok) { setSuccess('Fixacao atualizada!'); loadMessages(); } else { setError('Erro ao atualizar fixacao'); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta mensagem?')) return;
     const res = await fetch(`/api/messages/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setSuccess('Mensagem excluida!');
-      loadMessages();
-    } else {
-      setError('Erro ao excluir mensagem');
-    }
+    if (res.ok) { setSuccess('Mensagem excluida!'); loadMessages(); } else { setError('Erro ao excluir mensagem'); }
   };
 
   if (loading || !isAdmin) return null;
 
   return (
-    <Box>
-      <Typography variant="h4" fontWeight={700} gutterBottom>Moderacao de Mensagens</Typography>
+    <div>
+      <PageHeader title="Moderacao de Mensagens" />
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert variant="destructive" className="mb-4"><AlertDescription>{error}</AlertDescription></Alert>}
+      {success && <Alert className="mb-4 border-green-200 bg-green-50 text-green-800"><AlertDescription>{success}</AlertDescription></Alert>}
 
-      <Box sx={{ mb: 2 }}>
-        <TextField
-          select
-          label="Filtro"
-          size="small"
-          value={approvedFilter}
-          onChange={(e) => { setApprovedFilter(e.target.value); setPage(0); }}
-          sx={{ width: { xs: '100%', md: 200 } }}
-        >
-          <MenuItem value="">Todas</MenuItem>
-          <MenuItem value="pending">Pendentes</MenuItem>
-          <MenuItem value="approved">Aprovadas</MenuItem>
-        </TextField>
-      </Box>
+      <div className="mb-4">
+        <Select value={approvedFilter} onValueChange={(v) => { setApprovedFilter(v); setPage(1); }}>
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="Filtro" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="pending">Pendentes</SelectItem>
+            <SelectItem value="approved">Aprovadas</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      <TableContainer component={Paper}>
+      <Card>
         <Table>
-          <TableHead>
+          <TableHeader>
             <TableRow>
-              <TableCell>Autor</TableCell>
-              <TableCell>Mensagem</TableCell>
-              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Alvo</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Data</TableCell>
-              <TableCell align="right">Acoes</TableCell>
+              <TableHead>Autor</TableHead>
+              <TableHead>Mensagem</TableHead>
+              <TableHead className="hidden md:table-cell">Alvo</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="hidden md:table-cell">Data</TableHead>
+              <TableHead className="text-right">Acoes</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {messages.map((msg) => (
-              <TableRow key={msg.id} hover sx={{ bgcolor: !msg.is_approved ? '#fff8e1' : undefined }}>
+              <TableRow key={msg.id} className={!msg.is_approved ? 'bg-amber-50' : ''}>
                 <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Avatar src={msg.author_avatar || ''} sx={{ width: 32, height: 32, fontSize: 14 }}>
-                      {msg.author_name[0]}
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={msg.author_avatar || ''} />
+                      <AvatarFallback className="text-xs">{msg.author_name[0]}</AvatarFallback>
                     </Avatar>
-                    <Typography variant="body2" fontWeight={500}>{msg.author_name}</Typography>
-                  </Box>
+                    <span className="text-sm font-medium">{msg.author_name}</span>
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" sx={{ maxWidth: { xs: 150, md: 300 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {msg.message}
-                  </Typography>
+                  <p className="text-sm max-w-[150px] md:max-w-[300px] truncate">{msg.message}</p>
                 </TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                  <Chip
-                    label={TARGET_TYPE_LABELS[msg.target_type] || msg.target_type}
-                    size="small"
-                    variant="outlined"
-                  />
+                <TableCell className="hidden md:table-cell">
+                  <Badge variant="outline">{TARGET_TYPE_LABELS[msg.target_type] || msg.target_type}</Badge>
                 </TableCell>
                 <TableCell>
-                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                    <Chip
-                      label={msg.is_approved ? 'Aprovada' : 'Pendente'}
-                      size="small"
-                      color={msg.is_approved ? 'success' : 'warning'}
-                    />
-                    {msg.is_pinned && <Chip label="Fixada" size="small" color="primary" />}
-                  </Box>
+                  <div className="flex gap-1 flex-wrap">
+                    <StatusBadge status={msg.is_approved ? 'Aprovada' : 'Pendente'} />
+                    {msg.is_pinned && <Badge className="bg-blue-100 text-blue-800 border-blue-200">Fixada</Badge>}
+                  </div>
                 </TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                  <Typography variant="caption">{formatDateTime(msg.created_at)}</Typography>
-                </TableCell>
-                <TableCell align="right">
+                <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{formatDateTime(msg.created_at)}</TableCell>
+                <TableCell className="text-right">
                   <MobileActionsMenu actions={[
-                    {
-                      label: msg.is_approved ? 'Reprovar' : 'Aprovar',
-                      icon: msg.is_approved ? <Cancel fontSize="small" /> : <CheckCircle fontSize="small" />,
-                      color: msg.is_approved ? 'error' : 'success',
-                      onClick: () => handleToggleApproval(msg.id),
-                    },
-                    {
-                      label: msg.is_pinned ? 'Desfixar' : 'Fixar',
-                      icon: msg.is_pinned ? <PushPin fontSize="small" /> : <PushPinOutlined fontSize="small" />,
-                      color: msg.is_pinned ? 'primary' : 'inherit',
-                      onClick: () => handleTogglePin(msg.id),
-                    },
-                    { label: 'Excluir', icon: <Delete fontSize="small" />, color: 'error', onClick: () => handleDelete(msg.id) },
+                    { label: msg.is_approved ? 'Reprovar' : 'Aprovar', icon: msg.is_approved ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />, color: msg.is_approved ? 'error' : 'success', onClick: () => handleToggleApproval(msg.id) },
+                    { label: msg.is_pinned ? 'Desfixar' : 'Fixar', icon: msg.is_pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />, color: msg.is_pinned ? 'primary' : 'inherit', onClick: () => handleTogglePin(msg.id) },
+                    { label: 'Excluir', icon: <Trash2 className="h-4 w-4" />, color: 'error', onClick: () => handleDelete(msg.id) },
                   ]} />
                 </TableCell>
               </TableRow>
             ))}
             {messages.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">Nenhuma mensagem encontrada</Typography>
-                </TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma mensagem encontrada</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
         {total > 20 && (
-          <TablePagination
-            component="div"
-            count={total}
-            page={page}
-            onPageChange={(_, p) => setPage(p)}
-            rowsPerPage={20}
-            rowsPerPageOptions={[20]}
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-          />
+          <Pagination page={page} totalPages={Math.ceil(total / 20)} total={total} limit={20} onPageChange={setPage} />
         )}
-      </TableContainer>
-    </Box>
+      </Card>
+    </div>
   );
 }

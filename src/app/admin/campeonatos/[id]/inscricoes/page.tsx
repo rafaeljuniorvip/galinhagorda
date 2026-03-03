@@ -2,22 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import {
-  Box, Typography, Button, Card, CardContent, Grid, MenuItem, TextField,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  IconButton, Avatar, Chip, Alert, Divider, Dialog, DialogTitle, DialogContent, DialogActions,
-} from '@mui/material';
-import { ArrowBack, PersonAdd, Delete, GroupAdd, SwapHoriz } from '@mui/icons-material';
-import { useMediaQuery, useTheme } from '@mui/material';
+import { UsersRound, UserPlus, Trash2, ArrowLeftRight } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
+import PageHeader from '@/components/admin/PageHeader';
 
 export default function InscricoesPage() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading, isAdmin } = useAuth();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [championship, setChampionship] = useState<any>(null);
   const [enrolledTeams, setEnrolledTeams] = useState<any[]>([]);
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -59,44 +61,28 @@ export default function InscricoesPage() {
 
   const enrollTeam = async () => {
     setError(''); setSuccess('');
-    const res = await fetch(`/api/championships/${params.id}/registrations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'team', team_id: selectedTeam }),
-    });
+    const res = await fetch(`/api/championships/${params.id}/registrations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'team', team_id: selectedTeam }) });
     if (res.ok) { setSuccess('Time inscrito!'); setTeamDialogOpen(false); setSelectedTeam(''); loadData(); }
     else { const d = await res.json(); setError(d.error); }
   };
 
   const registerPlayer = async () => {
     setError(''); setSuccess('');
-    const res = await fetch(`/api/championships/${params.id}/registrations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player_id: selectedPlayer, team_id: selectedPlayerTeam }),
-    });
+    const res = await fetch(`/api/championships/${params.id}/registrations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player_id: selectedPlayer, team_id: selectedPlayerTeam }) });
     if (res.ok) { setSuccess('Jogador inscrito (BID gerado)!'); setPlayerDialogOpen(false); setSelectedPlayer(''); setSelectedPlayerTeam(''); loadData(); }
     else { const d = await res.json(); setError(d.error); }
   };
 
   const removeTeamEnrollment = async (teamId: string, name: string) => {
     if (!confirm(`Remover time "${name}" do campeonato?`)) return;
-    await fetch(`/api/championships/${params.id}/registrations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'remove_team', team_id: teamId }),
-    });
+    await fetch(`/api/championships/${params.id}/registrations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'remove_team', team_id: teamId }) });
     loadData();
   };
 
   const removePlayerRegistration = async (registrationId: string, playerName: string) => {
     if (!confirm(`Remover inscrição de "${playerName}"?`)) return;
     setError(''); setSuccess('');
-    const res = await fetch(`/api/championships/${params.id}/registrations`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ registration_id: registrationId }),
-    });
+    const res = await fetch(`/api/championships/${params.id}/registrations`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ registration_id: registrationId }) });
     if (res.ok) { setSuccess('Inscrição removida!'); loadData(); }
     else { const d = await res.json(); setError(d.error); }
   };
@@ -110,11 +96,7 @@ export default function InscricoesPage() {
   const swapTeam = async () => {
     if (!swapRegistration || !swapNewTeam) return;
     setError(''); setSuccess('');
-    const res = await fetch(`/api/championships/${params.id}/registrations`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ registration_id: swapRegistration.id, team_id: swapNewTeam }),
-    });
+    const res = await fetch(`/api/championships/${params.id}/registrations`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ registration_id: swapRegistration.id, team_id: swapNewTeam }) });
     if (res.ok) { setSuccess('Time do jogador atualizado!'); setSwapDialogOpen(false); setSwapRegistration(null); loadData(); }
     else { const d = await res.json(); setError(d.error); }
   };
@@ -129,135 +111,171 @@ export default function InscricoesPage() {
   });
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Button component={Link} href="/admin/campeonatos" startIcon={<ArrowBack />} color="inherit">Voltar</Button>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>Inscricoes - BID</Typography>
-          <Typography variant="body2" color="text.secondary">{championship.name} ({championship.year})</Typography>
-        </Box>
-      </Box>
+    <div>
+      <PageHeader title="Inscricoes - BID" backHref="/admin/campeonatos">
+        <p className="text-sm text-muted-foreground">{championship.name} ({championship.year})</p>
+      </PageHeader>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert variant="destructive" className="mb-4"><AlertDescription>{error}</AlertDescription></Alert>}
+      {success && <Alert className="mb-4 border-green-200 bg-green-50 text-green-800"><AlertDescription>{success}</AlertDescription></Alert>}
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Button variant="contained" startIcon={<GroupAdd />} onClick={() => setTeamDialogOpen(true)}>Inscrever Time</Button>
-        <Button variant="outlined" startIcon={<PersonAdd />} onClick={() => setPlayerDialogOpen(true)} disabled={enrolledTeams.length === 0}>Inscrever Jogador</Button>
-      </Box>
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <Button onClick={() => setTeamDialogOpen(true)}><UsersRound className="h-4 w-4 mr-1" />Inscrever Time</Button>
+        <Button variant="outline" onClick={() => setPlayerDialogOpen(true)} disabled={enrolledTeams.length === 0}><UserPlus className="h-4 w-4 mr-1" />Inscrever Jogador</Button>
+      </div>
 
-      <Typography variant="h6" gutterBottom>Times Inscritos ({enrolledTeams.length})</Typography>
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <h3 className="font-semibold text-lg mb-2">Times Inscritos ({enrolledTeams.length})</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
         {enrolledTeams.map((t: any) => (
-          <Grid item xs={6} md={3} key={t.team_id}>
-            <Card>
-              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 2 }}>
-                <Avatar src={t.team_logo || ''} sx={{ width: 32, height: 32 }}>{t.team_name?.[0]}</Avatar>
-                <Typography variant="body2" fontWeight={600} sx={{ flex: 1 }}>{t.team_name}</Typography>
-                <IconButton size="small" color="error" onClick={() => removeTeamEnrollment(t.team_id, t.team_name)}><Delete fontSize="small" /></IconButton>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Card key={t.team_id}>
+            <CardContent className="flex items-center gap-2 p-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={t.team_logo || ''} />
+                <AvatarFallback>{t.team_name?.[0]}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-semibold flex-1 truncate">{t.team_name}</span>
+              <button onClick={() => removeTeamEnrollment(t.team_id, t.team_name)} className="p-1 rounded hover:bg-accent text-destructive"><Trash2 className="h-4 w-4" /></button>
+            </CardContent>
+          </Card>
         ))}
-        {enrolledTeams.length === 0 && <Grid item xs={12}><Typography color="text.secondary">Nenhum time inscrito</Typography></Grid>}
-      </Grid>
+        {enrolledTeams.length === 0 && <p className="col-span-full text-muted-foreground text-sm">Nenhum time inscrito</p>}
+      </div>
 
-      <Divider sx={{ mb: 3 }} />
+      <Separator className="mb-4" />
 
-      <Typography variant="h6" gutterBottom>Jogadores Inscritos ({registrations.length})</Typography>
+      <h3 className="font-semibold text-lg mb-2">Jogadores Inscritos ({registrations.length})</h3>
       {Object.entries(regsByTeam).map(([teamName, regs]) => (
-        <Box key={teamName} sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, color: 'primary.main' }}>{teamName}</Typography>
-          <TableContainer component={Paper}>
-            <Table size="small">
-              <TableHead>
+        <div key={teamName} className="mb-4">
+          <p className="font-semibold text-primary mb-1">{teamName}</p>
+          <Card>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell>Jogador</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Posicao</TableCell>
-                  <TableCell>N BID</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Ações</TableCell>
+                  <TableHead>Jogador</TableHead>
+                  <TableHead className="hidden md:table-cell">Posicao</TableHead>
+                  <TableHead>N BID</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-center">Acoes</TableHead>
                 </TableRow>
-              </TableHead>
+              </TableHeader>
               <TableBody>
                 {regs.map((r: any) => (
-                  <TableRow key={r.id} hover>
+                  <TableRow key={r.id}>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar src={r.player_photo || ''} sx={{ width: 28, height: 28 }}>{r.player_name?.[0]}</Avatar>
-                        <Typography variant="body2">{r.player_name}</Typography>
-                      </Box>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-7 w-7 text-xs">
+                          <AvatarImage src={r.player_photo || ''} />
+                          <AvatarFallback>{r.player_name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">{r.player_name}</span>
+                      </div>
                     </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{r.player_position}</TableCell>
-                    <TableCell><Chip label={r.bid_number} size="small" variant="outlined" /></TableCell>
-                    <TableCell><Chip label={r.status} size="small" color={r.status === 'Ativo' ? 'success' : 'default'} /></TableCell>
-                    <TableCell align="center">
-                      <IconButton size="small" color="primary" title="Trocar time" onClick={() => openSwapDialog(r)}><SwapHoriz fontSize="small" /></IconButton>
-                      <IconButton size="small" color="error" title="Remover inscrição" onClick={() => removePlayerRegistration(r.id, r.player_name)}><Delete fontSize="small" /></IconButton>
+                    <TableCell className="hidden md:table-cell">{r.player_position}</TableCell>
+                    <TableCell><Badge variant="outline">{r.bid_number}</Badge></TableCell>
+                    <TableCell>
+                      <Badge className={r.status === 'Ativo' ? 'bg-green-100 text-green-800 border-green-200' : ''} variant="outline">{r.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <button onClick={() => openSwapDialog(r)} className="p-1.5 rounded hover:bg-accent text-primary" title="Trocar time"><ArrowLeftRight className="h-4 w-4" /></button>
+                      <button onClick={() => removePlayerRegistration(r.id, r.player_name)} className="p-1.5 rounded hover:bg-accent text-destructive" title="Remover inscricao"><Trash2 className="h-4 w-4" /></button>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
-        </Box>
+          </Card>
+        </div>
       ))}
 
       {/* Dialog: Inscrever Time */}
-      <Dialog open={teamDialogOpen} onClose={() => setTeamDialogOpen(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
-        <DialogTitle>Inscrever Time</DialogTitle>
+      <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
         <DialogContent>
-          <TextField select label="Selecione o Time" fullWidth value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} sx={{ mt: 1 }}>
-            {allTeams.filter(t => !enrolledTeams.find(et => et.team_id === t.id)).map(t => (
-              <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
-            ))}
-          </TextField>
+          <DialogHeader>
+            <DialogTitle>Inscrever Time</DialogTitle>
+            <DialogDescription>Selecione o time para inscrever no campeonato.</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label>Time</Label>
+            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+              <SelectTrigger><SelectValue placeholder="Selecione o time" /></SelectTrigger>
+              <SelectContent>
+                {allTeams.filter(t => !enrolledTeams.find(et => et.team_id === t.id)).map(t => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTeamDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={enrollTeam} disabled={!selectedTeam}>Inscrever</Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTeamDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={enrollTeam} disabled={!selectedTeam}>Inscrever</Button>
-        </DialogActions>
       </Dialog>
 
       {/* Dialog: Inscrever Jogador */}
-      <Dialog open={playerDialogOpen} onClose={() => setPlayerDialogOpen(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
-        <DialogTitle>Inscrever Jogador (BID)</DialogTitle>
+      <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
         <DialogContent>
-          <TextField select label="Time" fullWidth value={selectedPlayerTeam} onChange={(e) => setSelectedPlayerTeam(e.target.value)} sx={{ mt: 1, mb: 2 }}>
-            {enrolledTeams.map(t => <MenuItem key={t.team_id} value={t.team_id}>{t.team_name}</MenuItem>)}
-          </TextField>
-          <TextField select label="Jogador" fullWidth value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)}>
-            {allPlayers.filter(p => !registrations.find(r => r.player_id === p.id)).map(p => (
-              <MenuItem key={p.id} value={p.id}>{p.full_name || p.name} - {p.position}</MenuItem>
-            ))}
-          </TextField>
+          <DialogHeader>
+            <DialogTitle>Inscrever Jogador (BID)</DialogTitle>
+            <DialogDescription>Selecione o time e o jogador para gerar o BID.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label>Time</Label>
+              <Select value={selectedPlayerTeam} onValueChange={setSelectedPlayerTeam}>
+                <SelectTrigger><SelectValue placeholder="Selecione o time" /></SelectTrigger>
+                <SelectContent>
+                  {enrolledTeams.map(t => <SelectItem key={t.team_id} value={t.team_id}>{t.team_name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Jogador</Label>
+              <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
+                <SelectTrigger><SelectValue placeholder="Selecione o jogador" /></SelectTrigger>
+                <SelectContent>
+                  {allPlayers.filter(p => !registrations.find(r => r.player_id === p.id)).map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.full_name || p.name} - {p.position}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlayerDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={registerPlayer} disabled={!selectedPlayer || !selectedPlayerTeam}>Inscrever</Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPlayerDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={registerPlayer} disabled={!selectedPlayer || !selectedPlayerTeam}>Inscrever</Button>
-        </DialogActions>
       </Dialog>
 
       {/* Dialog: Trocar Time */}
-      <Dialog open={swapDialogOpen} onClose={() => setSwapDialogOpen(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
-        <DialogTitle>Trocar Time do Jogador</DialogTitle>
+      <Dialog open={swapDialogOpen} onOpenChange={setSwapDialogOpen}>
         <DialogContent>
-          {swapRegistration && (
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Jogador: <strong>{swapRegistration.player_name}</strong> (atual: {swapRegistration.team_name})
-            </Typography>
-          )}
-          <TextField select label="Novo Time" fullWidth value={swapNewTeam} onChange={(e) => setSwapNewTeam(e.target.value)} sx={{ mt: 1 }}>
-            {enrolledTeams.filter(t => t.team_id !== swapRegistration?.team_id).map(t => (
-              <MenuItem key={t.team_id} value={t.team_id}>{t.team_name}</MenuItem>
-            ))}
-          </TextField>
+          <DialogHeader>
+            <DialogTitle>Trocar Time do Jogador</DialogTitle>
+            {swapRegistration && (
+              <DialogDescription>
+                Jogador: <strong>{swapRegistration.player_name}</strong> (atual: {swapRegistration.team_name})
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="py-2">
+            <Label>Novo Time</Label>
+            <Select value={swapNewTeam} onValueChange={setSwapNewTeam}>
+              <SelectTrigger><SelectValue placeholder="Selecione o novo time" /></SelectTrigger>
+              <SelectContent>
+                {enrolledTeams.filter(t => t.team_id !== swapRegistration?.team_id).map(t => (
+                  <SelectItem key={t.team_id} value={t.team_id}>{t.team_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSwapDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={swapTeam} disabled={!swapNewTeam}>Trocar</Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSwapDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={swapTeam} disabled={!swapNewTeam}>Trocar</Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 }

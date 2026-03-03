@@ -1,7 +1,7 @@
-import { Container, Typography, Box, Grid, Card, CardContent, CardActionArea, Avatar } from '@mui/material';
 import type { Metadata } from 'next';
 import { getAllTeams } from '@/services/teamService';
 import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,43 +11,53 @@ export default async function TimesPage() {
   const teams = await getAllTeams();
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" fontWeight={700} gutterBottom>Times</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Times participantes dos campeonatos
-      </Typography>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-1 h-7 bg-[#1a237e] rounded-full" />
+        <div>
+          <h1 className="text-2xl font-bold text-[#0d1b2a]">Times</h1>
+          <p className="text-sm text-muted-foreground">Times participantes dos campeonatos</p>
+        </div>
+      </div>
 
-      <Grid container spacing={2}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {teams.map((team) => (
-          <Grid item xs={6} sm={4} md={3} key={team.id}>
-            <Card sx={{ height: '100%' }}>
-              <CardActionArea component={Link} href={`/times/${team.id}`} sx={{ height: '100%' }}>
-                <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                  <Avatar
-                    src={team.logo_url || ''}
-                    sx={{ width: 72, height: 72, mx: 'auto', mb: 1.5, bgcolor: team.primary_color || '#1976d2', fontSize: 28 }}
+          <Link key={team.id} href={`/times/${team.id}`} className="group">
+            <div className="h-full rounded-lg overflow-hidden border border-border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+              {/* Team color accent bar */}
+              <div
+                className="h-1.5"
+                style={{ backgroundColor: team.primary_color || '#1a237e' }}
+              />
+
+              {/* Content */}
+              <div className="bg-white text-center py-6 px-4">
+                <Avatar
+                  className="h-[76px] w-[76px] mx-auto mb-3 ring-2 ring-border"
+                  style={{ backgroundColor: team.primary_color || 'hsl(var(--primary))' }}
+                >
+                  <AvatarImage src={team.logo_url || ''} />
+                  <AvatarFallback
+                    className="text-white text-2xl font-bold"
+                    style={{ backgroundColor: team.primary_color || 'hsl(var(--primary))' }}
                   >
                     {team.short_name?.[0] || team.name[0]}
-                  </Avatar>
-                  <Typography variant="subtitle1" fontWeight={700} noWrap>{team.name}</Typography>
-                  {team.short_name && (
-                    <Typography variant="caption" color="text.secondary">{team.short_name}</Typography>
-                  )}
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    {team.city}/{team.state}
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Grid>
+                  </AvatarFallback>
+                </Avatar>
+                <p className="font-bold text-[#0d1b2a] leading-tight">{team.name}</p>
+                {team.short_name && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{team.short_name}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">{team.city}/{team.state}</p>
+              </div>
+            </div>
+          </Link>
         ))}
-      </Grid>
+      </div>
 
       {teams.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography color="text.secondary">Nenhum time cadastrado</Typography>
-        </Box>
+        <p className="text-center py-12 text-muted-foreground">Nenhum time cadastrado</p>
       )}
-    </Container>
+    </div>
   );
 }

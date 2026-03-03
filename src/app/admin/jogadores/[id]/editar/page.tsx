@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CircularProgress, Box } from '@mui/material';
+import { Loader2 } from 'lucide-react';
 import PlayerForm from '@/components/admin/PlayerForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { Player } from '@/types';
@@ -28,7 +28,7 @@ export default function EditarJogadorPage() {
   }, [params.id, user]);
 
   if (loading || authLoading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
+    return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
 
   if (!player) return null;

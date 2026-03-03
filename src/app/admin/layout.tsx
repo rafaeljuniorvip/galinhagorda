@@ -1,24 +1,25 @@
 'use client';
 
-import { Box } from '@mui/material';
 import { SessionProvider } from 'next-auth/react';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import AdminHeader from '@/components/layout/AdminHeader';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { Toaster } from 'sonner';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <AuthProvider>
-        <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+        <div className="flex min-h-screen bg-background">
           <AdminSidebar />
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="flex-1 flex flex-col overflow-hidden">
             <AdminHeader />
-            <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 }, overflow: 'auto' }}>
+            <main className="flex-1 p-4 md:p-6 overflow-auto">
               {children}
-            </Box>
-          </Box>
-        </Box>
+            </main>
+          </div>
+        </div>
+        <Toaster richColors position="top-right" />
       </AuthProvider>
     </SessionProvider>
   );

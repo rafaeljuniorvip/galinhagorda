@@ -6,10 +6,10 @@ import { getRegistrationsByPlayer } from '@/services/registrationService';
 import { getPublicPhotos } from '@/services/photoPublicService';
 import PlayerBIDProfile from '@/components/public/PlayerBIDProfile';
 import PhotoGallery from '@/components/public/PhotoGallery';
-import {
-  Box, Container, Typography, Card, CardContent, Button, Divider, Grid,
-} from '@mui/material';
-import { Instagram, Forum, SportsSoccer, Style, Block } from '@mui/icons-material';
+import { CircleDot, CreditCard, Ban, MessageSquare, Instagram } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import FanWall from '@/components/public/FanWall';
 
 export const dynamic = 'force-dynamic';
@@ -39,121 +39,103 @@ export default async function PlayerProfilePage({ params }: Props) {
   ]);
 
   return (
-    <Box>
+    <div>
       <PlayerBIDProfile
         player={player}
         stats={stats}
         registrations={registrations}
       />
 
-      {/* Additional sections below the BID profile */}
-      <Container maxWidth="lg" sx={{ pb: 4 }}>
+      <div className="max-w-7xl mx-auto px-4 pb-8">
         {/* Bio Section */}
         {player.bio && (
-          <Box sx={{ mb: 4 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
-              SOBRE O JOGADOR
-            </Typography>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="body1" sx={{ lineHeight: 1.8, color: '#444' }}>
-                  {player.bio}
-                </Typography>
+          <div className="mb-6">
+            <Separator className="mb-6" />
+            <h2 className="text-xl font-bold mb-3 text-[#1a237e]">SOBRE O JOGADOR</h2>
+            <Card>
+              <CardContent className="p-4">
+                <p className="leading-7 text-muted-foreground">{player.bio}</p>
               </CardContent>
             </Card>
-          </Box>
+          </div>
         )}
 
         {/* Instagram Link */}
         {player.instagram && (
-          <Box sx={{ mb: 4 }}>
+          <div className="mb-6">
             <Button
-              component="a"
-              href={player.instagram.startsWith('http') ? player.instagram : `https://instagram.com/${player.instagram.replace('@', '')}`}
-              target="_blank"
-              rel="noopener"
-              startIcon={<Instagram />}
-              variant="outlined"
-              sx={{
-                color: '#E4405F',
-                borderColor: '#E4405F',
-                '&:hover': { bgcolor: '#E4405F', color: 'white', borderColor: '#E4405F' },
-              }}
+              variant="outline"
+              asChild
+              className="border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white"
             >
-              {player.instagram.startsWith('http') ? 'Ver Instagram' : player.instagram}
+              <a
+                href={player.instagram.startsWith('http') ? player.instagram : `https://instagram.com/${player.instagram.replace('@', '')}`}
+                target="_blank"
+                rel="noopener"
+              >
+                <Instagram className="h-4 w-4 mr-2" />
+                {player.instagram.startsWith('http') ? 'Ver Instagram' : player.instagram}
+              </a>
             </Button>
-          </Box>
+          </div>
         )}
 
         {/* Career Stats */}
         {(careerStats.total_matches > 0 || careerStats.total_goals > 0) && (
-          <Box sx={{ mb: 4 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#1a237e' }}>
-              NUMEROS NA CARREIRA
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
-                <Card variant="outlined" sx={{ textAlign: 'center' }}>
-                  <CardContent>
-                    <SportsSoccer sx={{ color: '#1976d2', fontSize: 32 }} />
-                    <Typography variant="h4" fontWeight={800} sx={{ color: '#1a237e' }}>{careerStats.total_matches}</Typography>
-                    <Typography variant="caption" color="text.secondary">Partidas</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Card variant="outlined" sx={{ textAlign: 'center' }}>
-                  <CardContent>
-                    <SportsSoccer sx={{ color: '#2e7d32', fontSize: 32 }} />
-                    <Typography variant="h4" fontWeight={800} sx={{ color: '#2e7d32' }}>{careerStats.total_goals}</Typography>
-                    <Typography variant="caption" color="text.secondary">Gols</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Card variant="outlined" sx={{ textAlign: 'center' }}>
-                  <CardContent>
-                    <Style sx={{ color: '#ffd600', fontSize: 32 }} />
-                    <Typography variant="h4" fontWeight={800} sx={{ color: '#ed6c02' }}>{careerStats.total_yellow_cards}</Typography>
-                    <Typography variant="caption" color="text.secondary">Amarelos</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Card variant="outlined" sx={{ textAlign: 'center' }}>
-                  <CardContent>
-                    <Block sx={{ color: '#d32f2f', fontSize: 32 }} />
-                    <Typography variant="h4" fontWeight={800} sx={{ color: '#d32f2f' }}>{careerStats.total_red_cards}</Typography>
-                    <Typography variant="caption" color="text.secondary">Vermelhos</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </Box>
+          <div className="mb-6">
+            <Separator className="mb-6" />
+            <h2 className="text-xl font-bold mb-3 text-[#1a237e]">NUMEROS NA CARREIRA</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Card className="text-center">
+                <CardContent className="p-4">
+                  <CircleDot className="h-8 w-8 text-blue-600 mx-auto mb-1" />
+                  <p className="text-3xl font-extrabold text-[#1a237e]">{careerStats.total_matches}</p>
+                  <p className="text-xs text-muted-foreground">Partidas</p>
+                </CardContent>
+              </Card>
+              <Card className="text-center">
+                <CardContent className="p-4">
+                  <CircleDot className="h-8 w-8 text-green-600 mx-auto mb-1" />
+                  <p className="text-3xl font-extrabold text-green-700">{careerStats.total_goals}</p>
+                  <p className="text-xs text-muted-foreground">Gols</p>
+                </CardContent>
+              </Card>
+              <Card className="text-center">
+                <CardContent className="p-4">
+                  <CreditCard className="h-8 w-8 text-yellow-500 mx-auto mb-1" />
+                  <p className="text-3xl font-extrabold text-orange-600">{careerStats.total_yellow_cards}</p>
+                  <p className="text-xs text-muted-foreground">Amarelos</p>
+                </CardContent>
+              </Card>
+              <Card className="text-center">
+                <CardContent className="p-4">
+                  <Ban className="h-8 w-8 text-red-600 mx-auto mb-1" />
+                  <p className="text-3xl font-extrabold text-red-600">{careerStats.total_red_cards}</p>
+                  <p className="text-xs text-muted-foreground">Vermelhos</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
 
         {/* Photo Gallery */}
         {photos.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            <Divider sx={{ mb: 3 }} />
+          <div className="mb-6">
+            <Separator className="mb-6" />
             <PhotoGallery photos={photos} title="FOTOS" />
-          </Box>
+          </div>
         )}
 
         {/* Fan Wall */}
-        <Box sx={{ mb: 4 }}>
-          <Divider sx={{ mb: 3 }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Forum sx={{ color: '#1a237e' }} />
-            <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
-              MURAL DO TORCEDOR
-            </Typography>
-          </Box>
+        <div className="mb-6">
+          <Separator className="mb-6" />
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="h-6 w-6 text-[#1a237e]" />
+            <h2 className="text-xl font-bold text-[#1a237e]">MURAL DO TORCEDOR</h2>
+          </div>
           <FanWall targetType="player" targetId={params.id} />
-        </Box>
-      </Container>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

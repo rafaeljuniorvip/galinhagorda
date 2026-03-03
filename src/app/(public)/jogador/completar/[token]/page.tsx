@@ -1,12 +1,22 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import {
-  Box, Typography, TextField, Button, Paper, Avatar, Alert,
-  CircularProgress, MenuItem, Container, InputAdornment, Grid,
-} from '@mui/material';
-import { CheckCircle, CloudUpload, Instagram, Person } from '@mui/icons-material';
 import { useParams } from 'next/navigation';
+import { CheckCircle, Upload, Instagram, User, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Player } from '@/types';
 
 type PageState = 'loading' | 'error' | 'form' | 'success';
@@ -46,7 +56,6 @@ export default function CompletarPerfilPage() {
     try {
       let photo_url = player.photo_url || null;
 
-      // Upload photo first if selected
       if (photoFile) {
         const formData = new FormData();
         formData.append('file', photoFile);
@@ -91,201 +100,189 @@ export default function CompletarPerfilPage() {
 
   if (state === 'loading') {
     return (
-      <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
-        <CircularProgress />
-        <Typography sx={{ mt: 2 }} color="text.secondary">Carregando...</Typography>
-      </Container>
+      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+        <p className="text-muted-foreground mt-3">Carregando...</p>
+      </div>
     );
   }
 
   if (state === 'error') {
     return (
-      <Container maxWidth="sm" sx={{ py: 8 }}>
-        <Alert severity="error" sx={{ justifyContent: 'center' }}>
-          Link inválido ou expirado. Solicite um novo link ao administrador.
+      <div className="max-w-lg mx-auto px-4 py-16">
+        <Alert variant="destructive" className="justify-center">
+          <AlertDescription>
+            Link invalido ou expirado. Solicite um novo link ao administrador.
+          </AlertDescription>
         </Alert>
-      </Container>
+      </div>
     );
   }
 
   if (state === 'success') {
     return (
-      <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
-        <CheckCircle sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
-        <Typography variant="h5" fontWeight={700} gutterBottom>
-          Perfil atualizado!
-        </Typography>
-        <Typography color="text.secondary">
+      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+        <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-3" />
+        <h2 className="text-xl font-bold mb-1">Perfil atualizado!</h2>
+        <p className="text-muted-foreground">
           Seus dados foram salvos com sucesso. Obrigado por completar seu perfil.
-        </Typography>
-      </Container>
+        </p>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper sx={{ p: { xs: 2, sm: 4 } }}>
-        {/* Header with player info */}
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Person sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-          <Typography variant="h5" fontWeight={700}>
-            Completar Perfil
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {player.full_name || player.name} &mdash; {player.position}
-          </Typography>
-        </Box>
+    <div className="max-w-lg mx-auto px-4 py-8">
+      <Card>
+        <CardContent className="p-4 sm:p-6">
+          {/* Header */}
+          <div className="text-center mb-4">
+            <User className="h-10 w-10 text-blue-600 mx-auto mb-2" />
+            <h1 className="text-xl font-bold">Completar Perfil</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {player.full_name || player.name} &mdash; {player.position}
+            </p>
+          </div>
 
-        <form onSubmit={handleSubmit}>
-          {/* Photo */}
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Avatar
-              src={photoPreview || ''}
-              sx={{ width: 100, height: 100, mx: 'auto', mb: 1, fontSize: 40 }}
-            >
-              {player.name?.[0]}
-            </Avatar>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              hidden
-              onChange={handlePhotoChange}
-            />
-            <Button
-              size="small"
-              startIcon={<CloudUpload />}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {photoPreview ? 'Trocar foto' : 'Enviar foto'}
-            </Button>
-          </Box>
-
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                label="Apelido"
-                fullWidth
-                size="small"
-                value={player.nickname || ''}
-                onChange={(e) => setPlayer({ ...player, nickname: e.target.value })}
+          <form onSubmit={handleSubmit}>
+            {/* Photo */}
+            <div className="text-center mb-4">
+              <Avatar className="h-[100px] w-[100px] mx-auto mb-2 text-4xl">
+                <AvatarImage src={photoPreview || ''} />
+                <AvatarFallback>{player.name?.[0]}</AvatarFallback>
+              </Avatar>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                hidden
+                onChange={handlePhotoChange}
               />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Data de Nascimento"
-                type="date"
-                fullWidth
-                size="small"
-                InputLabelProps={{ shrink: true }}
-                value={player.birth_date ? String(player.birth_date).substring(0, 10) : ''}
-                onChange={(e) => setPlayer({ ...player, birth_date: e.target.value })}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Pé Dominante"
-                select
-                fullWidth
-                size="small"
-                value={player.dominant_foot || ''}
-                onChange={(e) => setPlayer({ ...player, dominant_foot: e.target.value })}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
               >
-                <MenuItem value="">Não informado</MenuItem>
-                <MenuItem value="Direito">Direito</MenuItem>
-                <MenuItem value="Esquerdo">Esquerdo</MenuItem>
-                <MenuItem value="Ambidestro">Ambidestro</MenuItem>
-              </TextField>
-            </Grid>
+                <Upload className="h-4 w-4 mr-1" />
+                {photoPreview ? 'Trocar foto' : 'Enviar foto'}
+              </Button>
+            </div>
 
-            <Grid item xs={6}>
-              <TextField
-                label="Altura (cm)"
-                type="number"
-                fullWidth
-                size="small"
-                value={player.height || ''}
-                onChange={(e) => setPlayer({ ...player, height: e.target.value ? Number(e.target.value) : null })}
-              />
-            </Grid>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <Label htmlFor="nickname">Apelido</Label>
+                <Input
+                  id="nickname"
+                  value={player.nickname || ''}
+                  onChange={(e) => setPlayer({ ...player, nickname: e.target.value })}
+                />
+              </div>
 
-            <Grid item xs={6}>
-              <TextField
-                label="Peso (kg)"
-                type="number"
-                fullWidth
-                size="small"
-                value={player.weight || ''}
-                onChange={(e) => setPlayer({ ...player, weight: e.target.value ? Number(e.target.value) : null })}
-              />
-            </Grid>
+              <div>
+                <Label htmlFor="birth_date">Data de Nascimento</Label>
+                <Input
+                  id="birth_date"
+                  type="date"
+                  value={player.birth_date ? String(player.birth_date).substring(0, 10) : ''}
+                  onChange={(e) => setPlayer({ ...player, birth_date: e.target.value })}
+                />
+              </div>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Cidade"
-                fullWidth
-                size="small"
-                value={player.city || ''}
-                onChange={(e) => setPlayer({ ...player, city: e.target.value })}
-              />
-            </Grid>
+              <div>
+                <Label>Pe Dominante</Label>
+                <Select
+                  value={player.dominant_foot || '__none__'}
+                  onValueChange={(val) => setPlayer({ ...player, dominant_foot: val === '__none__' ? '' : val })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nao informado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nao informado</SelectItem>
+                    <SelectItem value="Direito">Direito</SelectItem>
+                    <SelectItem value="Esquerdo">Esquerdo</SelectItem>
+                    <SelectItem value="Ambidestro">Ambidestro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Estado"
-                fullWidth
-                size="small"
-                value={player.state || ''}
-                onChange={(e) => setPlayer({ ...player, state: e.target.value })}
-              />
-            </Grid>
+              <div>
+                <Label htmlFor="height">Altura (cm)</Label>
+                <Input
+                  id="height"
+                  type="number"
+                  value={player.height || ''}
+                  onChange={(e) => setPlayer({ ...player, height: e.target.value ? Number(e.target.value) : null })}
+                />
+              </div>
 
-            <Grid item xs={12}>
-              <TextField
-                label="Instagram"
-                fullWidth
-                size="small"
-                placeholder="@seuusuario"
-                value={player.instagram || ''}
-                onChange={(e) => setPlayer({ ...player, instagram: e.target.value })}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Instagram fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+              <div>
+                <Label htmlFor="weight">Peso (kg)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  value={player.weight || ''}
+                  onChange={(e) => setPlayer({ ...player, weight: e.target.value ? Number(e.target.value) : null })}
+                />
+              </div>
 
-            <Grid item xs={12}>
-              <TextField
-                label="Bio"
-                fullWidth
-                size="small"
-                multiline
-                rows={3}
-                placeholder="Conte um pouco sobre você..."
-                value={player.bio || ''}
-                onChange={(e) => setPlayer({ ...player, bio: e.target.value })}
-              />
-            </Grid>
-          </Grid>
+              <div>
+                <Label htmlFor="city">Cidade</Label>
+                <Input
+                  id="city"
+                  value={player.city || ''}
+                  onChange={(e) => setPlayer({ ...player, city: e.target.value })}
+                />
+              </div>
 
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            size="large"
-            disabled={saving}
-            sx={{ mt: 3 }}
-          >
-            {saving ? <CircularProgress size={24} /> : 'Salvar Perfil'}
-          </Button>
-        </form>
-      </Paper>
-    </Container>
+              <div>
+                <Label htmlFor="state">Estado</Label>
+                <Input
+                  id="state"
+                  value={player.state || ''}
+                  onChange={(e) => setPlayer({ ...player, state: e.target.value })}
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <Label htmlFor="instagram">Instagram</Label>
+                <div className="relative">
+                  <Instagram className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="instagram"
+                    className="pl-9"
+                    placeholder="@seuusuario"
+                    value={player.instagram || ''}
+                    onChange={(e) => setPlayer({ ...player, instagram: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  rows={3}
+                  placeholder="Conte um pouco sobre voce..."
+                  value={player.bio || ''}
+                  onChange={(e) => setPlayer({ ...player, bio: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full mt-4"
+              size="lg"
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+              {saving ? 'Salvando...' : 'Salvar Perfil'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

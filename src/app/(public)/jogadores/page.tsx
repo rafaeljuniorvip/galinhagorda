@@ -1,4 +1,3 @@
-import { Container, Typography, Box } from '@mui/material';
 import type { Metadata } from 'next';
 import PlayersListClient from '@/components/public/PlayersListClient';
 
@@ -9,14 +8,12 @@ export const metadata: Metadata = {
 
 export default function JogadoresPage() {
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Jogadores
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-1">Jogadores</h1>
+      <p className="text-sm text-muted-foreground mb-6">
         Consulte o perfil e estatisticas dos atletas inscritos
-      </Typography>
+      </p>
       <PlayersListClient />
-    </Container>
+    </div>
   );
 }

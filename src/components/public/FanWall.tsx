@@ -1,23 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Avatar,
-  Card,
-  CardContent,
-  Chip,
-  Skeleton,
-  Divider,
-  Alert,
-  Snackbar,
-} from '@mui/material';
-import CampaignIcon from '@mui/icons-material/Campaign';
-import SendIcon from '@mui/icons-material/Send';
-import PushPinIcon from '@mui/icons-material/PushPin';
+import { Megaphone, Send, Pin } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/cn';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { FanMessage } from '@/types';
 import LikeButton from './LikeButton';
 
@@ -51,11 +44,6 @@ export default function FanWall({ targetType, targetId }: Props) {
   const [sending, setSending] = useState(false);
   const [authorName, setAuthorName] = useState('');
   const [messageText, setMessageText] = useState('');
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
 
   const LIMIT = 10;
 
@@ -97,7 +85,7 @@ export default function FanWall({ targetType, targetId }: Props) {
   const handleSend = async () => {
     if (!messageText.trim()) return;
     if (!authorName.trim()) {
-      setSnackbar({ open: true, message: 'Por favor, informe seu nome', severity: 'error' });
+      toast.error('Por favor, informe seu nome');
       return;
     }
 
@@ -116,16 +104,16 @@ export default function FanWall({ targetType, targetId }: Props) {
 
       if (res.ok) {
         setMessageText('');
-        setSnackbar({ open: true, message: 'Mensagem publicada!', severity: 'success' });
+        toast.success('Mensagem publicada!');
         // Refresh messages
         setPage(1);
         await fetchMessages(1);
       } else {
         const json = await res.json();
-        setSnackbar({ open: true, message: json.error || 'Erro ao enviar mensagem', severity: 'error' });
+        toast.error(json.error || 'Erro ao enviar mensagem');
       }
     } catch {
-      setSnackbar({ open: true, message: 'Erro ao enviar mensagem', severity: 'error' });
+      toast.error('Erro ao enviar mensagem');
     } finally {
       setSending(false);
     }
@@ -134,224 +122,145 @@ export default function FanWall({ targetType, targetId }: Props) {
   const hasMore = messages.length < total;
 
   return (
-    <Box
-      sx={{
-        bgcolor: '#fff',
-        borderRadius: 3,
-        overflow: 'hidden',
-        border: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
+    <div className="bg-white rounded-xl overflow-hidden border border-border">
       {/* Header */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-          px: { xs: 2, md: 3 },
-          py: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-        }}
+      <div
+        className="px-4 md:px-6 py-4 flex items-center gap-2"
+        style={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)' }}
       >
-        <CampaignIcon sx={{ color: '#fff', fontSize: 28 }} />
-        <Typography
-          variant="h6"
-          sx={{
-            color: '#fff',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-            fontSize: { xs: '0.95rem', sm: '1.1rem' },
-          }}
-        >
+        <Megaphone className="h-7 w-7 text-white" />
+        <h3 className="text-white font-extrabold uppercase tracking-wide text-[0.95rem] sm:text-lg">
           Mural da Torcida
-        </Typography>
+        </h3>
         {total > 0 && (
-          <Chip
-            label={total}
-            size="small"
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.2)',
-              color: '#fff',
-              fontWeight: 700,
-              ml: 'auto',
-            }}
-          />
+          <Badge className="ml-auto bg-white/20 text-white font-bold border-0 hover:bg-white/30">
+            {total}
+          </Badge>
         )}
-      </Box>
+      </div>
 
       {/* Input form */}
-      <Box sx={{ px: { xs: 2, md: 3 }, py: 2, bgcolor: '#fafafa', borderBottom: '1px solid', borderColor: 'divider' }}>
-        <TextField
-          fullWidth
-          size="small"
+      <div className="px-4 md:px-6 py-4 bg-[#fafafa] border-b border-border">
+        <Input
           placeholder="Seu nome"
           value={authorName}
           onChange={(e) => setAuthorName(e.target.value)}
-          sx={{ mb: 1.5 }}
-          inputProps={{ maxLength: 50 }}
+          maxLength={50}
+          className="mb-3"
         />
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-          <TextField
-            fullWidth
-            multiline
-            minRows={2}
-            maxRows={4}
+        <div className="flex gap-2 items-start">
+          <Textarea
             placeholder="Deixe sua mensagem para a torcida..."
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            inputProps={{ maxLength: 280 }}
-            size="small"
+            maxLength={280}
+            rows={2}
+            className="min-h-[60px] resize-none"
           />
           <Button
-            variant="contained"
             onClick={handleSend}
             disabled={sending || !messageText.trim()}
-            sx={{
-              minWidth: 48,
-              height: 48,
-              bgcolor: '#1976d2',
-              '&:hover': { bgcolor: '#1565c0' },
-            }}
+            className="min-w-[48px] h-12 bg-[#1976d2] hover:bg-[#1565c0]"
+            size="icon"
           >
-            <SendIcon />
+            <Send className="h-5 w-5" />
           </Button>
-        </Box>
-        <Typography
-          variant="caption"
-          sx={{
-            color: messageText.length > 260 ? '#e53935' : 'text.secondary',
-            mt: 0.5,
-            display: 'block',
-            textAlign: 'right',
-          }}
+        </div>
+        <span
+          className={cn(
+            'text-xs mt-1 block text-right',
+            messageText.length > 260 ? 'text-[#e53935]' : 'text-muted-foreground'
+          )}
         >
           {messageText.length}/280
-        </Typography>
-      </Box>
+        </span>
+      </div>
 
       {/* Messages */}
-      <Box sx={{ px: { xs: 2, md: 3 }, py: 1 }}>
+      <div className="px-4 md:px-6 py-2">
         {loading ? (
           [1, 2, 3].map((i) => (
-            <Box key={i} sx={{ py: 1.5 }}>
-              <Box sx={{ display: 'flex', gap: 1.5, mb: 1 }}>
-                <Skeleton variant="circular" width={36} height={36} />
-                <Box sx={{ flex: 1 }}>
-                  <Skeleton variant="text" width={120} height={20} />
-                  <Skeleton variant="text" width="80%" height={18} />
-                  <Skeleton variant="text" width="50%" height={18} />
-                </Box>
-              </Box>
-              {i < 3 && <Divider />}
-            </Box>
+            <div key={i} className="py-3">
+              <div className="flex gap-3 mb-2">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-[120px] mb-1" />
+                  <Skeleton className="h-4 w-[80%] mb-1" />
+                  <Skeleton className="h-4 w-[50%]" />
+                </div>
+              </div>
+              {i < 3 && <Separator />}
+            </div>
           ))
         ) : messages.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <CampaignIcon sx={{ fontSize: 48, color: 'rgba(0,0,0,0.1)', mb: 1 }} />
-            <Typography variant="body2" color="text.secondary">
+          <div className="text-center py-8">
+            <Megaphone className="h-12 w-12 text-black/10 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
               Nenhuma mensagem ainda. Seja o primeiro a comentar!
-            </Typography>
-          </Box>
+            </p>
+          </div>
         ) : (
           <>
             {messages.map((msg, idx) => (
-              <Box key={msg.id}>
-                <Box sx={{ py: 1.5 }}>
+              <div key={msg.id}>
+                <div className="py-3">
                   {msg.is_pinned && (
-                    <Chip
-                      icon={<PushPinIcon sx={{ fontSize: 14 }} />}
-                      label="Fixada"
-                      size="small"
-                      sx={{
-                        mb: 1,
-                        height: 22,
-                        fontSize: '0.65rem',
-                        bgcolor: 'rgba(25,118,210,0.08)',
-                        color: '#1976d2',
-                        '& .MuiChip-icon': { color: '#1976d2' },
-                      }}
-                    />
-                  )}
-                  <Box sx={{ display: 'flex', gap: 1.5 }}>
-                    <Avatar
-                      src={msg.author_avatar || ''}
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        bgcolor: '#1976d2',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                      }}
+                    <Badge
+                      variant="secondary"
+                      className="mb-2 h-[22px] text-[0.65rem] bg-[#1976d2]/8 text-[#1976d2] border-0"
                     >
-                      {msg.author_name?.[0]?.toUpperCase()}
+                      <Pin className="h-3.5 w-3.5 mr-1 text-[#1976d2]" />
+                      Fixada
+                    </Badge>
+                  )}
+                  <div className="flex gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={msg.author_avatar || ''} />
+                      <AvatarFallback className="bg-[#1976d2] text-white text-xs font-bold">
+                        {msg.author_name?.[0]?.toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.25 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#333' }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-sm font-bold text-[#333]">
                           {msg.author_name}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        </span>
+                        <span className="text-xs text-muted-foreground">
                           {timeAgo(msg.created_at)}
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#555',
-                          lineHeight: 1.5,
-                          wordBreak: 'break-word',
-                        }}
-                      >
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#555] leading-relaxed break-words">
                         {msg.message}
-                      </Typography>
-                      <Box sx={{ mt: 0.5 }}>
+                      </p>
+                      <div className="mt-1">
                         <LikeButton
                           messageId={msg.id}
                           initialCount={msg.likes_count}
                         />
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
-                {idx < messages.length - 1 && <Divider />}
-              </Box>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {idx < messages.length - 1 && <Separator />}
+              </div>
             ))}
 
             {/* Load more */}
             {hasMore && (
-              <Box sx={{ textAlign: 'center', py: 2 }}>
+              <div className="text-center py-4">
                 <Button
-                  variant="text"
+                  variant="ghost"
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  sx={{ color: '#1976d2', fontWeight: 600 }}
+                  className="text-[#1976d2] font-semibold hover:text-[#1565c0]"
                 >
                   {loadingMore ? 'Carregando...' : 'Carregar mais'}
                 </Button>
-              </Box>
+              </div>
             )}
           </>
         )}
-      </Box>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      </div>
+    </div>
   );
 }

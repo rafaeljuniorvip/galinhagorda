@@ -1,29 +1,22 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Trophy, CheckCircle, Vote, Timer } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/cn';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Box,
-  Typography,
-  Button,
-  Card,
-  CardContent,
-  Avatar,
-  Grid,
-  TextField,
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
-  Chip,
-  LinearProgress,
-  Skeleton,
-  Alert,
-  Snackbar,
-} from '@mui/material';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import HowToVoteIcon from '@mui/icons-material/HowToVote';
-import TimerIcon from '@mui/icons-material/Timer';
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { VoteResult } from '@/types';
 
 interface MatchPlayer {
@@ -86,12 +79,12 @@ function CountdownTimer({ deadline }: { deadline: string }) {
   }, [deadline]);
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      <TimerIcon sx={{ fontSize: 18, color: '#ffd600' }} />
-      <Typography variant="body2" sx={{ color: '#ffd600', fontWeight: 600 }}>
+    <div className="flex items-center gap-1">
+      <Timer className="h-[18px] w-[18px] text-[#ffd600]" />
+      <span className="text-sm text-[#ffd600] font-semibold">
         {timeLeft}
-      </Typography>
-    </Box>
+      </span>
+    </div>
   );
 }
 
@@ -102,11 +95,6 @@ export default function MatchVoting({ matchId }: Props) {
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [voterName, setVoterName] = useState('');
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
 
   const fetchData = useCallback(async () => {
     try {
@@ -150,13 +138,13 @@ export default function MatchVoting({ matchId }: Props) {
       const json = await res.json();
 
       if (res.ok) {
-        setSnackbar({ open: true, message: json.message, severity: 'success' });
+        toast.success(json.message);
         await fetchData();
       } else {
-        setSnackbar({ open: true, message: json.error, severity: 'error' });
+        toast.error(json.error);
       }
     } catch {
-      setSnackbar({ open: true, message: 'Erro ao registrar voto', severity: 'error' });
+      toast.error('Erro ao registrar voto');
     } finally {
       setVoting(false);
       setVoterName('');
@@ -166,20 +154,17 @@ export default function MatchVoting({ matchId }: Props) {
 
   if (loading) {
     return (
-      <Box sx={{
-        background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)',
-        borderRadius: 3,
-        p: 3,
-      }}>
-        <Skeleton variant="text" width={200} height={40} sx={{ bgcolor: 'rgba(255,255,255,0.1)' }} />
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+      <div
+        className="rounded-xl p-6"
+        style={{ background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)' }}
+      >
+        <Skeleton className="h-10 w-[200px] bg-white/10" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
           {[1, 2, 3, 4].map((i) => (
-            <Grid item xs={6} sm={4} md={3} key={i}>
-              <Skeleton variant="rounded" height={140} sx={{ bgcolor: 'rgba(255,255,255,0.1)' }} />
-            </Grid>
+            <Skeleton key={i} className="h-[140px] rounded-lg bg-white/10" />
           ))}
-        </Grid>
-      </Box>
+        </div>
+      </div>
     );
   }
 
@@ -195,248 +180,174 @@ export default function MatchVoting({ matchId }: Props) {
   });
 
   return (
-    <Box
-      sx={{
-        background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)',
-        borderRadius: 3,
-        p: { xs: 2, md: 3 },
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+    <div
+      className="rounded-xl p-4 md:p-6 relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)' }}
     >
       {/* Background decoration */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,214,0,0.08) 0%, transparent 70%)',
-        }}
+      <div
+        className="absolute -top-[50px] -right-[50px] w-[200px] h-[200px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(255,214,0,0.08) 0%, transparent 70%)' }}
       />
 
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5, flexWrap: 'wrap', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <EmojiEventsIcon sx={{ color: '#ffd600', fontSize: 32 }} />
-          <Typography
-            variant="h6"
-            sx={{
-              color: '#fff',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: 1,
-            }}
-          >
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <Trophy className="h-8 w-8 text-[#ffd600]" />
+          <h3 className="text-lg text-white font-extrabold uppercase tracking-wide">
             Craque do Jogo
-          </Typography>
-        </Box>
+          </h3>
+        </div>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <div className="flex items-center gap-3">
           {status.isOpen && status.deadline && (
             <CountdownTimer deadline={status.deadline} />
           )}
-          <Chip
-            label={status.isOpen ? 'Votacao Aberta' : 'Votacao Encerrada'}
-            size="small"
-            sx={{
-              bgcolor: status.isOpen ? 'rgba(76,175,80,0.2)' : 'rgba(255,255,255,0.1)',
-              color: status.isOpen ? '#66bb6a' : 'rgba(255,255,255,0.5)',
-              fontWeight: 600,
-              border: status.isOpen ? '1px solid rgba(76,175,80,0.3)' : '1px solid rgba(255,255,255,0.1)',
-            }}
-          />
-        </Box>
-      </Box>
+          <Badge
+            className={cn(
+              'font-semibold border',
+              status.isOpen
+                ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                : 'bg-white/10 text-white/50 border-white/10'
+            )}
+          >
+            {status.isOpen ? 'Votacao Aberta' : 'Votacao Encerrada'}
+          </Badge>
+        </div>
+      </div>
 
       {status.totalVotes > 0 && (
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 2 }}>
+        <p className="text-sm text-white/50 mb-4">
           {status.totalVotes} {status.totalVotes === 1 ? 'voto' : 'votos'} registrados
-        </Typography>
+        </p>
       )}
 
       {/* Voting Open State */}
       {status.isOpen && !userVotedFor && (
         <>
           {Object.entries(teamGroups).map(([teamId, teamPlayers]) => (
-            <Box key={teamId} sx={{ mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <Avatar
-                  src={teamPlayers[0]?.team_logo || ''}
-                  sx={{ width: 24, height: 24 }}
-                >
-                  {teamPlayers[0]?.team_name?.[0]}
+            <div key={teamId} className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={teamPlayers[0]?.team_logo || ''} />
+                  <AvatarFallback className="text-[10px]">
+                    {teamPlayers[0]?.team_name?.[0]}
+                  </AvatarFallback>
                 </Avatar>
-                <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                <span className="text-sm text-white/70 font-semibold">
                   {teamPlayers[0]?.team_name}
-                </Typography>
-              </Box>
-              <Grid container spacing={1.5}>
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {teamPlayers.map((player) => (
-                  <Grid item xs={6} sm={4} md={3} key={player.player_id}>
-                    <Card
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 2,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          bgcolor: 'rgba(255,214,0,0.1)',
-                          borderColor: 'rgba(255,214,0,0.3)',
-                          transform: 'translateY(-2px)',
-                        },
-                      }}
-                      onClick={() => handleVoteClick(player.player_id)}
-                    >
-                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
-                        <Avatar
-                          src={player.player_photo || ''}
-                          sx={{
-                            width: 48,
-                            height: 48,
-                            mx: 'auto',
-                            mb: 1,
-                            border: '2px solid rgba(255,214,0,0.3)',
-                          }}
-                        >
-                          {player.player_name?.[0]}
-                        </Avatar>
-                        {player.shirt_number && (
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: '#ffd600',
-                              fontWeight: 800,
-                              fontSize: '0.65rem',
-                            }}
-                          >
-                            #{player.shirt_number}
-                          </Typography>
-                        )}
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: '#fff',
-                            fontWeight: 600,
-                            fontSize: '0.75rem',
-                            lineHeight: 1.2,
-                            mb: 0.5,
-                          }}
-                          noWrap
-                        >
-                          {player.player_name}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem' }}
-                        >
-                          {player.position}
-                        </Typography>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<HowToVoteIcon sx={{ fontSize: 14 }} />}
-                          disabled={voting}
-                          sx={{
-                            mt: 1,
-                            width: '100%',
-                            fontSize: '0.65rem',
-                            py: 0.3,
-                            color: '#ffd600',
-                            borderColor: 'rgba(255,214,0,0.4)',
-                            '&:hover': {
-                              borderColor: '#ffd600',
-                              bgcolor: 'rgba(255,214,0,0.1)',
-                            },
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleVoteClick(player.player_id);
-                          }}
-                        >
-                          Votar
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                  <div
+                    key={player.player_id}
+                    className="bg-white/5 border border-white/10 rounded-lg cursor-pointer transition-all duration-200 hover:bg-[#ffd600]/10 hover:border-[#ffd600]/30 hover:-translate-y-0.5"
+                    onClick={() => handleVoteClick(player.player_id)}
+                  >
+                    <div className="p-3 text-center">
+                      <Avatar className="h-12 w-12 mx-auto mb-2 border-2 border-[#ffd600]/30">
+                        <AvatarImage src={player.player_photo || ''} />
+                        <AvatarFallback>{player.player_name?.[0]}</AvatarFallback>
+                      </Avatar>
+                      {player.shirt_number && (
+                        <span className="text-[0.65rem] text-[#ffd600] font-extrabold">
+                          #{player.shirt_number}
+                        </span>
+                      )}
+                      <p className="text-[0.75rem] text-white font-semibold leading-tight mb-1 truncate">
+                        {player.player_name}
+                      </p>
+                      <span className="text-[0.65rem] text-white/40">
+                        {player.position}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={voting}
+                        className="mt-2 w-full text-[0.65rem] py-1 h-7 text-[#ffd600] border-[#ffd600]/40 bg-transparent hover:border-[#ffd600] hover:bg-[#ffd600]/10 hover:text-[#ffd600]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVoteClick(player.player_id);
+                        }}
+                      >
+                        <Vote className="h-3.5 w-3.5 mr-1" />
+                        Votar
+                      </Button>
+                    </div>
+                  </div>
                 ))}
-              </Grid>
-            </Box>
+              </div>
+            </div>
           ))}
         </>
       )}
 
       {/* User already voted */}
       {status.isOpen && userVotedFor && (
-        <Box sx={{ textAlign: 'center', py: 2 }}>
-          <CheckCircleIcon sx={{ fontSize: 48, color: '#66bb6a', mb: 1 }} />
-          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, mb: 1 }}>
+        <div className="text-center py-4">
+          <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-2" />
+          <h3 className="text-lg text-white font-bold mb-2">
             Voto registrado!
-          </Typography>
+          </h3>
           {(() => {
             const votedPlayer = (players || []).find((p) => p.player_id === userVotedFor);
             if (!votedPlayer) return null;
             return (
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
-                <Avatar src={votedPlayer.player_photo || ''} sx={{ width: 40, height: 40 }}>
-                  {votedPlayer.player_name?.[0]}
+              <div className="flex items-center justify-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={votedPlayer.player_photo || ''} />
+                  <AvatarFallback>{votedPlayer.player_name?.[0]}</AvatarFallback>
                 </Avatar>
-                <Box>
-                  <Typography variant="body1" sx={{ color: '#fff', fontWeight: 600 }}>
+                <div>
+                  <p className="text-base text-white font-semibold">
                     {votedPlayer.player_name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                  </p>
+                  <span className="text-xs text-white/50">
                     {votedPlayer.team_name}
-                  </Typography>
-                </Box>
-              </Box>
+                  </span>
+                </div>
+              </div>
             );
           })()}
 
           {/* Show partial results after voting */}
           {results.length > 0 && (
-            <Box sx={{ mt: 3, textAlign: 'left' }}>
-              <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 1.5, textAlign: 'center' }}>
+            <div className="mt-6 text-left">
+              <p className="text-sm text-white/60 mb-3 text-center">
                 Resultados parciais
-              </Typography>
+              </p>
               {results.slice(0, 5).map((r, idx) => (
-                <Box key={r.player_id} sx={{ mb: 1.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)', width: 20, fontWeight: 700 }}>
+                <div key={r.player_id} className="mb-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm text-white/40 w-5 font-bold">
                       {idx + 1}.
-                    </Typography>
-                    <Avatar src={r.player_photo || ''} sx={{ width: 24, height: 24 }}>
-                      {r.player_name?.[0]}
+                    </span>
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={r.player_photo || ''} />
+                      <AvatarFallback className="text-[10px]">{r.player_name?.[0]}</AvatarFallback>
                     </Avatar>
-                    <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600, flex: 1 }} noWrap>
+                    <p className="text-sm text-white font-semibold flex-1 truncate">
                       {r.player_name}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: '#ffd600', fontWeight: 700 }}>
+                    </p>
+                    <span className="text-xs text-[#ffd600] font-bold">
                       {r.percentage}%
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={r.percentage}
-                    sx={{
-                      ml: 3.5,
-                      height: 6,
-                      borderRadius: 3,
-                      bgcolor: 'rgba(255,255,255,0.05)',
-                      '& .MuiLinearProgress-bar': {
-                        borderRadius: 3,
-                        bgcolor: idx === 0 ? '#ffd600' : '#1976d2',
-                      },
-                    }}
-                  />
-                </Box>
+                    </span>
+                  </div>
+                  <div className="ml-7 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all',
+                        idx === 0 ? 'bg-[#ffd600]' : 'bg-[#1976d2]'
+                      )}
+                      style={{ width: `${r.percentage}%` }}
+                    />
+                  </div>
+                </div>
               ))}
-            </Box>
+            </div>
           )}
-        </Box>
+        </div>
       )}
 
       {/* Voting Closed - Show Results */}
@@ -446,86 +357,53 @@ export default function MatchVoting({ matchId }: Props) {
 
       {/* No votes */}
       {!status.isOpen && results.length === 0 && (
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', py: 3 }}>
+        <p className="text-sm text-white/40 text-center py-6">
           Nenhum voto registrado para esta partida
-        </Typography>
+        </p>
       )}
 
       {/* Name dialog */}
       <Dialog
         open={showNameDialog}
-        onClose={() => { setShowNameDialog(false); setSelectedPlayer(null); }}
-        PaperProps={{
-          sx: {
-            bgcolor: '#1a237e',
-            color: '#fff',
-            borderRadius: 3,
-            minWidth: 300,
-          },
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowNameDialog(false);
+            setSelectedPlayer(null);
+          }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 700 }}>Confirmar voto</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 2 }}>
-            Insira seu nome para registrar o voto (opcional):
-          </Typography>
-          <TextField
-            fullWidth
+        <DialogContent className="bg-[#1a237e] text-white border-[#1a237e] rounded-xl max-w-[340px]">
+          <DialogHeader>
+            <DialogTitle className="text-white font-bold">Confirmar voto</DialogTitle>
+            <DialogDescription className="text-white/70">
+              Insira seu nome para registrar o voto (opcional):
+            </DialogDescription>
+          </DialogHeader>
+          <Input
             placeholder="Seu nome"
             value={voterName}
             onChange={(e) => setVoterName(e.target.value)}
-            variant="outlined"
-            size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                color: '#fff',
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,214,0,0.5)' },
-                '&.Mui-focused fieldset': { borderColor: '#ffd600' },
-              },
-            }}
+            className="bg-transparent text-white border-white/20 placeholder:text-white/40 focus-visible:ring-[#ffd600] focus-visible:border-[#ffd600]"
           />
+          <DialogFooter className="flex-row justify-end gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => { setShowNameDialog(false); setSelectedPlayer(null); }}
+              className="text-white/50 hover:text-white hover:bg-white/10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmVote}
+              disabled={voting}
+              className="bg-[#ffd600] text-[#1a237e] font-bold hover:bg-[#ffca00]"
+            >
+              {voting ? 'Votando...' : 'Confirmar'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={() => { setShowNameDialog(false); setSelectedPlayer(null); }}
-            sx={{ color: 'rgba(255,255,255,0.5)' }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleConfirmVote}
-            disabled={voting}
-            sx={{
-              bgcolor: '#ffd600',
-              color: '#1a237e',
-              fontWeight: 700,
-              '&:hover': { bgcolor: '#ffca00' },
-            }}
-          >
-            {voting ? 'Votando...' : 'Confirmar'}
-          </Button>
-        </DialogActions>
       </Dialog>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+    </div>
   );
 }
 
@@ -534,18 +412,9 @@ function VotingResultsInline({ results, totalVotes }: { results: VoteResult[]; t
   const rest = results.slice(3);
 
   return (
-    <Box>
+    <div>
       {/* Podium */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'center',
-          gap: { xs: 1, sm: 2 },
-          mb: 3,
-          pt: 2,
-        }}
-      >
+      <div className="flex items-end justify-center gap-2 sm:gap-4 mb-6 pt-4">
         {/* 2nd Place */}
         {top3[1] && (
           <PodiumCard
@@ -570,59 +439,52 @@ function VotingResultsInline({ results, totalVotes }: { results: VoteResult[]; t
             totalVotes={totalVotes}
           />
         )}
-      </Box>
+      </div>
 
       {/* Rest of results */}
       {rest.map((r, idx) => (
-        <Box key={r.player_id} sx={{ mb: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)', width: 24, fontWeight: 700, textAlign: 'center' }}>
+        <div key={r.player_id} className="mb-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm text-white/40 w-6 font-bold text-center">
               {idx + 4}
-            </Typography>
-            <Avatar src={r.player_photo || ''} sx={{ width: 28, height: 28 }}>
-              {r.player_name?.[0]}
+            </span>
+            <Avatar className="h-7 w-7">
+              <AvatarImage src={r.player_photo || ''} />
+              <AvatarFallback className="text-[10px]">{r.player_name?.[0]}</AvatarFallback>
             </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }} noWrap>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white font-semibold truncate">
                 {r.player_name}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+              </p>
+              <span className="text-xs text-white/40">
                 {r.team_name}
-              </Typography>
-            </Box>
-            <Box sx={{ textAlign: 'right' }}>
-              <Typography variant="body2" sx={{ color: '#fff', fontWeight: 700 }}>
+              </span>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-white font-bold">
                 {r.votes}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+              </p>
+              <span className="text-xs text-white/40">
                 {r.percentage}%
-              </Typography>
-            </Box>
-          </Box>
-          <LinearProgress
-            variant="determinate"
-            value={r.percentage}
-            sx={{
-              ml: 4,
-              height: 4,
-              borderRadius: 2,
-              bgcolor: 'rgba(255,255,255,0.05)',
-              '& .MuiLinearProgress-bar': {
-                borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.2)',
-              },
-            }}
-          />
-        </Box>
+              </span>
+            </div>
+          </div>
+          <div className="ml-8 h-1 rounded-full bg-white/5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-white/20 transition-all"
+              style={{ width: `${r.percentage}%` }}
+            />
+          </div>
+        </div>
       ))}
 
       {/* Total */}
-      <Box sx={{ textAlign: 'center', mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+      <div className="text-center mt-4 pt-4 border-t border-white/10">
+        <span className="text-xs text-white/40">
           Total de votos: {totalVotes}
-        </Typography>
-      </Box>
-    </Box>
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -665,80 +527,52 @@ function PodiumCard({
   const config = configs[position];
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: { xs: 100, sm: 120 },
+    <div
+      className="flex flex-col items-center w-[100px] sm:w-[120px] rounded-lg p-3 pt-4 relative"
+      style={{
         minHeight: config.height,
         background: config.bgGradient,
         border: `1px solid ${config.borderColor}`,
-        borderRadius: 2,
-        p: 1.5,
-        pt: 2,
-        position: 'relative',
       }}
     >
       {position === 1 && (
-        <EmojiEventsIcon
-          sx={{
-            position: 'absolute',
-            top: -12,
-            color: '#ffd600',
-            fontSize: 28,
-            filter: 'drop-shadow(0 2px 4px rgba(255,214,0,0.4))',
-          }}
+        <Trophy
+          className="absolute -top-3 h-7 w-7 text-[#ffd600]"
+          style={{ filter: 'drop-shadow(0 2px 4px rgba(255,214,0,0.4))' }}
         />
       )}
-      <Typography
-        variant="caption"
-        sx={{
-          color: config.color,
-          fontWeight: 800,
-          fontSize: position === 1 ? '0.85rem' : '0.7rem',
-          mb: 0.5,
-        }}
+      <span
+        className={cn(
+          'font-extrabold mb-1',
+          position === 1 ? 'text-[0.85rem]' : 'text-[0.7rem]'
+        )}
+        style={{ color: config.color }}
       >
         {config.label}
-      </Typography>
+      </span>
       <Avatar
-        src={result.player_photo || ''}
-        sx={{
+        className="mb-2"
+        style={{
           width: config.avatarSize,
           height: config.avatarSize,
-          mb: 1,
           border: `2px solid ${config.color}`,
         }}
       >
-        {result.player_name?.[0]}
+        <AvatarImage src={result.player_photo || ''} />
+        <AvatarFallback>{result.player_name?.[0]}</AvatarFallback>
       </Avatar>
-      <Typography
-        variant="body2"
-        sx={{
-          color: '#fff',
-          fontWeight: 700,
-          textAlign: 'center',
-          fontSize: '0.75rem',
-          lineHeight: 1.2,
-        }}
-        noWrap
-      >
+      <p className="text-[0.75rem] text-white font-bold text-center leading-tight truncate w-full">
         {result.player_name}
-      </Typography>
-      <Typography
-        variant="caption"
-        sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.6rem', mb: 0.5 }}
-        noWrap
-      >
+      </p>
+      <span className="text-[0.6rem] text-white/40 mb-1 truncate w-full text-center">
         {result.team_name}
-      </Typography>
-      <Typography variant="body1" sx={{ color: config.color, fontWeight: 800, mt: 'auto' }}>
+      </span>
+      <p className="text-base font-extrabold mt-auto" style={{ color: config.color }}>
         {result.votes}
-      </Typography>
-      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem' }}>
+      </p>
+      <span className="text-[0.65rem] text-white/50">
         {result.percentage}%
-      </Typography>
-    </Box>
+      </span>
+    </div>
   );
 }

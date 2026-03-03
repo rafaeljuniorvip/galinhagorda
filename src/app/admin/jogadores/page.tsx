@@ -3,43 +3,40 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, TextField, Chip, TablePagination,
-  Avatar, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert,
-  useMediaQuery, useTheme,
-} from '@mui/material';
-import { Add, Edit, Delete, Search, Link as LinkIcon, ContentCopy } from '@mui/icons-material';
+import { Plus, Pencil, Trash2, Search, Link2, Copy } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Player, PaginatedResponse } from '@/types';
+import { toast } from 'sonner';
+import PageHeader from '@/components/admin/PageHeader';
+import Pagination from '@/components/admin/Pagination';
+import StatusBadge from '@/components/admin/StatusBadge';
 import MobileActionsMenu from '@/components/admin/MobileActionsMenu';
 
 export default function AdminJogadoresPage() {
   const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [players, setPlayers] = useState<PaginatedResponse<Player> | null>(null);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [linkDialog, setLinkDialog] = useState<{ open: boolean; link: string; playerName: string }>({ open: false, link: '', playerName: '' });
   const [linkLoading, setLinkLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
-  useEffect(() => {
-    if (!loading && !isAdmin) router.push('/admin/login');
-  }, [isAdmin, loading, router]);
+  useEffect(() => { if (!loading && !isAdmin) router.push('/admin/login'); }, [isAdmin, loading, router]);
 
   const loadPlayers = useCallback(async () => {
-    const params = new URLSearchParams({ page: String(page + 1), limit: '15' });
+    const params = new URLSearchParams({ page: String(page), limit: '15' });
     if (search) params.set('search', search);
     const res = await fetch(`/api/players?${params}`);
     if (res.ok) setPlayers(await res.json());
   }, [page, search]);
 
-  useEffect(() => {
-    if (user) loadPlayers();
-  }, [user, loadPlayers]);
+  useEffect(() => { if (user) loadPlayers(); }, [user, loadPlayers]);
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Excluir jogador "${name}"?`)) return;
@@ -55,10 +52,10 @@ export default function AdminJogadoresPage() {
         const { link } = await res.json();
         setLinkDialog({ open: true, link, playerName: name });
       } else {
-        setSnackbar({ open: true, message: 'Erro ao gerar link', severity: 'error' });
+        toast.error('Erro ao gerar link');
       }
     } catch {
-      setSnackbar({ open: true, message: 'Erro ao gerar link', severity: 'error' });
+      toast.error('Erro ao gerar link');
     } finally {
       setLinkLoading(false);
     }
@@ -67,130 +64,97 @@ export default function AdminJogadoresPage() {
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(linkDialog.link);
-      setSnackbar({ open: true, message: 'Link copiado!', severity: 'success' });
+      toast.success('Link copiado!');
     } catch {
-      setSnackbar({ open: true, message: 'Erro ao copiar', severity: 'error' });
+      toast.error('Erro ao copiar');
     }
   };
 
   if (loading || !isAdmin) return null;
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" fontWeight={700}>Jogadores</Typography>
-        <Button variant="contained" startIcon={<Add />} component={Link} href="/admin/jogadores/novo">
-          Novo Jogador
-        </Button>
-      </Box>
+    <div>
+      <PageHeader title="Jogadores" action={{ label: 'Novo Jogador', href: '/admin/jogadores/novo', icon: <Plus className="h-4 w-4" /> }} />
 
-      <Box sx={{ mb: 2 }}>
-        <TextField
-          placeholder="Buscar jogador..."
-          size="small"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-          InputProps={{ startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} /> }}
-          sx={{ width: { xs: '100%', md: 300 } }}
-        />
-      </Box>
+      <div className="mb-4">
+        <div className="relative w-full md:w-[300px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar jogador..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
+        </div>
+      </div>
 
-      <TableContainer component={Paper}>
+      <Card>
         <Table>
-          <TableHead>
+          <TableHeader>
             <TableRow>
-              <TableCell>Jogador</TableCell>
-              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Posicao</TableCell>
-              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Cidade</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Acoes</TableCell>
+              <TableHead>Jogador</TableHead>
+              <TableHead className="hidden md:table-cell">Posicao</TableHead>
+              <TableHead className="hidden md:table-cell">Cidade</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Acoes</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {players?.data.map((player) => (
-              <TableRow key={player.id} hover>
+              <TableRow key={player.id}>
                 <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar src={player.photo_url || ''} sx={{ width: 36, height: 36 }}>
-                      {player.name[0]}
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={player.photo_url || ''} alt={player.name} />
+                      <AvatarFallback>{player.name[0]}</AvatarFallback>
                     </Avatar>
-                    <Box>
-                      <Typography variant="body2" fontWeight={600}>{player.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">{player.full_name}</Typography>
-                    </Box>
-                  </Box>
+                    <div>
+                      <span className="font-semibold text-sm">{player.name}</span>
+                      <p className="text-xs text-muted-foreground">{player.full_name}</p>
+                    </div>
+                  </div>
                 </TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{player.position}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{player.city}/{player.state}</TableCell>
-                <TableCell>
-                  <Chip label={player.active ? 'Ativo' : 'Inativo'} size="small"
-                    color={player.active ? 'success' : 'default'} />
-                </TableCell>
-                <TableCell align="right">
+                <TableCell className="hidden md:table-cell">{player.position}</TableCell>
+                <TableCell className="hidden md:table-cell">{player.city}/{player.state}</TableCell>
+                <TableCell><StatusBadge status={player.active ? 'Ativo' : 'Inativo'} /></TableCell>
+                <TableCell className="text-right">
                   <MobileActionsMenu actions={[
-                    { label: 'Gerar link', icon: <LinkIcon fontSize="small" />, color: 'primary', onClick: () => handleGenerateLink(player.id, player.name), disabled: linkLoading },
-                    { label: 'Editar', icon: <Edit fontSize="small" />, href: `/admin/jogadores/${player.id}/editar` },
-                    { label: 'Excluir', icon: <Delete fontSize="small" />, color: 'error', onClick: () => handleDelete(player.id, player.name) },
+                    { label: 'Gerar link', icon: <Link2 className="h-4 w-4" />, color: 'primary', onClick: () => handleGenerateLink(player.id, player.name), disabled: linkLoading },
+                    { label: 'Editar', icon: <Pencil className="h-4 w-4" />, href: `/admin/jogadores/${player.id}/editar` },
+                    { label: 'Excluir', icon: <Trash2 className="h-4 w-4" />, color: 'error', onClick: () => handleDelete(player.id, player.name) },
                   ]} />
                 </TableCell>
               </TableRow>
             ))}
             {players?.data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">Nenhum jogador encontrado</Typography>
-                </TableCell>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhum jogador encontrado</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-        {players && players.total > 15 && (
-          <TablePagination
-            component="div"
-            count={players.total}
-            page={page}
-            onPageChange={(_, p) => setPage(p)}
-            rowsPerPage={15}
-            rowsPerPageOptions={[15]}
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-          />
+        {players && (
+          <Pagination page={page} totalPages={players.totalPages} total={players.total} limit={15} onPageChange={setPage} />
         )}
-      </TableContainer>
+      </Card>
 
-      {/* Link Dialog */}
-      <Dialog open={linkDialog.open} onClose={() => setLinkDialog({ ...linkDialog, open: false })} maxWidth="sm" fullWidth fullScreen={isMobile}>
-        <DialogTitle>Link para Completar Perfil</DialogTitle>
+      <Dialog open={linkDialog.open} onOpenChange={(open) => setLinkDialog({ ...linkDialog, open })}>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Envie este link para <strong>{linkDialog.playerName}</strong> preencher o perfil. O link expira em 7 dias e so pode ser usado uma vez.
-          </Typography>
-          <TextField
-            fullWidth
-            size="small"
+          <DialogHeader>
+            <DialogTitle>Link para Completar Perfil</DialogTitle>
+            <DialogDescription>
+              Envie este link para <strong>{linkDialog.playerName}</strong> preencher o perfil. O link expira em 7 dias e so pode ser usado uma vez.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            readOnly
             value={linkDialog.link}
-            InputProps={{ readOnly: true }}
             onClick={(e) => (e.target as HTMLInputElement).select()}
           />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialog({ ...linkDialog, open: false })}>Fechar</Button>
+            <Button onClick={handleCopyLink}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copiar Link
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLinkDialog({ ...linkDialog, open: false })}>Fechar</Button>
-          <Button variant="contained" startIcon={<ContentCopy />} onClick={handleCopyLink}>
-            Copiar Link
-          </Button>
-        </DialogActions>
       </Dialog>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+    </div>
   );
 }

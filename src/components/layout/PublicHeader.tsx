@@ -1,18 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import {
-  AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer,
-  List, ListItem, ListItemButton, ListItemText, useMediaQuery, useTheme,
-  Avatar, Menu, MenuItem, ListItemIcon, Divider,
-} from '@mui/material';
-import {
-  Menu as MenuIcon, Close, SportsSoccer, Login, Person,
-  Notifications, Logout,
-} from '@mui/icons-material';
+import { Menu, X, CircleDot, LogIn, User, Bell, LogOut } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/cn';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const navItems = [
   { label: 'Inicio', href: '/' },
@@ -25,11 +23,10 @@ const navItems = [
 export default function PublicHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const menuOpen = Boolean(anchorEl);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const { data: session, status } = useSession();
   const isAuthenticated = status === 'authenticated';
@@ -41,213 +38,167 @@ export default function PublicHeader() {
     return pathname.startsWith(href);
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
   const handleLogout = async () => {
-    handleMenuClose();
+    setMenuOpen(false);
     await signOut({ callbackUrl: '/' });
   };
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
   return (
     <>
-      <AppBar
-        position="sticky"
-        elevation={0}
-        sx={{
-          backgroundColor: '#1a237e',
-          borderBottom: '3px solid #ffd600',
-        }}
-      >
-        <Toolbar sx={{ maxWidth: 1200, width: '100%', mx: 'auto' }}>
-          <Box
-            component={Link}
-            href="/"
-            sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none', color: 'white', mr: 4 }}
-          >
-            <SportsSoccer sx={{ fontSize: 32, color: '#ffd600' }} />
-            <Box>
-              <Typography variant="h6" fontWeight={800} lineHeight={1} sx={{ fontSize: { xs: '1rem', md: '1.2rem' } }}>
-                GALINHA GORDA
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#ffd600', fontSize: '0.65rem' }}>
-                ITAPECERICA - MG
-              </Typography>
-            </Box>
-          </Box>
+      <header className="sticky top-0 z-50 bg-[#1a237e] border-b-[3px] border-yellow-400">
+        <div className="max-w-7xl w-full mx-auto flex items-center h-16 px-4">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 mr-8">
+            <CircleDot className="h-8 w-8 text-yellow-400" />
+            <div>
+              <p className="text-white font-extrabold text-sm md:text-lg leading-none">GALINHA GORDA</p>
+              <p className="text-yellow-400 text-[0.65rem]">ITAPECERICA - MG</p>
+            </div>
+          </Link>
 
           {!isMobile ? (
             <>
-              <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
+              {/* Desktop nav */}
+              <nav className="flex gap-1 ml-auto">
                 {navItems.map((item) => (
-                  <Button
+                  <Link
                     key={item.href}
-                    component={Link}
                     href={item.href}
-                    sx={{
-                      color: isActive(item.href) ? '#ffd600' : 'white',
-                      fontWeight: isActive(item.href) ? 700 : 500,
-                      borderBottom: isActive(item.href) ? '2px solid #ffd600' : '2px solid transparent',
-                      borderRadius: 0,
-                      '&:hover': { color: '#ffd600' },
-                    }}
+                    className={cn(
+                      'px-3 py-2 text-sm font-medium transition-colors border-b-2',
+                      isActive(item.href)
+                        ? 'text-yellow-400 border-yellow-400 font-bold'
+                        : 'text-white border-transparent hover:text-yellow-400'
+                    )}
                   >
                     {item.label}
-                  </Button>
+                  </Link>
                 ))}
-              </Box>
+              </nav>
 
               {/* User area - desktop */}
-              <Box sx={{ ml: 2 }}>
+              <div className="ml-3 relative" ref={menuRef}>
                 {isAuthenticated ? (
-                  <IconButton onClick={handleMenuOpen} sx={{ p: 0.5 }}>
-                    <Avatar
-                      src={userAvatar}
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        border: '2px solid #ffd600',
-                        fontSize: '0.9rem',
-                      }}
-                    >
-                      {userName?.charAt(0)?.toUpperCase()}
-                    </Avatar>
-                  </IconButton>
+                  <>
+                    <button onClick={() => setMenuOpen(!menuOpen)} className="p-0.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400">
+                      <Avatar className="h-9 w-9 border-2 border-yellow-400">
+                        <AvatarImage src={userAvatar} />
+                        <AvatarFallback className="text-sm bg-yellow-400 text-[#1a237e] font-bold">{userName?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                    {menuOpen && (
+                      <div className="absolute right-0 mt-2 w-52 bg-card rounded-md shadow-lg border z-50">
+                        <div className="px-3 py-2">
+                          <p className="text-sm font-semibold">{userName}</p>
+                          <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+                        </div>
+                        <Separator />
+                        <button onClick={() => { setMenuOpen(false); router.push('/meu-perfil'); }} className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent transition-colors">
+                          <User className="h-4 w-4" />Meu Perfil
+                        </button>
+                        <button onClick={() => { setMenuOpen(false); router.push('/meu-perfil'); }} className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent transition-colors">
+                          <Bell className="h-4 w-4" />Notificacoes
+                        </button>
+                        <Separator />
+                        <button onClick={handleLogout} className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-destructive">
+                          <LogOut className="h-4 w-4" />Sair
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <Button
-                    component={Link}
-                    href="/login"
-                    startIcon={<Login />}
-                    sx={{
-                      color: '#1a237e',
-                      backgroundColor: '#ffd600',
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      px: 2,
-                      '&:hover': {
-                        backgroundColor: '#ffea00',
-                      },
-                    }}
-                  >
-                    Entrar
+                  <Button asChild size="sm" className="bg-yellow-400 text-[#1a237e] font-semibold hover:bg-yellow-300">
+                    <Link href="/login"><LogIn className="h-4 w-4 mr-1" />Entrar</Link>
                   </Button>
                 )}
-              </Box>
+              </div>
             </>
           ) : (
-            <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <div className="ml-auto flex items-center gap-1">
               {isAuthenticated && (
-                <IconButton onClick={handleMenuOpen} sx={{ p: 0.5 }}>
-                  <Avatar
-                    src={userAvatar}
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      border: '2px solid #ffd600',
-                      fontSize: '0.8rem',
-                    }}
-                  >
-                    {userName?.charAt(0)?.toUpperCase()}
+                <button onClick={() => setMenuOpen(!menuOpen)} className="p-0.5 rounded-full">
+                  <Avatar className="h-8 w-8 border-2 border-yellow-400">
+                    <AvatarImage src={userAvatar} />
+                    <AvatarFallback className="text-xs bg-yellow-400 text-[#1a237e] font-bold">{userName?.charAt(0)?.toUpperCase()}</AvatarFallback>
                   </Avatar>
-                </IconButton>
+                </button>
               )}
-              <IconButton
-                sx={{ color: 'white' }}
-                onClick={() => setDrawerOpen(true)}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Box>
+              <button onClick={() => setDrawerOpen(true)} className="p-2 text-white hover:text-yellow-400">
+                <Menu className="h-6 w-6" />
+              </button>
+            </div>
           )}
-        </Toolbar>
-      </AppBar>
+        </div>
+      </header>
 
-      {/* User dropdown menu (shared for desktop and mobile) */}
-      {isAuthenticated && (
-        <Menu
-          anchorEl={anchorEl}
-          open={menuOpen}
-          onClose={handleMenuClose}
-          onClick={handleMenuClose}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          PaperProps={{
-            sx: {
-              mt: 1,
-              minWidth: 200,
-              '& .MuiMenuItem-root': { fontSize: '0.9rem' },
-            },
-          }}
-        >
-          <Box sx={{ px: 2, py: 1 }}>
-            <Typography variant="body2" fontWeight={600}>{userName}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {session?.user?.email}
-            </Typography>
-          </Box>
-          <Divider />
-          <MenuItem onClick={() => router.push('/meu-perfil')}>
-            <ListItemIcon><Person fontSize="small" /></ListItemIcon>
-            Meu Perfil
-          </MenuItem>
-          <MenuItem onClick={() => router.push('/meu-perfil')}>
-            <ListItemIcon><Notifications fontSize="small" /></ListItemIcon>
-            Notificacoes
-          </MenuItem>
-          <Divider />
-          <MenuItem onClick={handleLogout}>
-            <ListItemIcon><Logout fontSize="small" /></ListItemIcon>
-            Sair
-          </MenuItem>
-        </Menu>
+      {/* User dropdown - mobile (rendered as absolute overlay) */}
+      {isAuthenticated && menuOpen && isMobile && (
+        <div ref={menuRef} className="fixed top-[67px] right-2 w-52 bg-card rounded-md shadow-lg border z-50">
+          <div className="px-3 py-2">
+            <p className="text-sm font-semibold">{userName}</p>
+            <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+          </div>
+          <Separator />
+          <button onClick={() => { setMenuOpen(false); router.push('/meu-perfil'); }} className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent">
+            <User className="h-4 w-4" />Meu Perfil
+          </button>
+          <Separator />
+          <button onClick={handleLogout} className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent text-destructive">
+            <LogOut className="h-4 w-4" />Sair
+          </button>
+        </div>
       )}
 
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      >
-        <Box sx={{ width: 260, p: 2 }}>
-          <IconButton onClick={() => setDrawerOpen(false)} sx={{ mb: 1 }}>
-            <Close />
-          </IconButton>
-          <List>
-            {navItems.map((item) => (
-              <ListItem key={item.href} disablePadding>
-                <ListItemButton
-                  component={Link}
+      {/* Mobile drawer */}
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent side="right" className="w-[260px] p-0">
+          <div className="p-4">
+            <button onClick={() => setDrawerOpen(false)} className="mb-3 p-1 rounded hover:bg-accent">
+              <X className="h-5 w-5" />
+            </button>
+            <nav className="space-y-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
                   href={item.href}
                   onClick={() => setDrawerOpen(false)}
-                  selected={isActive(item.href)}
+                  className={cn(
+                    'block px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    isActive(item.href)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-accent'
+                  )}
                 >
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-            {!isAuthenticated && (
-              <>
-                <Divider sx={{ my: 1 }} />
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component={Link}
+                  {item.label}
+                </Link>
+              ))}
+              {!isAuthenticated && (
+                <>
+                  <Separator className="my-2" />
+                  <Link
                     href="/login"
                     onClick={() => setDrawerOpen(false)}
-                    sx={{ color: '#1a237e', fontWeight: 600 }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-semibold text-[#1a237e]"
                   >
-                    <ListItemIcon><Login sx={{ color: '#1a237e' }} /></ListItemIcon>
-                    <ListItemText primary="Entrar" />
-                  </ListItemButton>
-                </ListItem>
-              </>
-            )}
-          </List>
-        </Box>
-      </Drawer>
+                    <LogIn className="h-4 w-4" />Entrar
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

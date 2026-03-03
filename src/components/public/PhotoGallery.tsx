@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  Box, Typography, IconButton, Modal, Grid,
-} from '@mui/material';
-import {
-  Close, ChevronLeft, ChevronRight, PhotoLibrary,
-} from '@mui/icons-material';
+import { X, ChevronLeft, ChevronRight, Images } from 'lucide-react';
 import { Photo } from '@/types';
 
 interface Props {
@@ -49,189 +44,96 @@ export default function PhotoGallery({ photos, title = 'Galeria de Fotos' }: Pro
   const currentPhoto = selectedIndex !== null ? photos[selectedIndex] : null;
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <PhotoLibrary sx={{ color: '#1a237e' }} />
-        <Typography variant="h5" fontWeight={700} sx={{ color: '#1a237e' }}>
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <Images className="h-6 w-6 text-[#1a237e]" />
+        <h2 className="text-xl font-bold text-[#1a237e]">
           {title}
-        </Typography>
-      </Box>
+        </h2>
+      </div>
 
-      <Grid container spacing={1}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
         {photos.map((photo, index) => (
-          <Grid item xs={6} sm={4} md={3} key={photo.id}>
-            <Box
-              onClick={() => handleOpen(index)}
-              sx={{
-                width: '100%',
-                paddingTop: '100%',
-                position: 'relative',
-                borderRadius: 1,
-                overflow: 'hidden',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-                '&:hover': {
-                  transform: 'scale(1.03)',
-                  '& .overlay': { opacity: 1 },
-                },
-              }}
-            >
-              <Box
-                component="img"
-                src={photo.thumbnail_url || photo.url}
-                alt={photo.caption || ''}
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-              <Box
-                className="overlay"
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  bgcolor: 'rgba(0,0,0,0.3)',
-                  opacity: 0,
-                  transition: 'opacity 0.2s',
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  p: 1,
-                }}
-              >
-                {photo.caption && (
-                  <Typography variant="caption" sx={{ color: 'white' }}>
-                    {photo.caption}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </Grid>
+          <div
+            key={photo.id}
+            onClick={() => handleOpen(index)}
+            className="relative w-full pt-[100%] rounded overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-[1.03] group"
+          >
+            <img
+              src={photo.thumbnail_url || photo.url}
+              alt={photo.caption || ''}
+              className="absolute top-0 left-0 w-full h-full object-cover"
+            />
+            <div className="absolute top-0 left-0 w-full h-full bg-black/30 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-end p-2">
+              {photo.caption && (
+                <span className="text-xs text-white">
+                  {photo.caption}
+                </span>
+              )}
+            </div>
+          </div>
         ))}
-      </Grid>
+      </div>
 
       {/* Lightbox Modal */}
-      <Modal
-        open={selectedIndex !== null}
-        onClose={handleClose}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Box
-          sx={{
-            position: 'relative',
-            width: '90vw',
-            height: '90vh',
-            outline: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+      {selectedIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+          onClick={handleClose}
         >
-          {/* Close button */}
-          <IconButton
-            onClick={handleClose}
-            sx={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              color: 'white',
-              bgcolor: 'rgba(0,0,0,0.5)',
-              zIndex: 2,
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-            }}
+          <div
+            className="relative w-[90vw] h-[90vh] flex flex-col items-center justify-center outline-none"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Close />
-          </IconButton>
-
-          {/* Previous button */}
-          {photos.length > 1 && (
-            <IconButton
-              onClick={handlePrev}
-              sx={{
-                position: 'absolute',
-                left: 8,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'white',
-                bgcolor: 'rgba(0,0,0,0.5)',
-                zIndex: 2,
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-              }}
+            {/* Close button */}
+            <button
+              onClick={handleClose}
+              className="absolute top-2 right-2 z-10 p-2 rounded-full text-white bg-black/50 hover:bg-black/70 transition-colors"
             >
-              <ChevronLeft sx={{ fontSize: 36 }} />
-            </IconButton>
-          )}
+              <X className="h-6 w-6" />
+            </button>
 
-          {/* Next button */}
-          {photos.length > 1 && (
-            <IconButton
-              onClick={handleNext}
-              sx={{
-                position: 'absolute',
-                right: 8,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'white',
-                bgcolor: 'rgba(0,0,0,0.5)',
-                zIndex: 2,
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-              }}
-            >
-              <ChevronRight sx={{ fontSize: 36 }} />
-            </IconButton>
-          )}
-
-          {/* Image */}
-          {currentPhoto && (
-            <>
-              <Box
-                component="img"
-                src={currentPhoto.url}
-                alt={currentPhoto.caption || ''}
-                sx={{
-                  maxWidth: '100%',
-                  maxHeight: 'calc(90vh - 60px)',
-                  objectFit: 'contain',
-                  borderRadius: 1,
-                }}
-              />
-              {currentPhoto.caption && (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'white',
-                    mt: 1,
-                    textAlign: 'center',
-                    bgcolor: 'rgba(0,0,0,0.6)',
-                    px: 2,
-                    py: 0.5,
-                    borderRadius: 1,
-                  }}
-                >
-                  {currentPhoto.caption}
-                </Typography>
-              )}
-              <Typography
-                variant="caption"
-                sx={{ color: 'rgba(255,255,255,0.7)', mt: 0.5 }}
+            {/* Previous button */}
+            {photos.length > 1 && (
+              <button
+                onClick={handlePrev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full text-white bg-black/50 hover:bg-black/70 transition-colors"
               >
-                {(selectedIndex ?? 0) + 1} / {photos.length}
-              </Typography>
-            </>
-          )}
-        </Box>
-      </Modal>
-    </Box>
+                <ChevronLeft className="h-9 w-9" />
+              </button>
+            )}
+
+            {/* Next button */}
+            {photos.length > 1 && (
+              <button
+                onClick={handleNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full text-white bg-black/50 hover:bg-black/70 transition-colors"
+              >
+                <ChevronRight className="h-9 w-9" />
+              </button>
+            )}
+
+            {/* Image */}
+            {currentPhoto && (
+              <>
+                <img
+                  src={currentPhoto.url}
+                  alt={currentPhoto.caption || ''}
+                  className="max-w-full max-h-[calc(90vh-60px)] object-contain rounded"
+                />
+                {currentPhoto.caption && (
+                  <p className="text-sm text-white mt-2 text-center bg-black/60 px-4 py-1 rounded">
+                    {currentPhoto.caption}
+                  </p>
+                )}
+                <span className="text-xs text-white/70 mt-1">
+                  {(selectedIndex ?? 0) + 1} / {photos.length}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

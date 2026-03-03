@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { IconButton, Typography, Box } from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import { Heart } from 'lucide-react';
+import { cn } from '@/lib/cn';
 
 interface Props {
   messageId: string;
@@ -47,38 +46,37 @@ export default function LikeButton({ messageId, initialCount, initialLiked = fal
     }
   };
 
+  const iconSize = size === 'small' ? 'h-[18px] w-[18px]' : 'h-[22px] w-[22px]';
+
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-      <IconButton
+    <div className="flex items-center gap-0.5">
+      <button
         onClick={handleLike}
-        size={size}
-        sx={{
-          color: liked ? '#e91e63' : 'rgba(0,0,0,0.4)',
-          transition: 'all 0.2s',
-          transform: animating ? 'scale(1.3)' : 'scale(1)',
-          '&:hover': {
-            color: liked ? '#c2185b' : '#e91e63',
-            bgcolor: 'rgba(233,30,99,0.08)',
-          },
-        }}
-      >
-        {liked ? (
-          <FavoriteIcon sx={{ fontSize: size === 'small' ? 18 : 22 }} />
-        ) : (
-          <FavoriteBorderIcon sx={{ fontSize: size === 'small' ? 18 : 22 }} />
+        className={cn(
+          'inline-flex items-center justify-center rounded-full transition-all duration-200',
+          size === 'small' ? 'h-8 w-8' : 'h-9 w-9',
+          liked
+            ? 'text-[#e91e63] hover:text-[#c2185b]'
+            : 'text-black/40 hover:text-[#e91e63]',
+          'hover:bg-[#e91e63]/[0.08]',
+          animating && 'scale-[1.3]'
         )}
-      </IconButton>
-      <Typography
-        variant="caption"
-        sx={{
-          color: liked ? '#e91e63' : 'rgba(0,0,0,0.5)',
-          fontWeight: liked ? 700 : 400,
-          fontSize: size === 'small' ? '0.7rem' : '0.8rem',
-          minWidth: 14,
-        }}
+        type="button"
+        aria-label={liked ? 'Descurtir' : 'Curtir'}
+      >
+        <Heart
+          className={cn(iconSize, liked && 'fill-current')}
+        />
+      </button>
+      <span
+        className={cn(
+          'min-w-[14px]',
+          size === 'small' ? 'text-[0.7rem]' : 'text-[0.8rem]',
+          liked ? 'text-[#e91e63] font-bold' : 'text-black/50 font-normal'
+        )}
       >
         {count > 0 ? count : ''}
-      </Typography>
-    </Box>
+      </span>
+    </div>
   );
 }

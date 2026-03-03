@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import ThemeRegistry from '@/theme/ThemeRegistry';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 const inter = Inter({
@@ -26,9 +26,8 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.variable}>
-        <ThemeRegistry>
-          {children}
-        </ThemeRegistry>
+        {children}
+        <Toaster position="bottom-center" richColors />
       </body>
     </html>
   );

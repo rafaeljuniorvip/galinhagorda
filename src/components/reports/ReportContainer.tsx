@@ -1,9 +1,11 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Box, Button, CircularProgress, Dialog, AppBar, Toolbar, Typography, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import { Download, Visibility, Close } from '@mui/icons-material';
+import { Download, Eye, X, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { downloadElementAsImage } from '@/lib/downloadImage';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface ReportContainerProps {
   filename: string;
@@ -25,8 +27,7 @@ export default function ReportContainer({
   const captureRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useIsMobile();
   const effectiveScale = isMobile ? Math.min(previewScale, 0.3) : previewScale;
 
   const handleDownload = async () => {
@@ -34,20 +35,10 @@ export default function ReportContainer({
     setDownloading(true);
     try {
       const el = captureRef.current;
-
-      // Temporarily remove scale transform for accurate capture
       el.style.transform = 'none';
       el.style.marginBottom = '0px';
-
-      // Wait for the browser to apply the style change
       await new Promise(r => setTimeout(r, 50));
-
-      await downloadElementAsImage(el, filename, {
-        backgroundColor: bgColor,
-        captureWidth: width,
-      });
-
-      // Restore preview scale
+      await downloadElementAsImage(el, filename, { backgroundColor: bgColor, captureWidth: width });
       el.style.transform = `scale(${effectiveScale})`;
       el.style.marginBottom = '';
     } finally {
@@ -56,77 +47,48 @@ export default function ReportContainer({
   };
 
   return (
-    <Box>
-      <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
-        <Button
-          variant="contained"
-          startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <Download />}
-          onClick={handleDownload}
-          disabled={downloading}
-        >
+    <div>
+      <div className="mb-2 flex gap-2">
+        <Button onClick={handleDownload} disabled={downloading}>
+          {downloading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
           {downloading ? 'Gerando...' : 'Download JPG'}
         </Button>
-        <Button
-          variant="outlined"
-          startIcon={<Visibility />}
-          onClick={() => setFullscreenOpen(true)}
-        >
-          Visualizar
+        <Button variant="outline" onClick={() => setFullscreenOpen(true)}>
+          <Eye className="h-4 w-4 mr-1" />Visualizar
         </Button>
-      </Box>
-      <Box
-        sx={{
-          width: width * effectiveScale,
-          height: 'auto',
-          overflow: 'hidden',
-          border: '1px solid #e0e0e0',
-          borderRadius: 1,
-        }}
+      </div>
+      <div
+        style={{ width: width * effectiveScale, height: 'auto', overflow: 'hidden' }}
+        className="border rounded"
       >
         <div
           ref={captureRef}
-          style={{
-            width,
-            minWidth: width,
-            transformOrigin: 'top left',
-            transform: `scale(${effectiveScale})`,
-          }}
+          style={{ width, minWidth: width, transformOrigin: 'top left', transform: `scale(${effectiveScale})` }}
         >
           {children}
         </div>
-      </Box>
+      </div>
 
       {/* Fullscreen Dialog */}
-      <Dialog
-        fullScreen
-        open={fullscreenOpen}
-        onClose={() => setFullscreenOpen(false)}
-      >
-        <AppBar sx={{ position: 'relative' }}>
-          <Toolbar>
-            <Typography sx={{ flex: 1 }} variant="h6">
-              {title || 'Relatorio'}
-            </Typography>
-            <Button
-              color="inherit"
-              startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <Download />}
-              onClick={handleDownload}
-              disabled={downloading}
-              sx={{ mr: 1 }}
-            >
+      <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
+        <DialogContent className="max-w-[100vw] h-[100vh] w-[100vw] p-0 rounded-none border-none">
+          <div className="sticky top-0 z-10 bg-primary text-primary-foreground px-4 py-3 flex items-center">
+            <span className="flex-1 font-semibold">{title || 'Relatorio'}</span>
+            <Button variant="ghost" size="sm" className="text-primary-foreground hover:text-primary-foreground/80" onClick={handleDownload} disabled={downloading}>
+              {downloading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
               {downloading ? 'Gerando...' : 'Download JPG'}
             </Button>
-            <IconButton edge="end" color="inherit" onClick={() => setFullscreenOpen(false)}>
-              <Close />
-            </IconButton>
-          </Toolbar>
-        </AppBar>
-        <Box sx={{ overflow: 'auto', display: 'flex', justifyContent: 'center', bgcolor: '#f5f5f5', p: 2 }}>
-          <div style={{ width, minWidth: width }}>
-            {children}
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:text-primary-foreground/80 ml-1" onClick={() => setFullscreenOpen(false)}>
+              <X className="h-5 w-5" />
+            </Button>
           </div>
-        </Box>
+          <div className="overflow-auto flex justify-center bg-muted p-4" style={{ height: 'calc(100vh - 56px)' }}>
+            <div style={{ width, minWidth: width }}>
+              {children}
+            </div>
+          </div>
+        </DialogContent>
       </Dialog>
-    </Box>
+    </div>
   );
 }

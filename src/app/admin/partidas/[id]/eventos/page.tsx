@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import {
-  Box, Typography, Button, Card, CardContent, Grid, MenuItem, TextField,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  IconButton, Chip, Alert,
-} from '@mui/material';
-import { ArrowBack, Add, Delete } from '@mui/icons-material';
+import { Plus, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { EVENT_TYPES } from '@/lib/utils';
+import PageHeader from '@/components/admin/PageHeader';
+import StatusBadge from '@/components/admin/StatusBadge';
 
 export default function EventosPartidaPage() {
   const params = useParams();
@@ -21,29 +24,20 @@ export default function EventosPartidaPage() {
   const [players, setPlayers] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const [form, setForm] = useState({
-    player_id: '', team_id: '', event_type: '', minute: '', half: '1T',
-  });
+  const [form, setForm] = useState({ player_id: '', team_id: '', event_type: '', minute: '', half: '1T' });
 
   useEffect(() => { if (!authLoading && !isAdmin) router.push('/admin/login'); }, [isAdmin, authLoading, router]);
 
   const loadData = useCallback(async () => {
     const [matchRes, eventsRes] = await Promise.all([
-      fetch(`/api/matches/${params.id}`),
-      fetch(`/api/matches/${params.id}/events`),
+      fetch(`/api/matches/${params.id}`), fetch(`/api/matches/${params.id}/events`),
     ]);
     if (matchRes.ok) {
-      const m = await matchRes.json();
-      setMatch(m);
-      // Load players registered for this championship in both teams
+      const m = await matchRes.json(); setMatch(m);
       const regsRes = await fetch(`/api/championships/${m.championship_id}/registrations`);
       if (regsRes.ok) {
         const regs = await regsRes.json();
-        const teamPlayers = regs.filter((r: any) =>
-          r.team_id === m.home_team_id || r.team_id === m.away_team_id
-        );
-        setPlayers(teamPlayers);
+        setPlayers(regs.filter((r: any) => r.team_id === m.home_team_id || r.team_id === m.away_team_id));
       }
     }
     if (eventsRes.ok) setEvents(await eventsRes.json());
@@ -53,132 +47,116 @@ export default function EventosPartidaPage() {
 
   const handleAdd = async () => {
     setError(''); setSuccess('');
-    if (!form.player_id || !form.event_type) {
-      setError('Jogador e tipo de evento sao obrigatorios');
-      return;
-    }
+    if (!form.player_id || !form.event_type) { setError('Jogador e tipo de evento sao obrigatorios'); return; }
     const playerReg = players.find(p => p.player_id === form.player_id);
     const res = await fetch(`/api/matches/${params.id}/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        player_id: form.player_id,
-        team_id: playerReg?.team_id || form.team_id,
-        event_type: form.event_type,
-        minute: form.minute ? parseInt(form.minute) : null,
-        half: form.half || null,
-      }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: form.player_id, team_id: playerReg?.team_id || form.team_id, event_type: form.event_type, minute: form.minute ? parseInt(form.minute) : null, half: form.half || null }),
     });
-    if (res.ok) {
-      setSuccess('Evento adicionado!');
-      setForm({ player_id: '', team_id: '', event_type: '', minute: '', half: '1T' });
-      loadData();
-    } else { const d = await res.json(); setError(d.error); }
+    if (res.ok) { setSuccess('Evento adicionado!'); setForm({ player_id: '', team_id: '', event_type: '', minute: '', half: '1T' }); loadData(); }
+    else { const d = await res.json(); setError(d.error); }
   };
 
   const handleDelete = async (eventId: string) => {
-    await fetch(`/api/matches/${params.id}/events?event_id=${eventId}`, { method: 'DELETE' });
-    loadData();
+    await fetch(`/api/matches/${params.id}/events?event_id=${eventId}`, { method: 'DELETE' }); loadData();
   };
 
-  const eventLabel = (type: string) => {
-    const found = EVENT_TYPES.find(e => e.value === type);
-    return found?.label || type;
-  };
-
-  const eventColor = (type: string) => {
-    if (type.includes('GOL')) return 'success';
-    if (type.includes('AMARELO')) return 'warning';
-    if (type.includes('VERMELHO')) return 'error';
-    return 'default';
+  const eventLabel = (type: string) => EVENT_TYPES.find(e => e.value === type)?.label || type;
+  const eventVariant = (type: string) => {
+    if (type.includes('GOL')) return 'success' as const;
+    if (type.includes('AMARELO')) return 'warning' as const;
+    if (type.includes('VERMELHO')) return 'error' as const;
+    return 'default' as const;
   };
 
   if (authLoading || !isAdmin || !match) return null;
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Button component={Link} href="/admin/partidas" startIcon={<ArrowBack />} color="inherit">Voltar</Button>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>Eventos da Partida</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {match.home_team_name} {match.home_score ?? '-'} x {match.away_score ?? '-'} {match.away_team_name}
-          </Typography>
-        </Box>
-      </Box>
+    <div>
+      <PageHeader title="Eventos da Partida" backHref="/admin/partidas">
+        <p className="text-sm text-muted-foreground">{match.home_team_name} {match.home_score ?? '-'} x {match.away_score ?? '-'} {match.away_team_name}</p>
+      </PageHeader>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert variant="destructive" className="mb-4"><AlertDescription>{error}</AlertDescription></Alert>}
+      {success && <Alert className="mb-4 border-green-200 bg-green-50 text-green-800"><AlertDescription>{success}</AlertDescription></Alert>}
 
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>Adicionar Evento</Typography>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={3}>
-              <TextField select label="Jogador" fullWidth size="small" value={form.player_id} onChange={(e) => setForm(prev => ({ ...prev, player_id: e.target.value }))}>
-                {players.map((p: any) => (
-                  <MenuItem key={p.player_id} value={p.player_id}>
-                    {p.player_name} ({p.team_name === match.home_team_name ? 'CASA' : 'VISIT'})
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField select label="Tipo" fullWidth size="small" value={form.event_type} onChange={(e) => setForm(prev => ({ ...prev, event_type: e.target.value }))}>
-                {EVENT_TYPES.map(e => <MenuItem key={e.value} value={e.value}>{e.label}</MenuItem>)}
-              </TextField>
-            </Grid>
-            <Grid item xs={6} sm={3} md={2}>
-              <TextField label="Minuto" type="number" fullWidth size="small" value={form.minute} onChange={(e) => setForm(prev => ({ ...prev, minute: e.target.value }))} />
-            </Grid>
-            <Grid item xs={6} sm={3} md={2}>
-              <TextField select label="Tempo" fullWidth size="small" value={form.half} onChange={(e) => setForm(prev => ({ ...prev, half: e.target.value }))}>
-                <MenuItem value="1T">1 Tempo</MenuItem>
-                <MenuItem value="2T">2 Tempo</MenuItem>
-                <MenuItem value="PRO">Prorrogacao</MenuItem>
-                <MenuItem value="PEN">Penaltis</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <Button variant="contained" startIcon={<Add />} onClick={handleAdd} fullWidth>Adicionar</Button>
-            </Grid>
-          </Grid>
+      <Card className="mb-4">
+        <CardContent className="pt-6">
+          <h3 className="font-semibold mb-3">Adicionar Evento</h3>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+            <div className="md:col-span-3">
+              <Label>Jogador</Label>
+              <Select value={form.player_id} onValueChange={(v) => setForm(prev => ({ ...prev, player_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {players.map((p: any) => (
+                    <SelectItem key={p.player_id} value={p.player_id}>
+                      {p.player_name} ({p.team_name === match.home_team_name ? 'CASA' : 'VISIT'})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-3">
+              <Label>Tipo</Label>
+              <Select value={form.event_type} onValueChange={(v) => setForm(prev => ({ ...prev, event_type: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map(e => <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2"><Label>Minuto</Label><Input type="number" value={form.minute} onChange={(e) => setForm(prev => ({ ...prev, minute: e.target.value }))} /></div>
+            <div className="md:col-span-2">
+              <Label>Tempo</Label>
+              <Select value={form.half} onValueChange={(v) => setForm(prev => ({ ...prev, half: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1T">1 Tempo</SelectItem>
+                  <SelectItem value="2T">2 Tempo</SelectItem>
+                  <SelectItem value="PRO">Prorrogacao</SelectItem>
+                  <SelectItem value="PEN">Penaltis</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Button className="w-full" onClick={handleAdd}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      <TableContainer component={Paper}>
+      <Card>
         <Table>
-          <TableHead>
+          <TableHeader>
             <TableRow>
-              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Tempo</TableCell>
-              <TableCell>Min</TableCell>
-              <TableCell>Jogador</TableCell>
-              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Time</TableCell>
-              <TableCell>Evento</TableCell>
-              <TableCell align="right">Acao</TableCell>
+              <TableHead className="hidden md:table-cell">Tempo</TableHead>
+              <TableHead>Min</TableHead>
+              <TableHead>Jogador</TableHead>
+              <TableHead className="hidden md:table-cell">Time</TableHead>
+              <TableHead>Evento</TableHead>
+              <TableHead className="text-right">Acao</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {events.map((e) => (
               <TableRow key={e.id}>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{e.half || '-'}</TableCell>
+                <TableCell className="hidden md:table-cell">{e.half || '-'}</TableCell>
                 <TableCell>{e.minute ?? '-'}</TableCell>
                 <TableCell>{e.player_name}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{e.team_name}</TableCell>
-                <TableCell><Chip label={eventLabel(e.event_type)} size="small" color={eventColor(e.event_type) as any} /></TableCell>
-                <TableCell align="right">
-                  <IconButton size="small" color="error" onClick={() => handleDelete(e.id)}><Delete fontSize="small" /></IconButton>
+                <TableCell className="hidden md:table-cell">{e.team_name}</TableCell>
+                <TableCell><StatusBadge status={eventLabel(e.event_type)} variant={eventVariant(e.event_type)} /></TableCell>
+                <TableCell className="text-right">
+                  <button onClick={() => handleDelete(e.id)} className="p-1.5 rounded hover:bg-accent text-destructive"><Trash2 className="h-4 w-4" /></button>
                 </TableCell>
               </TableRow>
             ))}
             {events.length === 0 && (
-              <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                <Typography color="text.secondary">Nenhum evento registrado</Typography>
-              </TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum evento registrado</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
-      </TableContainer>
-    </Box>
+      </Card>
+    </div>
   );
 }

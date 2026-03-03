@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Box, Typography, Button, Card, CardContent, Grid, CircularProgress } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Standing, Championship } from '@/types';
 import ReportContainer from '@/components/reports/ReportContainer';
 import StandingsImage from '@/components/reports/StandingsImage';
 import TopScorersImage from '@/components/reports/TopScorersImage';
 import { slugify } from '@/lib/utils';
+import PageHeader from '@/components/admin/PageHeader';
 
 export default function CampeonatoRelatoriosPage() {
   const params = useParams();
@@ -21,9 +21,7 @@ export default function CampeonatoRelatoriosPage() {
   const [scorers, setScorers] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && !isAdmin) router.push('/admin/login');
-  }, [isAdmin, authLoading, router]);
+  useEffect(() => { if (!authLoading && !isAdmin) router.push('/admin/login'); }, [isAdmin, authLoading, router]);
 
   const loadData = useCallback(async () => {
     setLoadingData(true);
@@ -38,81 +36,48 @@ export default function CampeonatoRelatoriosPage() {
     setLoadingData(false);
   }, [params.id]);
 
-  useEffect(() => {
-    if (user) loadData();
-  }, [user, loadData]);
+  useEffect(() => { if (user) loadData(); }, [user, loadData]);
 
   if (authLoading || !isAdmin) return null;
-
-  if (loadingData || !championship) {
-    return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loadingData || !championship) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   const slug = slugify(championship.short_name || championship.name);
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Button component={Link} href="/admin/campeonatos" startIcon={<ArrowBack />} color="inherit">
-          Voltar
-        </Button>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>Relatorios</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {championship.name} ({championship.year})
-          </Typography>
-        </Box>
-      </Box>
+    <div>
+      <PageHeader title="Relatorios" backHref="/admin/campeonatos">
+        <p className="text-sm text-muted-foreground">{championship.name} ({championship.year})</p>
+      </PageHeader>
 
-      <Grid container spacing={3}>
+      <div className="space-y-4">
         {/* Standings Table */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Tabela de Classificacao
-              </Typography>
-              {standings.length > 0 ? (
-                <ReportContainer filename={`classificacao-${slug}-${championship.year}`} title="Tabela de Classificacao">
-                  <StandingsImage
-                    standings={standings}
-                    championshipName={championship.name}
-                    year={championship.year}
-                  />
-                </ReportContainer>
-              ) : (
-                <Typography color="text.secondary">Nenhum dado de classificacao disponivel</Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="font-semibold text-lg mb-3">Tabela de Classificacao</h3>
+            {standings.length > 0 ? (
+              <ReportContainer filename={`classificacao-${slug}-${championship.year}`} title="Tabela de Classificacao">
+                <StandingsImage standings={standings} championshipName={championship.name} year={championship.year} />
+              </ReportContainer>
+            ) : (
+              <p className="text-muted-foreground">Nenhum dado de classificacao disponivel</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Top Scorers */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Artilharia
-              </Typography>
-              {scorers.length > 0 ? (
-                <ReportContainer filename={`artilharia-${slug}-${championship.year}`} title="Artilharia">
-                  <TopScorersImage
-                    scorers={scorers}
-                    championshipName={championship.name}
-                    year={championship.year}
-                  />
-                </ReportContainer>
-              ) : (
-                <Typography color="text.secondary">Nenhum gol registrado</Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="font-semibold text-lg mb-3">Artilharia</h3>
+            {scorers.length > 0 ? (
+              <ReportContainer filename={`artilharia-${slug}-${championship.year}`} title="Artilharia">
+                <TopScorersImage scorers={scorers} championshipName={championship.name} year={championship.year} />
+              </ReportContainer>
+            ) : (
+              <p className="text-muted-foreground">Nenhum gol registrado</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

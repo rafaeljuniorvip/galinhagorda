@@ -1,14 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Avatar,
-  LinearProgress,
-  Skeleton,
-} from '@mui/material';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import { Trophy } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { VoteResult } from '@/types';
 
 interface Props {
@@ -38,34 +34,31 @@ export default function VotingResults({ matchId }: Props) {
 
   if (loading) {
     return (
-      <Box sx={{
-        background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)',
-        borderRadius: 3,
-        p: 3,
-      }}>
-        <Skeleton variant="text" width={200} height={40} sx={{ bgcolor: 'rgba(255,255,255,0.1)', mx: 'auto' }} />
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
+      <div
+        className="rounded-xl p-6"
+        style={{ background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)' }}
+      >
+        <Skeleton className="h-10 w-[200px] mx-auto bg-white/10" />
+        <div className="flex justify-center gap-4 mt-6">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rounded" width={120} height={160} sx={{ bgcolor: 'rgba(255,255,255,0.1)' }} />
+            <Skeleton key={i} className="w-[120px] h-[160px] rounded-lg bg-white/10" />
           ))}
-        </Box>
-      </Box>
+        </div>
+      </div>
     );
   }
 
   if (results.length === 0) {
     return (
-      <Box sx={{
-        background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)',
-        borderRadius: 3,
-        p: 3,
-        textAlign: 'center',
-      }}>
-        <EmojiEventsIcon sx={{ color: 'rgba(255,214,0,0.3)', fontSize: 48, mb: 1 }} />
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+      <div
+        className="rounded-xl p-6 text-center"
+        style={{ background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)' }}
+      >
+        <Trophy className="h-12 w-12 text-[#ffd600]/30 mx-auto mb-2" />
+        <p className="text-sm text-white/40">
           Nenhum voto registrado
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
@@ -79,209 +72,143 @@ export default function VotingResults({ matchId }: Props) {
   };
 
   return (
-    <Box
-      sx={{
-        background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)',
-        borderRadius: 3,
-        p: { xs: 2, md: 3 },
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+    <div
+      className="rounded-xl p-4 md:p-6 relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #1a237e 0%, #0d1642 100%)' }}
     >
       {/* Background decoration */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: -80,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,214,0,0.06) 0%, transparent 70%)',
-        }}
+      <div
+        className="absolute -top-20 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(255,214,0,0.06) 0%, transparent 70%)' }}
       />
 
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 3 }}>
-        <EmojiEventsIcon sx={{ color: '#ffd600', fontSize: 32 }} />
-        <Typography
-          variant="h6"
-          sx={{
-            color: '#fff',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-          }}
-        >
+      <div className="flex items-center justify-center gap-2 mb-6">
+        <Trophy className="h-8 w-8 text-[#ffd600]" />
+        <h3 className="text-lg text-white font-extrabold uppercase tracking-wide">
           Craque do Jogo
-        </Typography>
-      </Box>
+        </h3>
+      </div>
 
       {/* Winner highlight */}
       {results[0] && (
-        <Box
-          sx={{
-            textAlign: 'center',
-            mb: 3,
-            position: 'relative',
-            animation: 'fadeInScale 0.5s ease-out',
-            '@keyframes fadeInScale': {
-              '0%': { opacity: 0, transform: 'scale(0.9)' },
-              '100%': { opacity: 1, transform: 'scale(1)' },
-            },
-          }}
-        >
-          <EmojiEventsIcon
-            sx={{
-              fontSize: 40,
-              color: '#ffd600',
-              filter: 'drop-shadow(0 4px 8px rgba(255,214,0,0.4))',
-              mb: 1,
-            }}
+        <div className="text-center mb-6 relative animate-in fade-in zoom-in-95 duration-500">
+          <Trophy
+            className="h-10 w-10 text-[#ffd600] mx-auto mb-2"
+            style={{ filter: 'drop-shadow(0 4px 8px rgba(255,214,0,0.4))' }}
           />
           <Avatar
-            src={results[0].player_photo || ''}
-            sx={{
-              width: 80,
-              height: 80,
-              mx: 'auto',
-              mb: 1,
-              border: '3px solid #ffd600',
-              boxShadow: '0 0 20px rgba(255,214,0,0.3)',
-            }}
+            className="h-20 w-20 mx-auto mb-2 border-[3px] border-[#ffd600]"
+            style={{ boxShadow: '0 0 20px rgba(255,214,0,0.3)' }}
           >
-            {results[0].player_name?.[0]}
+            <AvatarImage src={results[0].player_photo || ''} />
+            <AvatarFallback>{results[0].player_name?.[0]}</AvatarFallback>
           </Avatar>
-          <Typography variant="h5" sx={{ color: '#fff', fontWeight: 800, mb: 0.25 }}>
+          <h2 className="text-xl text-white font-extrabold mb-0.5">
             {results[0].player_name}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 0.5 }}>
-            <Avatar src={results[0].team_logo || ''} sx={{ width: 20, height: 20 }}>
-              {results[0].team_name?.[0]}
+          </h2>
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={results[0].team_logo || ''} />
+              <AvatarFallback className="text-[8px]">{results[0].team_name?.[0]}</AvatarFallback>
             </Avatar>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+            <span className="text-sm text-white/60">
               {results[0].team_name}
-            </Typography>
-          </Box>
-          <Typography variant="h4" sx={{ color: '#ffd600', fontWeight: 900 }}>
+            </span>
+          </div>
+          <p className="text-3xl text-[#ffd600] font-black">
             {results[0].votes}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+          </p>
+          <span className="text-xs text-white/50">
             {results[0].percentage}% dos votos
-          </Typography>
-        </Box>
+          </span>
+        </div>
       )}
 
       {/* Podium - 2nd and 3rd */}
       {top3.length > 1 && (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: { xs: 2, sm: 4 },
-            mb: 3,
-          }}
-        >
+        <div className="flex justify-center gap-4 sm:gap-8 mb-6">
           {top3.slice(1).map((result, idx) => {
             const posIdx = idx + 1;
             const colors = podiumColors[posIdx as keyof typeof podiumColors];
             return (
-              <Box
+              <div
                 key={result.player_id}
-                sx={{
-                  textAlign: 'center',
-                  p: 2,
-                  borderRadius: 2,
-                  bgcolor: colors.bg,
+                className="text-center p-4 rounded-lg min-w-[100px] sm:min-w-[130px]"
+                style={{
+                  backgroundColor: colors.bg,
                   border: `1px solid ${colors.border}`,
-                  minWidth: { xs: 100, sm: 130 },
                 }}
               >
-                <Typography variant="subtitle2" sx={{ color: colors.main, fontWeight: 800, mb: 1 }}>
+                <p className="text-sm font-extrabold mb-2" style={{ color: colors.main }}>
                   {posIdx + 1}o Lugar
-                </Typography>
+                </p>
                 <Avatar
-                  src={result.player_photo || ''}
-                  sx={{
-                    width: 52,
-                    height: 52,
-                    mx: 'auto',
-                    mb: 1,
-                    border: `2px solid ${colors.main}`,
-                  }}
+                  className="h-[52px] w-[52px] mx-auto mb-2"
+                  style={{ border: `2px solid ${colors.main}` }}
                 >
-                  {result.player_name?.[0]}
+                  <AvatarImage src={result.player_photo || ''} />
+                  <AvatarFallback>{result.player_name?.[0]}</AvatarFallback>
                 </Avatar>
-                <Typography variant="body2" sx={{ color: '#fff', fontWeight: 700, mb: 0.25 }} noWrap>
+                <p className="text-sm text-white font-bold mb-0.5 truncate">
                   {result.player_name}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block', mb: 0.5 }} noWrap>
+                </p>
+                <span className="text-xs text-white/40 block mb-1 truncate">
                   {result.team_name}
-                </Typography>
-                <Typography variant="h6" sx={{ color: colors.main, fontWeight: 800 }}>
+                </span>
+                <p className="text-lg font-extrabold" style={{ color: colors.main }}>
                   {result.votes}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+                </p>
+                <span className="text-xs text-white/40">
                   {result.percentage}%
-                </Typography>
-              </Box>
+                </span>
+              </div>
             );
           })}
-        </Box>
+        </div>
       )}
 
       {/* Rest of results */}
       {rest.length > 0 && (
-        <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="mt-4 pt-4 border-t border-white/10">
           {rest.map((r, idx) => (
-            <Box key={r.player_id} sx={{ mb: 1.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'rgba(255,255,255,0.3)', width: 24, fontWeight: 700, textAlign: 'center' }}
-                >
+            <div key={r.player_id} className="mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm text-white/30 w-6 font-bold text-center">
                   {idx + 4}
-                </Typography>
-                <Avatar src={r.player_photo || ''} sx={{ width: 28, height: 28 }}>
-                  {r.player_name?.[0]}
+                </span>
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={r.player_photo || ''} />
+                  <AvatarFallback className="text-[10px]">{r.player_name?.[0]}</AvatarFallback>
                 </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }} noWrap>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-semibold truncate">
                     {r.player_name}
-                  </Typography>
-                </Box>
-                <Box sx={{ textAlign: 'right', minWidth: 50 }}>
-                  <Typography variant="body2" sx={{ color: '#fff', fontWeight: 700 }}>
+                  </p>
+                </div>
+                <div className="text-right min-w-[50px]">
+                  <p className="text-sm text-white font-bold">
                     {r.votes}
-                  </Typography>
-                </Box>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={r.percentage}
-                sx={{
-                  ml: 4,
-                  height: 4,
-                  borderRadius: 2,
-                  bgcolor: 'rgba(255,255,255,0.05)',
-                  '& .MuiLinearProgress-bar': {
-                    borderRadius: 2,
-                    bgcolor: 'rgba(255,255,255,0.15)',
-                  },
-                }}
-              />
-            </Box>
+                  </p>
+                </div>
+              </div>
+              <div className="ml-8 h-1 rounded-full bg-white/5 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-white/15 transition-all"
+                  style={{ width: `${r.percentage}%` }}
+                />
+              </div>
+            </div>
           ))}
-        </Box>
+        </div>
       )}
 
       {/* Total footer */}
-      <Box sx={{ textAlign: 'center', mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)' }}>
+      <div className="text-center mt-4 pt-4 border-t border-white/[0.08]">
+        <span className="text-xs text-white/30">
           Total: {totalVotes} {totalVotes === 1 ? 'voto' : 'votos'}
-        </Typography>
-      </Box>
-    </Box>
+        </span>
+      </div>
+    </div>
   );
 }

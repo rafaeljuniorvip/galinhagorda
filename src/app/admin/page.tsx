@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Box, Typography, Card, CardContent, Grid,
-} from '@mui/material';
-import { People, Groups, EmojiEvents, SportsSoccer, Newspaper, PhotoLibrary, Forum, HowToVote } from '@mui/icons-material';
+  Users, Users2, Trophy, CircleDot, Newspaper, Images, MessageSquare, Vote,
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardStats {
@@ -44,7 +44,6 @@ export default function AdminDashboard() {
           fetch('/api/matches?limit=50').then(r => r.json()).catch(() => ({ data: [] })),
         ]);
 
-        // Count active votings from matches data
         const activeVotings = (matchesAll.data || []).filter((match: any) => match.voting_open).length;
 
         setStats({
@@ -67,40 +66,39 @@ export default function AdminDashboard() {
   if (loading || !user) return null;
 
   const cards = [
-    { label: 'Jogadores', value: stats.players, icon: <People sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#1976d2' },
-    { label: 'Times', value: stats.teams, icon: <Groups sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#2e7d32' },
-    { label: 'Campeonatos', value: stats.championships, icon: <EmojiEvents sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#ed6c02' },
-    { label: 'Partidas', value: stats.matches, icon: <SportsSoccer sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#9c27b0' },
-    { label: 'Noticias Publicadas', value: stats.news, icon: <Newspaper sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#0288d1' },
-    { label: 'Fotos', value: stats.photos, icon: <PhotoLibrary sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#7b1fa2' },
-    { label: 'Msgs Pendentes', value: stats.pendingMessages, icon: <Forum sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#d32f2f' },
-    { label: 'Votacoes Ativas', value: stats.activeVotings, icon: <HowToVote sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#388e3c' },
+    { label: 'Jogadores', value: stats.players, icon: Users, color: 'text-primary' },
+    { label: 'Times', value: stats.teams, icon: Users2, color: 'text-emerald-600' },
+    { label: 'Campeonatos', value: stats.championships, icon: Trophy, color: 'text-amber-600' },
+    { label: 'Partidas', value: stats.matches, icon: CircleDot, color: 'text-violet-600' },
+    { label: 'Noticias Publicadas', value: stats.news, icon: Newspaper, color: 'text-primary' },
+    { label: 'Fotos', value: stats.photos, icon: Images, color: 'text-violet-600' },
+    { label: 'Msgs Pendentes', value: stats.pendingMessages, icon: MessageSquare, color: 'text-destructive' },
+    { label: 'Votacoes Ativas', value: stats.activeVotings, icon: Vote, color: 'text-emerald-600' },
   ];
 
   return (
-    <Box>
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        Dashboard
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+    <div>
+      <h1 className="text-2xl font-bold tracking-tight mb-1">Dashboard</h1>
+      <p className="text-sm text-muted-foreground mb-6">
         Bem-vindo, {user.name}
-      </Typography>
+      </p>
 
-      <Grid container spacing={3}>
-        {cards.map((card) => (
-          <Grid item xs={6} md={3} key={card.label}>
-            <Card>
-              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, md: 2 }, p: { xs: 1.5, md: 3 } }}>
-                <Box sx={{ color: card.color }}>{card.icon}</Box>
-                <Box>
-                  <Typography fontWeight={700} sx={{ fontSize: { xs: '1.25rem', md: '2rem' } }}>{card.value}</Typography>
-                  <Typography variant="body2" color="text.secondary">{card.label}</Typography>
-                </Box>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Card key={card.label}>
+              <CardContent className="flex items-center gap-3 p-3 md:p-6">
+                <Icon className={`h-8 w-8 md:h-10 md:w-10 shrink-0 ${card.color}`} />
+                <div>
+                  <p className="text-xl md:text-3xl font-bold">{card.value}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">{card.label}</p>
+                </div>
               </CardContent>
             </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
+          );
+        })}
+      </div>
+    </div>
   );
 }
