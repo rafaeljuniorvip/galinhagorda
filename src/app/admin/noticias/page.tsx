@@ -84,10 +84,10 @@ export default function AdminNoticiasPage() {
           <TableHead>
             <TableRow>
               <TableCell>Titulo</TableCell>
-              <TableCell>Autor</TableCell>
-              <TableCell>Views</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Autor</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Views</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Data</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Data</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
           </TableHead>
@@ -102,8 +102,8 @@ export default function AdminNoticiasPage() {
                     )}
                   </Box>
                 </TableCell>
-                <TableCell>{item.author_name || '-'}</TableCell>
-                <TableCell>{item.views_count}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{item.author_name || '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{item.views_count}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                     <Chip
@@ -114,7 +114,7 @@ export default function AdminNoticiasPage() {
                     {item.is_featured && <Chip label="Destaque" size="small" color="primary" />}
                   </Box>
                 </TableCell>
-                <TableCell>{item.published_at ? formatDateTime(item.published_at) : formatDateTime(item.created_at)}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{item.published_at ? formatDateTime(item.published_at) : formatDateTime(item.created_at)}</TableCell>
                 <TableCell align="right">
                   <IconButton component={Link} href={`/admin/noticias/${item.id}/editar`} size="small">
                     <Edit fontSize="small" />

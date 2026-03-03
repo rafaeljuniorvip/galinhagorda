@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Box, Button, CircularProgress, Dialog, AppBar, Toolbar, Typography, IconButton } from '@mui/material';
+import { Box, Button, CircularProgress, Dialog, AppBar, Toolbar, Typography, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { Download, Visibility, Close } from '@mui/icons-material';
 import { downloadElementAsImage } from '@/lib/downloadImage';
 
@@ -25,6 +25,9 @@ export default function ReportContainer({
   const captureRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const effectiveScale = isMobile ? Math.min(previewScale, 0.3) : previewScale;
 
   const handleDownload = async () => {
     if (!captureRef.current) return;
@@ -45,7 +48,7 @@ export default function ReportContainer({
       });
 
       // Restore preview scale
-      el.style.transform = `scale(${previewScale})`;
+      el.style.transform = `scale(${effectiveScale})`;
       el.style.marginBottom = '';
     } finally {
       setDownloading(false);
@@ -73,7 +76,7 @@ export default function ReportContainer({
       </Box>
       <Box
         sx={{
-          width: width * previewScale,
+          width: width * effectiveScale,
           height: 'auto',
           overflow: 'hidden',
           border: '1px solid #e0e0e0',
@@ -86,7 +89,7 @@ export default function ReportContainer({
             width,
             minWidth: width,
             transformOrigin: 'top left',
-            transform: `scale(${previewScale})`,
+            transform: `scale(${effectiveScale})`,
           }}
         >
           {children}

@@ -1,6 +1,6 @@
 'use client';
 
-import { AppBar, Toolbar, Button, Box, Chip, Avatar } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Chip, Avatar, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { Logout } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 export default function AdminHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleLogout = async () => {
     await logout();
@@ -23,7 +25,7 @@ export default function AdminHeader() {
         color: '#333',
       }}
     >
-      <Toolbar sx={{ justifyContent: 'flex-end', gap: 2 }}>
+      <Toolbar sx={{ justifyContent: 'flex-end', gap: isMobile ? 1 : 2, pl: isMobile ? 6 : undefined }}>
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Chip
@@ -32,18 +34,24 @@ export default function AdminHeader() {
                   ? <Avatar src={user.avatar_url} alt={user.name} />
                   : undefined
               }
-              label={user.name}
+              label={isMobile ? undefined : user.name}
               variant="outlined"
               size="small"
             />
-            <Button
-              startIcon={<Logout />}
-              onClick={handleLogout}
-              size="small"
-              color="inherit"
-            >
-              Sair
-            </Button>
+            {isMobile ? (
+              <IconButton onClick={handleLogout} size="small" color="inherit">
+                <Logout fontSize="small" />
+              </IconButton>
+            ) : (
+              <Button
+                startIcon={<Logout />}
+                onClick={handleLogout}
+                size="small"
+                color="inherit"
+              >
+                Sair
+              </Button>
+            )}
           </Box>
         )}
       </Toolbar>

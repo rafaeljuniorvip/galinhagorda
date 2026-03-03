@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, Chip, TablePagination, TextField, MenuItem, Avatar,
+  TableHead, TableRow, Paper, Chip, TablePagination, TextField, MenuItem, Avatar,
 } from '@mui/material';
 import { Add, Edit, Delete, ListAlt, LiveTv, Group, Assessment } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { Match, PaginatedResponse, Championship } from '@/types';
 import { formatDateTime } from '@/lib/utils';
+import MobileActionsMenu from '@/components/admin/MobileActionsMenu';
 
 export default function AdminPartidasPage() {
   const { user, loading, isAdmin } = useAuth();
@@ -72,8 +73,8 @@ export default function AdminPartidasPage() {
             <TableRow>
               <TableCell>Partida</TableCell>
               <TableCell>Placar</TableCell>
-              <TableCell>Data</TableCell>
-              <TableCell>Rodada</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Data</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Rodada</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
@@ -82,7 +83,7 @@ export default function AdminPartidasPage() {
             {data?.data.map((m) => (
               <TableRow key={m.id} hover>
                 <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <Avatar src={m.home_team_logo || ''} sx={{ width: 24, height: 24 }}>{m.home_team_short?.[0]}</Avatar>
                     <Typography variant="body2" fontWeight={600}>{m.home_team_short || m.home_team_name}</Typography>
                     <Typography variant="body2" color="text.secondary">x</Typography>
@@ -93,16 +94,18 @@ export default function AdminPartidasPage() {
                 <TableCell>
                   {m.home_score !== null ? `${m.home_score} x ${m.away_score}` : '-'}
                 </TableCell>
-                <TableCell>{m.match_date ? formatDateTime(m.match_date) : '-'}</TableCell>
-                <TableCell>{m.match_round || '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{m.match_date ? formatDateTime(m.match_date) : '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{m.match_round || '-'}</TableCell>
                 <TableCell><Chip label={m.status} size="small" color={statusColor(m.status) as any} /></TableCell>
                 <TableCell align="right">
-                  <IconButton component={Link} href={`/admin/partidas/${m.id}/eventos`} size="small" title="Eventos"><ListAlt fontSize="small" /></IconButton>
-                  <IconButton component={Link} href={`/admin/partidas/${m.id}/escalacao`} size="small" title="Escalacao"><Group fontSize="small" /></IconButton>
-                  <IconButton component={Link} href={`/admin/partidas/${m.id}/transmissoes`} size="small" title="Transmissoes"><LiveTv fontSize="small" /></IconButton>
-                  <IconButton component={Link} href={`/admin/partidas/${m.id}/relatorios`} size="small" title="Relatorios"><Assessment fontSize="small" /></IconButton>
-                  <IconButton component={Link} href={`/admin/partidas/${m.id}/editar`} size="small" title="Editar"><Edit fontSize="small" /></IconButton>
-                  <IconButton onClick={() => handleDelete(m.id)} size="small" color="error"><Delete fontSize="small" /></IconButton>
+                  <MobileActionsMenu actions={[
+                    { label: 'Eventos', icon: <ListAlt fontSize="small" />, href: `/admin/partidas/${m.id}/eventos` },
+                    { label: 'Escalacao', icon: <Group fontSize="small" />, href: `/admin/partidas/${m.id}/escalacao` },
+                    { label: 'Transmissoes', icon: <LiveTv fontSize="small" />, href: `/admin/partidas/${m.id}/transmissoes` },
+                    { label: 'Relatorios', icon: <Assessment fontSize="small" />, href: `/admin/partidas/${m.id}/relatorios` },
+                    { label: 'Editar', icon: <Edit fontSize="small" />, href: `/admin/partidas/${m.id}/editar` },
+                    { label: 'Excluir', icon: <Delete fontSize="small" />, color: 'error', onClick: () => handleDelete(m.id) },
+                  ]} />
                 </TableCell>
               </TableRow>
             ))}

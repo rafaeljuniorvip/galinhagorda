@@ -8,6 +8,7 @@ import {
   DialogContent, DialogActions, TablePagination,
 } from '@mui/material';
 import { Delete, Star, StarBorder, Add, PhotoLibrary } from '@mui/icons-material';
+import { useMediaQuery, useTheme } from '@mui/material';
 import { useAuth } from '@/contexts/AuthContext';
 import { Photo } from '@/types';
 
@@ -23,6 +24,8 @@ const TARGET_TYPES = [
 export default function AdminFotosPage() {
   const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [total, setTotal] = useState(0);
   const [targetTypeFilter, setTargetTypeFilter] = useState('');
@@ -215,7 +218,7 @@ export default function AdminFotosPage() {
         />
       )}
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle>Upload de Fotos</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>

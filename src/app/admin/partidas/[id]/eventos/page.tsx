@@ -123,15 +123,15 @@ export default function EventosPartidaPage() {
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={6} md={3}>
+            <Grid item xs={12} sm={6} md={3}>
               <TextField select label="Tipo" fullWidth size="small" value={form.event_type} onChange={(e) => setForm(prev => ({ ...prev, event_type: e.target.value }))}>
                 {EVENT_TYPES.map(e => <MenuItem key={e.value} value={e.value}>{e.label}</MenuItem>)}
               </TextField>
             </Grid>
-            <Grid item xs={3} md={2}>
+            <Grid item xs={6} sm={3} md={2}>
               <TextField label="Minuto" type="number" fullWidth size="small" value={form.minute} onChange={(e) => setForm(prev => ({ ...prev, minute: e.target.value }))} />
             </Grid>
-            <Grid item xs={3} md={2}>
+            <Grid item xs={6} sm={3} md={2}>
               <TextField select label="Tempo" fullWidth size="small" value={form.half} onChange={(e) => setForm(prev => ({ ...prev, half: e.target.value }))}>
                 <MenuItem value="1T">1 Tempo</MenuItem>
                 <MenuItem value="2T">2 Tempo</MenuItem>
@@ -150,10 +150,10 @@ export default function EventosPartidaPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Tempo</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Tempo</TableCell>
               <TableCell>Min</TableCell>
               <TableCell>Jogador</TableCell>
-              <TableCell>Time</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Time</TableCell>
               <TableCell>Evento</TableCell>
               <TableCell align="right">Acao</TableCell>
             </TableRow>
@@ -161,10 +161,10 @@ export default function EventosPartidaPage() {
           <TableBody>
             {events.map((e) => (
               <TableRow key={e.id}>
-                <TableCell>{e.half || '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{e.half || '-'}</TableCell>
                 <TableCell>{e.minute ?? '-'}</TableCell>
                 <TableCell>{e.player_name}</TableCell>
-                <TableCell>{e.team_name}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{e.team_name}</TableCell>
                 <TableCell><Chip label={eventLabel(e.event_type)} size="small" color={eventColor(e.event_type) as any} /></TableCell>
                 <TableCell align="right">
                   <IconButton size="small" color="error" onClick={() => handleDelete(e.id)}><Delete fontSize="small" /></IconButton>

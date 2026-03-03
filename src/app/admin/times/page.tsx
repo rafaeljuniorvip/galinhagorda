@@ -56,9 +56,9 @@ export default function AdminTimesPage() {
           <TableHead>
             <TableRow>
               <TableCell>Time</TableCell>
-              <TableCell>Sigla</TableCell>
-              <TableCell>Cidade</TableCell>
-              <TableCell>Contato</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Sigla</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Cidade</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Contato</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
@@ -74,9 +74,9 @@ export default function AdminTimesPage() {
                     <Typography variant="body2" fontWeight={600}>{team.name}</Typography>
                   </Box>
                 </TableCell>
-                <TableCell>{team.short_name || '-'}</TableCell>
-                <TableCell>{team.city}/{team.state}</TableCell>
-                <TableCell>{team.contact_name || '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{team.short_name || '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{team.city}/{team.state}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{team.contact_name || '-'}</TableCell>
                 <TableCell>
                   <Chip label={team.active ? 'Ativo' : 'Inativo'} size="small" color={team.active ? 'success' : 'default'} />
                 </TableCell>

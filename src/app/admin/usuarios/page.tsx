@@ -130,9 +130,9 @@ export default function AdminUsuariosPage() {
           <TableHead>
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
               <TableCell>Usuario</TableCell>
-              <TableCell>Email</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Email</TableCell>
               <TableCell>Role</TableCell>
-              <TableCell>Cadastro</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Cadastro</TableCell>
               <TableCell align="center">Acoes</TableCell>
             </TableRow>
           </TableHead>
@@ -160,9 +160,9 @@ export default function AdminUsuariosPage() {
                       {u.name}
                     </Box>
                   </TableCell>
-                  <TableCell>{u.email}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{u.email}</TableCell>
                   <TableCell>{getRoleChip(u.role)}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     {new Date(u.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell align="center">

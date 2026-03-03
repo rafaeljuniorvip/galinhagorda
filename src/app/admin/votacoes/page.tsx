@@ -180,8 +180,8 @@ export default function AdminVotacoesPage() {
               <TableCell>Partida</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Votos</TableCell>
-              <TableCell>Vencedor</TableCell>
-              <TableCell>Prazo</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Vencedor</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Prazo</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
           </TableHead>
@@ -215,7 +215,7 @@ export default function AdminVotacoesPage() {
                     />
                   </TableCell>
                   <TableCell>{vs?.totalVotes || 0}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     {vs?.winner ? (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Avatar src={vs.winner.player_photo || ''} sx={{ width: 24, height: 24 }}>
@@ -225,11 +225,11 @@ export default function AdminVotacoesPage() {
                       </Box>
                     ) : '-'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     {vs?.deadline ? formatDateTime(vs.deadline) : '-'}
                   </TableCell>
                   <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexDirection: { xs: 'column', md: 'row' } }}>
                       <Button
                         size="small"
                         variant={vs?.isOpen ? 'outlined' : 'contained'}

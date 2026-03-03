@@ -5,16 +5,20 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, TextField, Chip, TablePagination,
+  TableHead, TableRow, Paper, TextField, Chip, TablePagination,
   Avatar, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert,
+  useMediaQuery, useTheme,
 } from '@mui/material';
 import { Add, Edit, Delete, Search, Link as LinkIcon, ContentCopy } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { Player, PaginatedResponse } from '@/types';
+import MobileActionsMenu from '@/components/admin/MobileActionsMenu';
 
 export default function AdminJogadoresPage() {
   const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [players, setPlayers] = useState<PaginatedResponse<Player> | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -96,8 +100,8 @@ export default function AdminJogadoresPage() {
           <TableHead>
             <TableRow>
               <TableCell>Jogador</TableCell>
-              <TableCell>Posicao</TableCell>
-              <TableCell>Cidade</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Posicao</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Cidade</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
@@ -116,28 +120,18 @@ export default function AdminJogadoresPage() {
                     </Box>
                   </Box>
                 </TableCell>
-                <TableCell>{player.position}</TableCell>
-                <TableCell>{player.city}/{player.state}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{player.position}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{player.city}/{player.state}</TableCell>
                 <TableCell>
                   <Chip label={player.active ? 'Ativo' : 'Inativo'} size="small"
                     color={player.active ? 'success' : 'default'} />
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton
-                    onClick={() => handleGenerateLink(player.id, player.name)}
-                    size="small"
-                    color="primary"
-                    title="Gerar link para completar perfil"
-                    disabled={linkLoading}
-                  >
-                    <LinkIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton component={Link} href={`/admin/jogadores/${player.id}/editar`} size="small">
-                    <Edit fontSize="small" />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(player.id, player.name)} size="small" color="error">
-                    <Delete fontSize="small" />
-                  </IconButton>
+                  <MobileActionsMenu actions={[
+                    { label: 'Gerar link', icon: <LinkIcon fontSize="small" />, color: 'primary', onClick: () => handleGenerateLink(player.id, player.name), disabled: linkLoading },
+                    { label: 'Editar', icon: <Edit fontSize="small" />, href: `/admin/jogadores/${player.id}/editar` },
+                    { label: 'Excluir', icon: <Delete fontSize="small" />, color: 'error', onClick: () => handleDelete(player.id, player.name) },
+                  ]} />
                 </TableCell>
               </TableRow>
             ))}
@@ -164,7 +158,7 @@ export default function AdminJogadoresPage() {
       </TableContainer>
 
       {/* Link Dialog */}
-      <Dialog open={linkDialog.open} onClose={() => setLinkDialog({ ...linkDialog, open: false })} maxWidth="sm" fullWidth>
+      <Dialog open={linkDialog.open} onClose={() => setLinkDialog({ ...linkDialog, open: false })} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle>Link para Completar Perfil</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

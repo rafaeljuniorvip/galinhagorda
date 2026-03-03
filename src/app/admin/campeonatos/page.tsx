@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, TextField, Chip, TablePagination,
+  TableHead, TableRow, Paper, TextField, Chip, TablePagination,
 } from '@mui/material';
 import { Add, Edit, Delete, Search, People, Assessment } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { Championship, PaginatedResponse } from '@/types';
+import MobileActionsMenu from '@/components/admin/MobileActionsMenu';
 
 export default function AdminCampeonatosPage() {
   const { user, loading, isAdmin } = useAuth();
@@ -63,8 +64,8 @@ export default function AdminCampeonatosPage() {
           <TableHead>
             <TableRow>
               <TableCell>Campeonato</TableCell>
-              <TableCell>Ano</TableCell>
-              <TableCell>Categoria</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Ano</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Categoria</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
@@ -73,14 +74,16 @@ export default function AdminCampeonatosPage() {
             {data?.data.map((c) => (
               <TableRow key={c.id} hover>
                 <TableCell><Typography variant="body2" fontWeight={600}>{c.name}</Typography></TableCell>
-                <TableCell>{c.year}</TableCell>
-                <TableCell>{c.category}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{c.year}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{c.category}</TableCell>
                 <TableCell><Chip label={c.status} size="small" color={statusColor(c.status) as any} /></TableCell>
                 <TableCell align="right">
-                  <IconButton component={Link} href={`/admin/campeonatos/${c.id}/inscricoes`} size="small" title="Inscricoes"><People fontSize="small" /></IconButton>
-                  <IconButton component={Link} href={`/admin/campeonatos/${c.id}/relatorios`} size="small" title="Relatorios"><Assessment fontSize="small" /></IconButton>
-                  <IconButton component={Link} href={`/admin/campeonatos/${c.id}/editar`} size="small"><Edit fontSize="small" /></IconButton>
-                  <IconButton onClick={() => handleDelete(c.id, c.name)} size="small" color="error"><Delete fontSize="small" /></IconButton>
+                  <MobileActionsMenu actions={[
+                    { label: 'Inscricoes', icon: <People fontSize="small" />, href: `/admin/campeonatos/${c.id}/inscricoes` },
+                    { label: 'Relatorios', icon: <Assessment fontSize="small" />, href: `/admin/campeonatos/${c.id}/relatorios` },
+                    { label: 'Editar', icon: <Edit fontSize="small" />, href: `/admin/campeonatos/${c.id}/editar` },
+                    { label: 'Excluir', icon: <Delete fontSize="small" />, color: 'error', onClick: () => handleDelete(c.id, c.name) },
+                  ]} />
                 </TableCell>
               </TableRow>
             ))}

@@ -67,7 +67,7 @@ export default function AdminArbitrosPage() {
           size="small"
           value={category}
           onChange={(e) => { setCategory(e.target.value); setPage(0); }}
-          sx={{ width: 200 }}
+          sx={{ width: { xs: '100%', md: 200 } }}
           label="Categoria"
         >
           <MenuItem value="">Todas</MenuItem>
@@ -80,10 +80,10 @@ export default function AdminArbitrosPage() {
           <TableHead>
             <TableRow>
               <TableCell>Nome</TableCell>
-              <TableCell>Apelido</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Apelido</TableCell>
               <TableCell>Categoria</TableCell>
-              <TableCell>Cidade</TableCell>
-              <TableCell>Telefone</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Cidade</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Telefone</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
@@ -94,12 +94,12 @@ export default function AdminArbitrosPage() {
                 <TableCell>
                   <Typography variant="body2" fontWeight={600}>{ref.name}</Typography>
                 </TableCell>
-                <TableCell>{ref.nickname || '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{ref.nickname || '-'}</TableCell>
                 <TableCell>
                   <Chip label={ref.category} size="small" variant="outlined" />
                 </TableCell>
-                <TableCell>{ref.city}/{ref.state}</TableCell>
-                <TableCell>{ref.phone || '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{ref.city}/{ref.state}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{ref.phone || '-'}</TableCell>
                 <TableCell>
                   <Chip label={ref.active ? 'Ativo' : 'Inativo'} size="small"
                     color={ref.active ? 'success' : 'default'} />

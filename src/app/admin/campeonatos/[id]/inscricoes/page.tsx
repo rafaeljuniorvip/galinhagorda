@@ -9,12 +9,15 @@ import {
   IconButton, Avatar, Chip, Alert, Divider, Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import { ArrowBack, PersonAdd, Delete, GroupAdd, SwapHoriz } from '@mui/icons-material';
+import { useMediaQuery, useTheme } from '@mui/material';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function InscricoesPage() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading, isAdmin } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [championship, setChampionship] = useState<any>(null);
   const [enrolledTeams, setEnrolledTeams] = useState<any[]>([]);
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -170,7 +173,7 @@ export default function InscricoesPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>Jogador</TableCell>
-                  <TableCell>Posicao</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Posicao</TableCell>
                   <TableCell>N BID</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="center">Ações</TableCell>
@@ -185,7 +188,7 @@ export default function InscricoesPage() {
                         <Typography variant="body2">{r.player_name}</Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>{r.player_position}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{r.player_position}</TableCell>
                     <TableCell><Chip label={r.bid_number} size="small" variant="outlined" /></TableCell>
                     <TableCell><Chip label={r.status} size="small" color={r.status === 'Ativo' ? 'success' : 'default'} /></TableCell>
                     <TableCell align="center">
@@ -201,7 +204,7 @@ export default function InscricoesPage() {
       ))}
 
       {/* Dialog: Inscrever Time */}
-      <Dialog open={teamDialogOpen} onClose={() => setTeamDialogOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={teamDialogOpen} onClose={() => setTeamDialogOpen(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
         <DialogTitle>Inscrever Time</DialogTitle>
         <DialogContent>
           <TextField select label="Selecione o Time" fullWidth value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} sx={{ mt: 1 }}>
@@ -217,7 +220,7 @@ export default function InscricoesPage() {
       </Dialog>
 
       {/* Dialog: Inscrever Jogador */}
-      <Dialog open={playerDialogOpen} onClose={() => setPlayerDialogOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={playerDialogOpen} onClose={() => setPlayerDialogOpen(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
         <DialogTitle>Inscrever Jogador (BID)</DialogTitle>
         <DialogContent>
           <TextField select label="Time" fullWidth value={selectedPlayerTeam} onChange={(e) => setSelectedPlayerTeam(e.target.value)} sx={{ mt: 1, mb: 2 }}>
@@ -236,7 +239,7 @@ export default function InscricoesPage() {
       </Dialog>
 
       {/* Dialog: Trocar Time */}
-      <Dialog open={swapDialogOpen} onClose={() => setSwapDialogOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={swapDialogOpen} onClose={() => setSwapDialogOpen(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
         <DialogTitle>Trocar Time do Jogador</DialogTitle>
         <DialogContent>
           {swapRegistration && (

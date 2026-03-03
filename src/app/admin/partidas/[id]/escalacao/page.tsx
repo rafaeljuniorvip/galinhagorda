@@ -221,7 +221,7 @@ export default function EscalacaoPartidaPage() {
                   <TableCell padding="checkbox">Titular</TableCell>
                   <TableCell>Jogador</TableCell>
                   <TableCell>Posicao</TableCell>
-                  <TableCell>Camisa</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Camisa</TableCell>
                   <TableCell align="right">Acao</TableCell>
                 </TableRow>
               </TableHead>
@@ -241,7 +241,7 @@ export default function EscalacaoPartidaPage() {
                           {entry.player_name[0]}
                         </Avatar>
                         <Typography variant="body2">{entry.player_name}</Typography>
-                        {entry.is_starter && <Chip label="Titular" size="small" color="primary" variant="outlined" />}
+                        <Chip label="Titular" size="small" color="primary" variant="outlined" sx={{ display: { xs: 'none', md: 'inline-flex' } }} />
                       </Box>
                     </TableCell>
                     <TableCell>
@@ -250,19 +250,19 @@ export default function EscalacaoPartidaPage() {
                         size="small"
                         value={entry.position}
                         onChange={(e) => updateLineupEntry(entry.player_id, side, 'position', e.target.value)}
-                        sx={{ minWidth: 120 }}
+                        sx={{ minWidth: { xs: 90, md: 120 } }}
                       >
                         <MenuItem value="">-</MenuItem>
                         {POSITIONS.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
                       </TextField>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       <TextField
                         type="number"
                         size="small"
                         value={entry.shirt_number ?? ''}
                         onChange={(e) => updateLineupEntry(entry.player_id, side, 'shirt_number', e.target.value ? parseInt(e.target.value) : null)}
-                        sx={{ width: 70 }}
+                        sx={{ width: { xs: 55, md: 70 } }}
                       />
                     </TableCell>
                     <TableCell align="right">

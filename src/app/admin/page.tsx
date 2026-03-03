@@ -67,14 +67,14 @@ export default function AdminDashboard() {
   if (loading || !user) return null;
 
   const cards = [
-    { label: 'Jogadores', value: stats.players, icon: <People sx={{ fontSize: 40 }} />, color: '#1976d2' },
-    { label: 'Times', value: stats.teams, icon: <Groups sx={{ fontSize: 40 }} />, color: '#2e7d32' },
-    { label: 'Campeonatos', value: stats.championships, icon: <EmojiEvents sx={{ fontSize: 40 }} />, color: '#ed6c02' },
-    { label: 'Partidas', value: stats.matches, icon: <SportsSoccer sx={{ fontSize: 40 }} />, color: '#9c27b0' },
-    { label: 'Noticias Publicadas', value: stats.news, icon: <Newspaper sx={{ fontSize: 40 }} />, color: '#0288d1' },
-    { label: 'Fotos', value: stats.photos, icon: <PhotoLibrary sx={{ fontSize: 40 }} />, color: '#7b1fa2' },
-    { label: 'Msgs Pendentes', value: stats.pendingMessages, icon: <Forum sx={{ fontSize: 40 }} />, color: '#d32f2f' },
-    { label: 'Votacoes Ativas', value: stats.activeVotings, icon: <HowToVote sx={{ fontSize: 40 }} />, color: '#388e3c' },
+    { label: 'Jogadores', value: stats.players, icon: <People sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#1976d2' },
+    { label: 'Times', value: stats.teams, icon: <Groups sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#2e7d32' },
+    { label: 'Campeonatos', value: stats.championships, icon: <EmojiEvents sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#ed6c02' },
+    { label: 'Partidas', value: stats.matches, icon: <SportsSoccer sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#9c27b0' },
+    { label: 'Noticias Publicadas', value: stats.news, icon: <Newspaper sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#0288d1' },
+    { label: 'Fotos', value: stats.photos, icon: <PhotoLibrary sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#7b1fa2' },
+    { label: 'Msgs Pendentes', value: stats.pendingMessages, icon: <Forum sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#d32f2f' },
+    { label: 'Votacoes Ativas', value: stats.activeVotings, icon: <HowToVote sx={{ fontSize: { xs: 32, md: 40 } }} />, color: '#388e3c' },
   ];
 
   return (
@@ -90,10 +90,10 @@ export default function AdminDashboard() {
         {cards.map((card) => (
           <Grid item xs={6} md={3} key={card.label}>
             <Card>
-              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
+              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, md: 2 }, p: { xs: 1.5, md: 3 } }}>
                 <Box sx={{ color: card.color }}>{card.icon}</Box>
                 <Box>
-                  <Typography variant="h4" fontWeight={700}>{card.value}</Typography>
+                  <Typography fontWeight={700} sx={{ fontSize: { xs: '1.25rem', md: '2rem' } }}>{card.value}</Typography>
                   <Typography variant="body2" color="text.secondary">{card.label}</Typography>
                 </Box>
               </CardContent>

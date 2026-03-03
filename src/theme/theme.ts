@@ -23,7 +23,13 @@ const theme = createTheme({
     h1: { fontSize: '2rem', fontWeight: 700 },
     h2: { fontSize: '1.75rem', fontWeight: 700 },
     h3: { fontSize: '1.5rem', fontWeight: 600 },
-    h4: { fontSize: '1.25rem', fontWeight: 600 },
+    h4: {
+      fontSize: '1.25rem',
+      fontWeight: 600,
+      '@media (min-width: 900px)': {
+        fontSize: '1.5rem',
+      },
+    },
     h5: { fontSize: '1.1rem', fontWeight: 600 },
     h6: { fontSize: '1rem', fontWeight: 600 },
     body1: { fontSize: '0.938rem' },
@@ -49,6 +55,14 @@ const theme = createTheme({
         },
       },
     },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+        },
+      },
+    },
     MuiTableRow: {
       styleOverrides: {
         root: {
@@ -64,6 +78,13 @@ const theme = createTheme({
           fontWeight: 700,
           backgroundColor: '#f5f5f5',
           borderBottom: '2px solid #e0e0e0',
+          whiteSpace: 'nowrap',
+        },
+        root: {
+          '@media (max-width: 900px)': {
+            padding: '8px 12px',
+            fontSize: '0.8125rem',
+          },
         },
       },
     },

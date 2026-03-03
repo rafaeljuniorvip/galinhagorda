@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, Chip, TablePagination,
+  TableHead, TableRow, Paper, Chip, TablePagination,
   TextField, MenuItem, Alert, Avatar,
 } from '@mui/material';
 import {
@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { FanMessage } from '@/types';
 import { formatDateTime } from '@/lib/utils';
+import MobileActionsMenu from '@/components/admin/MobileActionsMenu';
 
 const TARGET_TYPE_LABELS: Record<string, string> = {
   match: 'Partida',
@@ -124,9 +125,9 @@ export default function AdminMensagensPage() {
             <TableRow>
               <TableCell>Autor</TableCell>
               <TableCell>Mensagem</TableCell>
-              <TableCell>Alvo</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Alvo</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Data</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Data</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
           </TableHead>
@@ -142,11 +143,11 @@ export default function AdminMensagensPage() {
                   </Box>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <Typography variant="body2" sx={{ maxWidth: { xs: 150, md: 300 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {msg.message}
                   </Typography>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                   <Chip
                     label={TARGET_TYPE_LABELS[msg.target_type] || msg.target_type}
                     size="small"
@@ -163,29 +164,25 @@ export default function AdminMensagensPage() {
                     {msg.is_pinned && <Chip label="Fixada" size="small" color="primary" />}
                   </Box>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                   <Typography variant="caption">{formatDateTime(msg.created_at)}</Typography>
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton
-                    size="small"
-                    onClick={() => handleToggleApproval(msg.id)}
-                    color={msg.is_approved ? 'error' : 'success'}
-                    title={msg.is_approved ? 'Reprovar' : 'Aprovar'}
-                  >
-                    {msg.is_approved ? <Cancel fontSize="small" /> : <CheckCircle fontSize="small" />}
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleTogglePin(msg.id)}
-                    color={msg.is_pinned ? 'primary' : 'default'}
-                    title={msg.is_pinned ? 'Desfixar' : 'Fixar'}
-                  >
-                    {msg.is_pinned ? <PushPin fontSize="small" /> : <PushPinOutlined fontSize="small" />}
-                  </IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDelete(msg.id)} title="Excluir">
-                    <Delete fontSize="small" />
-                  </IconButton>
+                  <MobileActionsMenu actions={[
+                    {
+                      label: msg.is_approved ? 'Reprovar' : 'Aprovar',
+                      icon: msg.is_approved ? <Cancel fontSize="small" /> : <CheckCircle fontSize="small" />,
+                      color: msg.is_approved ? 'error' : 'success',
+                      onClick: () => handleToggleApproval(msg.id),
+                    },
+                    {
+                      label: msg.is_pinned ? 'Desfixar' : 'Fixar',
+                      icon: msg.is_pinned ? <PushPin fontSize="small" /> : <PushPinOutlined fontSize="small" />,
+                      color: msg.is_pinned ? 'primary' : 'inherit',
+                      onClick: () => handleTogglePin(msg.id),
+                    },
+                    { label: 'Excluir', icon: <Delete fontSize="small" />, color: 'error', onClick: () => handleDelete(msg.id) },
+                  ]} />
                 </TableCell>
               </TableRow>
             ))}

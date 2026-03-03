@@ -168,7 +168,7 @@ export default function TransmissoesPartidaPage() {
         <CardContent>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>Adicionar Link de Transmissao</Typography>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} sm={6} md={2}>
               <TextField
                 select
                 label="Plataforma"
@@ -200,13 +200,13 @@ export default function TransmissoesPartidaPage() {
                 placeholder="Ex: Transmissao oficial"
               />
             </Grid>
-            <Grid item xs={6} md={1}>
+            <Grid item xs={6} sm={3} md={1}>
               <FormControlLabel
                 control={<Switch checked={form.is_live} onChange={(e) => setForm(prev => ({ ...prev, is_live: e.target.checked }))} />}
                 label="Ao Vivo"
               />
             </Grid>
-            <Grid item xs={6} md={2}>
+            <Grid item xs={6} sm={3} md={2}>
               <Button variant="contained" startIcon={<Add />} onClick={handleAddLink} fullWidth>Adicionar</Button>
             </Grid>
           </Grid>
@@ -219,7 +219,7 @@ export default function TransmissoesPartidaPage() {
             <TableRow>
               <TableCell>Plataforma</TableCell>
               <TableCell>URL</TableCell>
-              <TableCell>Label</TableCell>
+              <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Label</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Acoes</TableCell>
             </TableRow>
@@ -229,11 +229,11 @@ export default function TransmissoesPartidaPage() {
               <TableRow key={link.id} hover>
                 <TableCell>{link.platform}</TableCell>
                 <TableCell>
-                  <Typography variant="body2" sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <Typography variant="body2" sx={{ maxWidth: { xs: 150, md: 300 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {link.url}
                   </Typography>
                 </TableCell>
-                <TableCell>{link.label || '-'}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{link.label || '-'}</TableCell>
                 <TableCell>
                   <Chip
                     icon={<LiveTv />}
