@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { NewsArticle, Championship } from '@/types';
@@ -79,10 +80,10 @@ export default function NewsForm({ news }: Props) {
       <Card>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="md:col-span-8"><Label>Titulo *</Label><Input required value={form.title} onChange={handleChange('title')} /></div>
-            <div className="md:col-span-4"><Label>Slug *</Label><Input required value={form.slug} onChange={handleChange('slug')} /></div>
+            <div className="md:col-span-12"><Label>Titulo *</Label><Input required value={form.title} onChange={handleChange('title')} /></div>
+            <input type="hidden" value={form.slug} />
             <div className="md:col-span-12"><Label>Resumo</Label><Textarea rows={2} value={form.summary} onChange={handleChange('summary')} /></div>
-            <div className="md:col-span-12"><Label>Conteudo *</Label><Textarea required rows={10} value={form.content} onChange={handleChange('content')} /></div>
+            <div className="md:col-span-12"><Label className="mb-2 block">Conteudo *</Label><RichTextEditor value={form.content} onChange={(html) => setForm(prev => ({ ...prev, content: html }))} /></div>
             <div className="md:col-span-4">
               <Label>Campeonato (opcional)</Label>
               <Select value={form.championship_id || 'none'} onValueChange={(v) => setForm(prev => ({ ...prev, championship_id: v === 'none' ? '' : v }))}>
