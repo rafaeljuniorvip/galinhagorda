@@ -13,7 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { NewsArticle, Championship, PaginatedResponse } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
+import { NewsArticle, Championship, PaginatedResponse, Player, Team, Match } from '@/types';
 import { formatDateTime } from '@/lib/utils';
 import PageHeader from '@/components/admin/PageHeader';
 import Pagination from '@/components/admin/Pagination';
@@ -32,8 +33,17 @@ export default function AdminNoticiasPage() {
   const [showAiDialog, setShowAiDialog] = useState(false);
   const [aiChampionshipId, setAiChampionshipId] = useState('all');
   const [aiCount, setAiCount] = useState('3');
+  const [aiFocus, setAiFocus] = useState('geral');
+  const [aiStyle, setAiStyle] = useState('auto');
+  const [aiContext, setAiContext] = useState('');
+  const [aiMatchId, setAiMatchId] = useState('');
+  const [aiTeamId, setAiTeamId] = useState('');
+  const [aiPlayerId, setAiPlayerId] = useState('');
   const [generating, setGenerating] = useState(false);
   const [championships, setChampionships] = useState<Championship[]>([]);
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
+  const [focusMatches, setFocusMatches] = useState<Match[]>([]);
 
   useEffect(() => { if (!loading && !isAdmin) router.push('/admin/login'); }, [isAdmin, loading, router]);
 
@@ -49,17 +59,45 @@ export default function AdminNoticiasPage() {
 
   useEffect(() => { if (user) loadData(); }, [user, loadData]);
 
-  // Load championships for AI dialog
+  // Load championships, teams, and players for AI dialog
   useEffect(() => {
-    async function loadChampionships() {
-      const res = await fetch('/api/championships?all=true');
-      if (res.ok) {
-        const data = await res.json();
-        setChampionships(Array.isArray(data) ? data : data.data || []);
+    async function loadDialogData() {
+      const [champsRes, teamsRes, playersRes] = await Promise.all([
+        fetch('/api/championships?all=true'),
+        fetch('/api/teams?all=true'),
+        fetch('/api/players?all=true'),
+      ]);
+      if (champsRes.ok) {
+        const d = await champsRes.json();
+        setChampionships(Array.isArray(d) ? d : d.data || []);
+      }
+      if (teamsRes.ok) {
+        const d = await teamsRes.json();
+        setAllTeams(Array.isArray(d) ? d : d.data || []);
+      }
+      if (playersRes.ok) {
+        const d = await playersRes.json();
+        setAllPlayers(Array.isArray(d) ? d : d.data || []);
       }
     }
-    if (user) loadChampionships();
+    if (user) loadDialogData();
   }, [user]);
+
+  // Load matches when focus=jogo and championship changes
+  useEffect(() => {
+    async function loadMatches() {
+      const params = new URLSearchParams({ limit: '50' });
+      if (aiChampionshipId !== 'all') params.set('championship_id', aiChampionshipId);
+      const res = await fetch(`/api/matches?${params}`);
+      if (res.ok) {
+        const d = await res.json();
+        setFocusMatches(d.data || []);
+      }
+    }
+    if (aiFocus === 'jogo') {
+      loadMatches();
+    }
+  }, [aiFocus, aiChampionshipId]);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Excluir noticia "${title}"?`)) return;
@@ -76,6 +114,10 @@ export default function AdminNoticiasPage() {
         body: JSON.stringify({
           championship_id: aiChampionshipId !== 'all' ? aiChampionshipId : undefined,
           count: parseInt(aiCount),
+          focus: aiFocus !== 'geral' ? aiFocus : undefined,
+          focus_id: aiFocus === 'jogo' ? aiMatchId : aiFocus === 'time' ? aiTeamId : aiFocus === 'jogador' ? aiPlayerId : undefined,
+          style: aiStyle !== 'auto' ? aiStyle : undefined,
+          context: aiContext.trim() || undefined,
         }),
       });
 
@@ -185,7 +227,7 @@ export default function AdminNoticiasPage() {
 
       {/* AI Generation Dialog */}
       <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
@@ -196,34 +238,134 @@ export default function AdminNoticiasPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Campeonato</Label>
-              <Select value={aiChampionshipId} onValueChange={setAiChampionshipId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o campeonato" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os campeonatos</SelectItem>
-                  {championships.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name} ({c.year})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Campeonato</Label>
+                <Select value={aiChampionshipId} onValueChange={setAiChampionshipId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o campeonato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os campeonatos</SelectItem>
+                    {championships.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name} ({c.year})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Quantidade</Label>
+                <Select value={aiCount} onValueChange={setAiCount}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <SelectItem key={n} value={String(n)}>{n} noticia{n > 1 ? 's' : ''}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Foco da noticia</Label>
+                <Select value={aiFocus} onValueChange={(v) => { setAiFocus(v); setAiMatchId(''); setAiTeamId(''); setAiPlayerId(''); }}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geral">Geral / Campeonato</SelectItem>
+                    <SelectItem value="jogo">Sobre um jogo</SelectItem>
+                    <SelectItem value="time">Sobre um time</SelectItem>
+                    <SelectItem value="jogador">Sobre um jogador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Estilo / Enfase</Label>
+                <Select value={aiStyle} onValueChange={setAiStyle}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">IA decide o estilo</SelectItem>
+                    <SelectItem value="cronica">Cronica de jogo</SelectItem>
+                    <SelectItem value="analise">Analise tatica/tecnica</SelectItem>
+                    <SelectItem value="preview">Preview/expectativa</SelectItem>
+                    <SelectItem value="destaque">Destaque de jogador</SelectItem>
+                    <SelectItem value="classificacao">Analise de classificacao</SelectItem>
+                    <SelectItem value="bastidores">Bastidores e curiosidades</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {aiFocus === 'jogo' && (
+              <div className="space-y-2">
+                <Label>Selecione o jogo</Label>
+                <Select value={aiMatchId} onValueChange={setAiMatchId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha uma partida..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {focusMatches.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.home_team_name} {m.home_score ?? ''} x {m.away_score ?? ''} {m.away_team_name} ({m.status})
+                      </SelectItem>
+                    ))}
+                    {focusMatches.length === 0 && (
+                      <SelectItem value="" disabled>Nenhuma partida encontrada</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {aiFocus === 'time' && (
+              <div className="space-y-2">
+                <Label>Selecione o time</Label>
+                <Select value={aiTeamId} onValueChange={setAiTeamId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um time..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allTeams.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {aiFocus === 'jogador' && (
+              <div className="space-y-2">
+                <Label>Selecione o jogador</Label>
+                <Select value={aiPlayerId} onValueChange={setAiPlayerId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um jogador..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allPlayers.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.full_name} ({p.position})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label>Quantidade de noticias</Label>
-              <Select value={aiCount} onValueChange={setAiCount}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <SelectItem key={n} value={String(n)}>{n} noticia{n > 1 ? 's' : ''}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Contexto adicional <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+              <Textarea
+                value={aiContext}
+                onChange={(e) => setAiContext(e.target.value)}
+                placeholder="Ex: Focar na rivalidade entre os times, mencionar que o artilheiro voltou de lesao, destacar a torcida que lotou o estadio..."
+                rows={3}
+              />
             </div>
           </div>
 

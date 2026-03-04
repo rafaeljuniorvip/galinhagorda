@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
-    const { championship_id, count = 3 } = body;
+    const { championship_id, count = 3, focus, focus_id, style, context } = body;
 
     if (count < 1 || count > 10) {
       return NextResponse.json({ error: 'Quantidade deve ser entre 1 e 10' }, { status: 400 });
@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
       championship_id: championship_id || undefined,
       count,
       author_id: user.id,
+      focus: focus || undefined,
+      focus_id: focus_id || undefined,
+      style: style || undefined,
+      context: context || undefined,
     });
 
     return NextResponse.json({

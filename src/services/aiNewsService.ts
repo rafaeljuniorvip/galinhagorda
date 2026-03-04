@@ -1,8 +1,9 @@
 import { getAllChampionships, getChampionshipById } from '@/services/championshipService';
-import { listMatches } from '@/services/matchService';
+import { listMatches, getMatchById } from '@/services/matchService';
 import { getEventsByMatch } from '@/services/matchEventService';
-import { getChampionshipStandings, getTopScorers, getDisciplinaryRanking } from '@/services/statsService';
-import { getAllTeams } from '@/services/teamService';
+import { getChampionshipStandings, getTopScorers, getDisciplinaryRanking, getPlayerStats } from '@/services/statsService';
+import { getAllTeams, getTeamById } from '@/services/teamService';
+import { getPlayerById } from '@/services/playerService';
 import { listNews, createNews } from '@/services/newsService';
 import { slugify } from '@/lib/utils';
 
@@ -17,9 +18,15 @@ interface GenerateOptions {
   championship_id?: string;
   count: number;
   author_id: string;
+  focus?: 'geral' | 'jogo' | 'time' | 'jogador';
+  focus_id?: string;
+  style?: string;
+  context?: string;
 }
 
-async function gatherContext(championshipId?: string) {
+async function gatherContext(options: GenerateOptions) {
+  const { championship_id: championshipId, focus, focus_id } = options;
+
   const championships = championshipId
     ? [await getChampionshipById(championshipId)].filter(Boolean)
     : await getAllChampionships();
@@ -102,6 +109,74 @@ async function gatherContext(championshipId?: string) {
   const existingNews = await listNews({ limit: 30 });
   const existingTitles = existingNews.data.map((n) => n.title);
 
+  // Focus-specific context
+  let focusContext: any = null;
+
+  if (focus === 'jogo' && focus_id) {
+    const match = await getMatchById(focus_id);
+    if (match) {
+      const events = await getEventsByMatch(focus_id);
+      focusContext = {
+        type: 'jogo',
+        match: {
+          id: match.id,
+          home_team: match.home_team_name,
+          away_team: match.away_team_name,
+          home_score: match.home_score,
+          away_score: match.away_score,
+          date: match.match_date,
+          round: match.match_round,
+          status: match.status,
+          venue: match.venue,
+          referee: match.referee_name || match.referee,
+          championship: match.championship_name,
+        },
+        events: events.map((e) => ({
+          type: e.event_type,
+          player: e.player_name,
+          team: e.team_name,
+          minute: e.minute,
+          half: e.half,
+        })),
+      };
+    }
+  } else if (focus === 'time' && focus_id) {
+    const team = await getTeamById(focus_id);
+    if (team) {
+      focusContext = {
+        type: 'time',
+        team: {
+          name: team.name,
+          short_name: team.short_name,
+          city: team.city,
+          founded_year: team.founded_year,
+        },
+      };
+    }
+  } else if (focus === 'jogador' && focus_id) {
+    const player = await getPlayerById(focus_id);
+    if (player) {
+      const stats = await getPlayerStats(focus_id, championshipId);
+      focusContext = {
+        type: 'jogador',
+        player: {
+          name: player.full_name,
+          nickname: player.nickname,
+          position: player.position,
+          city: player.city,
+        },
+        stats: stats.map((s) => ({
+          championship: s.championship_name,
+          team: s.team_name,
+          matches: s.matches_played,
+          goals: s.goals,
+          yellow_cards: s.yellow_cards,
+          red_cards: s.red_cards,
+        })),
+      };
+    }
+  }
+
   return {
     championships: championships.map((c) => ({
       id: c!.id,
@@ -121,23 +196,67 @@ async function gatherContext(championshipId?: string) {
     disciplinary: cardsMap,
     teams,
     existingTitles,
+    focusContext,
   };
 }
 
-function buildPrompt(context: Awaited<ReturnType<typeof gatherContext>>, count: number) {
+const STYLE_INSTRUCTIONS: Record<string, string> = {
+  cronica: 'Escreva no estilo de CRONICA DE JOGO: narrativa envolvente, descrevendo os principais momentos, emoções e lances decisivos.',
+  analise: 'Escreva no estilo de ANALISE TATICA/TECNICA: foco em estratégias, formações, desempenho coletivo e individual dos times.',
+  preview: 'Escreva no estilo de PREVIEW/EXPECTATIVA: antecipe os próximos jogos, destaque confrontos-chave, retrospecto e expectativas.',
+  destaque: 'Escreva no estilo de DESTAQUE DE JOGADOR: foque em um jogador específico, suas estatísticas, atuação recente e importância para o time.',
+  classificacao: 'Escreva no estilo de ANALISE DE CLASSIFICACAO: analise a tabela, corrida pelo título, luta contra rebaixamento, desempenho dos times.',
+  bastidores: 'Escreva no estilo de BASTIDORES E CURIOSIDADES: traga informações interessantes, curiosidades, fatos inusitados e bastidores do campeonato.',
+};
+
+function buildPrompt(context: Awaited<ReturnType<typeof gatherContext>>, options: GenerateOptions) {
+  const { count, focus, style, context: userContext } = options;
+
+  let styleInstruction = '- Varie os tipos de matéria: crônica de jogo, preview de rodada, análise tática, destaque de jogador/artilheiro, ranking/classificação, matéria sobre disciplina/fair play.';
+  if (style && style !== 'auto' && STYLE_INSTRUCTIONS[style]) {
+    styleInstruction = `- ${STYLE_INSTRUCTIONS[style]}`;
+  }
+
+  let focusInstruction = '';
+  if (context.focusContext) {
+    if (context.focusContext.type === 'jogo') {
+      const m = context.focusContext.match;
+      focusInstruction = `\n\nFOCO PRINCIPAL: A notícia DEVE ser sobre o jogo ${m.home_team} x ${m.away_team} (${m.status}${m.home_score !== null ? `, placar: ${m.home_score}x${m.away_score}` : ''}).`;
+      if (context.focusContext.events?.length > 0) {
+        focusInstruction += `\nEventos do jogo:\n${JSON.stringify(context.focusContext.events, null, 2)}`;
+      }
+    } else if (context.focusContext.type === 'time') {
+      focusInstruction = `\n\nFOCO PRINCIPAL: A notícia DEVE ser focada no time ${context.focusContext.team.name}. Destaque seu desempenho, resultados recentes, posição na tabela e jogadores.`;
+    } else if (context.focusContext.type === 'jogador') {
+      const p = context.focusContext.player;
+      focusInstruction = `\n\nFOCO PRINCIPAL: A notícia DEVE ser focada no jogador ${p.name}${p.nickname ? ` (${p.nickname})` : ''}, posição: ${p.position}.`;
+      if (context.focusContext.stats?.length > 0) {
+        focusInstruction += `\nEstatísticas:\n${JSON.stringify(context.focusContext.stats, null, 2)}`;
+      }
+    }
+  }
+
+  let userContextInstruction = '';
+  if (userContext && userContext.trim()) {
+    userContextInstruction = `\n\nCONTEXTO ADICIONAL DO EDITOR (use como guia para o tom/conteúdo da matéria):\n"${userContext.trim()}"`;
+  }
+
   const systemPrompt = `Você é um jornalista esportivo brasileiro especializado em futebol amador e regional. Seu estilo é engajante, apaixonado e informativo, escrevendo em português brasileiro.
 
 Regras:
 - Use APENAS os dados fornecidos. NUNCA invente resultados, placar, gols ou estatísticas.
 - O conteúdo deve ser em HTML usando apenas: <p>, <strong>, <em>, <h3>, <ul>, <li>. NÃO use <h1>, <h2> ou <br>.
-- Varie os tipos de matéria: crônica de jogo, preview de rodada, análise tática, destaque de jogador/artilheiro, ranking/classificação, matéria sobre disciplina/fair play.
+${styleInstruction}
 - Cada artigo deve ter entre 3 e 6 parágrafos.
 - O campo "summary" deve ter no máximo 200 caracteres.
 - NÃO repita assuntos já cobertos (lista de títulos existentes fornecida).
-- Responda SOMENTE com JSON válido no formato especificado.`;
+- Responda SOMENTE com JSON válido no formato especificado.${focusInstruction}${userContextInstruction}`;
+
+  // Build context data without focusContext to avoid duplication in user prompt
+  const { focusContext: _, ...contextData } = context;
 
   const userPrompt = `Dados do campeonato:
-${JSON.stringify(context, null, 2)}
+${JSON.stringify(contextData, null, 2)}
 
 Gere exatamente ${count} artigo(s) de notícia baseado(s) nos dados acima.
 
@@ -174,7 +293,7 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
       'X-Title': 'Galinha Gorda - Gerador de Noticias',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-preview',
+      model: 'google/gemini-3-flash-preview',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -208,8 +327,8 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
 }
 
 export async function generateAINews(options: GenerateOptions) {
-  const context = await gatherContext(options.championship_id);
-  const { systemPrompt, userPrompt } = buildPrompt(context, options.count);
+  const context = await gatherContext(options);
+  const { systemPrompt, userPrompt } = buildPrompt(context, options);
   const articles = await callOpenRouter(systemPrompt, userPrompt);
 
   const saved: any[] = [];
@@ -240,7 +359,6 @@ export async function generateAINews(options: GenerateOptions) {
         summary: article.summary || undefined,
         content: article.content,
         championship_id: champId || undefined,
-        author_id: options.author_id,
         is_published: false,
       });
       saved.push(news);
