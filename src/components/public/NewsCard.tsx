@@ -88,7 +88,7 @@ export default function NewsCard({ article, featured = false }: Props) {
             <div className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-[11px] text-muted-foreground">
-                {formatDate(article.published_at)}
+                {formatDate(article.published_at || article.created_at)}
               </span>
             </div>
             <div className="flex items-center gap-1">

@@ -88,7 +88,7 @@ export default async function NewsDetailPage({ params }: Props) {
               )}
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                {formatDateTime(article.published_at)}
+                {formatDateTime(article.published_at || article.created_at)}
               </div>
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Eye className="h-4 w-4" />
