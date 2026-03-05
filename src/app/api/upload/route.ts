@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Arquivo é obrigatório' }, { status: 400 });
     }
 
-    const allowedTypes_upload = ['players', 'teams', 'news', 'photos', 'championships'];
+    const allowedTypes_upload = ['players', 'teams', 'news', 'photos', 'championships', 'sponsors'];
     if (!allowedTypes_upload.includes(type)) {
       return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 });
     }

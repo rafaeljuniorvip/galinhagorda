@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   LayoutDashboard, Users, Users2, Trophy, CircleDot, Gavel,
-  Newspaper, Images, Vote, MessageSquare, ShieldCheck,
+  Newspaper, Images, Vote, MessageSquare, ShieldCheck, Handshake,
   Menu, ChevronLeft,
 } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -30,6 +30,7 @@ const secondaryMenuItems = [
   { text: 'Fotos', icon: Images, href: '/admin/fotos' },
   { text: 'Votacoes', icon: Vote, href: '/admin/votacoes' },
   { text: 'Mensagens', icon: MessageSquare, href: '/admin/mensagens' },
+  { text: 'Patrocinadores', icon: Handshake, href: '/admin/patrocinadores' },
 ];
 
 export default function AdminSidebar() {

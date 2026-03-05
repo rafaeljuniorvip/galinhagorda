@@ -19,7 +19,7 @@ COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/scripts ./scripts
 COPY docker-entrypoint.sh ./
 
-RUN mkdir -p /app/uploads/players /app/uploads/teams && \
+RUN mkdir -p /app/uploads/players /app/uploads/teams /app/uploads/sponsors && \
     chown -R nextjs:nodejs /app/uploads && \
     chmod +x docker-entrypoint.sh
 
