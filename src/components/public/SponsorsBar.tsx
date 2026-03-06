@@ -14,14 +14,14 @@ export default async function SponsorsBar() {
   const outros = sponsors.filter((s) => s.tier !== 'patrocinador');
 
   return (
-    <section className="bg-white border-t py-6">
+    <section className="bg-[#0f1630] py-8">
       <div className="max-w-7xl mx-auto px-4">
         {patrocinadores.length > 0 && (
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center mb-3">
+          <div className="mb-6">
+            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest text-center mb-4">
               Patrocinadores
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-8">
+            <div className="flex flex-wrap items-center justify-center gap-10">
               {patrocinadores.map((s) => (
                 <SponsorLogo key={s.id} sponsor={s} size="lg" />
               ))}
@@ -31,10 +31,10 @@ export default async function SponsorsBar() {
 
         {outros.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center mb-3">
+            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest text-center mb-4">
               Apoio
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-8">
               {outros.map((s) => (
                 <SponsorLogo key={s.id} sponsor={s} size="sm" />
               ))}
@@ -47,7 +47,7 @@ export default async function SponsorsBar() {
 }
 
 function SponsorLogo({ sponsor, size }: { sponsor: Sponsor; size: 'lg' | 'sm' }) {
-  const imgClass = size === 'lg' ? 'h-16 max-w-[180px]' : 'h-10 max-w-[120px]';
+  const imgClass = size === 'lg' ? 'h-20 max-w-[200px]' : 'h-14 max-w-[140px]';
 
   const content = sponsor.logo_url ? (
     <img
@@ -57,7 +57,7 @@ function SponsorLogo({ sponsor, size }: { sponsor: Sponsor; size: 'lg' | 'sm' })
       loading="lazy"
     />
   ) : (
-    <span className="text-sm font-medium text-muted-foreground">{sponsor.name}</span>
+    <span className="text-sm font-medium text-white/60">{sponsor.name}</span>
   );
 
   if (sponsor.website_url) {
