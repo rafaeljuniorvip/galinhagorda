@@ -18,6 +18,7 @@ const navItems = [
   { label: 'Times', href: '/times' },
   { label: 'Campeonatos', href: '/campeonatos' },
   { label: 'Noticias', href: '/noticias' },
+  { label: 'Apoiadores', href: '/apoiadores' },
 ];
 
 export default function PublicHeader() {
