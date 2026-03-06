@@ -73,11 +73,16 @@ module.exports = {
           "70%": { boxShadow: "0 0 0 6px rgba(211,47,47,0)" },
           "100%": { boxShadow: "0 0 0 0 rgba(211,47,47,0)" },
         },
+        marquee: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-33.333%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "live-pulse": "live-pulse 1.5s infinite",
+        marquee: "marquee var(--marquee-duration, 30s) linear infinite",
       },
     },
   },
