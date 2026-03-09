@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import PlayersDashboard from '@/components/public/PlayersDashboard';
 import PlayersListClient from '@/components/public/PlayersListClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Jogadores',
   description: 'Lista de jogadores inscritos nos campeonatos',
