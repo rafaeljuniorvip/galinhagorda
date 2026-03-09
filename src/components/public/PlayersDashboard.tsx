@@ -1,9 +1,9 @@
 import { getOne, getMany } from '@/lib/db';
-import { getTopScorers, getDisciplinaryRanking } from '@/services/statsService';
+import { getTopScorers } from '@/services/statsService';
 import { Championship } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/cn';
-import { Target, ShieldAlert, Flame, Award } from 'lucide-react';
+import { Target, ShieldAlert, Flame, Award, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 async function getActiveChampionship(): Promise<Championship | null> {
@@ -65,14 +65,22 @@ export default async function PlayersDashboard() {
   const hasData = scorers.length > 0 || carded.length > 0 || mostPlayed.length > 0;
   if (!hasData) return null;
 
+  const totalGoals = scorers.reduce((s: number, x: any) => s + x.goals, 0);
+  const totalReds = carded.reduce((s: number, x: any) => s + x.red_cards, 0);
+
   return (
     <div className="mb-8">
       {/* Stats summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard icon={<Award className="h-5 w-5 text-[#1a237e]" />} value={totalPlayers} label="Jogadores ativos" />
-        <StatCard icon={<Target className="h-5 w-5 text-[#ffd600]" />} value={scorers[0]?.goals || 0} label="Gols do artilheiro" />
-        <StatCard icon={<Flame className="h-5 w-5 text-orange-500" />} value={scorers.reduce((s: number, x: any) => s + x.goals, 0)} label="Total de gols" />
-        <StatCard icon={<ShieldAlert className="h-5 w-5 text-red-500" />} value={carded.reduce((s: number, x: any) => s + x.red_cards, 0)} label="Cartoes vermelhos" />
+        <StatCard
+          icon={<Target className="h-5 w-5 text-[#ffd600]" />}
+          value={scorers[0]?.goals || 0}
+          label={scorers[0] ? `${scorers[0].player_name}` : 'Artilheiro'}
+          sublabel="Gols do artilheiro"
+        />
+        <StatCard icon={<Flame className="h-5 w-5 text-orange-500" />} value={totalGoals} label="Total de gols" />
+        <StatCard icon={<ShieldAlert className="h-5 w-5 text-red-500" />} value={totalReds} label="Cartoes vermelhos" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -81,6 +89,7 @@ export default async function PlayersDashboard() {
           <RankingCard
             title="Artilheiros"
             accentColor="bg-[#ffd600]"
+            champId={champ.id}
             items={scorers.map((s: any, i: number) => ({
               id: s.player_id,
               rank: i + 1,
@@ -88,8 +97,7 @@ export default async function PlayersDashboard() {
               photo: s.photo_url,
               team: s.team_name,
               teamLogo: s.team_logo,
-              value: s.goals,
-              valueLabel: 'gols',
+              stat: `${s.goals} gol${s.goals !== 1 ? 's' : ''}`,
               isTop: i === 0,
             }))}
           />
@@ -100,6 +108,7 @@ export default async function PlayersDashboard() {
           <RankingCard
             title="Mais Jogos"
             accentColor="bg-[#1a237e]"
+            champId={champ.id}
             items={mostPlayed.map((p: any, i: number) => ({
               id: p.player_id,
               rank: i + 1,
@@ -107,8 +116,7 @@ export default async function PlayersDashboard() {
               photo: p.photo_url,
               team: p.team_name,
               teamLogo: p.team_logo,
-              value: p.matches,
-              valueLabel: 'jogos',
+              stat: `${p.matches} jogo${p.matches !== 1 ? 's' : ''}`,
               isTop: i === 0,
             }))}
           />
@@ -119,6 +127,7 @@ export default async function PlayersDashboard() {
           <RankingCard
             title="Cartoes"
             accentColor="bg-red-500"
+            champId={champ.id}
             items={carded.map((c: any, i: number) => ({
               id: c.player_id,
               rank: i + 1,
@@ -126,8 +135,9 @@ export default async function PlayersDashboard() {
               photo: c.photo_url,
               team: c.team_name,
               teamLogo: c.team_logo,
-              value: c.yellow_cards + c.red_cards * 2,
-              valueLabel: `${c.yellow_cards}A ${c.red_cards}V`,
+              stat: '',
+              yellowCards: c.yellow_cards,
+              redCards: c.red_cards,
               isTop: i === 0,
             }))}
           />
@@ -137,22 +147,24 @@ export default async function PlayersDashboard() {
   );
 }
 
-function StatCard({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+function StatCard({ icon, value, label, sublabel }: { icon: React.ReactNode; value: number; label: string; sublabel?: string }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-white p-4">
       {icon}
-      <div>
+      <div className="min-w-0">
         <p className="text-xl font-extrabold text-[#0d1b2a] leading-none">{value}</p>
-        <p className="text-[11px] text-muted-foreground">{label}</p>
+        <p className="text-[11px] text-muted-foreground truncate">{label}</p>
+        {sublabel && <p className="text-[10px] text-muted-foreground/70">{sublabel}</p>}
       </div>
     </div>
   );
 }
 
-function RankingCard({ title, accentColor, items }: {
+function RankingCard({ title, accentColor, champId, items }: {
   title: string;
   accentColor: string;
-  items: { id: string; rank: number; name: string; photo: string | null; team: string; teamLogo: string | null; value: number; valueLabel: string; isTop: boolean }[];
+  champId: string;
+  items: { id: string; rank: number; name: string; photo: string | null; team: string; teamLogo: string | null; stat: string; yellowCards?: number; redCards?: number; isTop: boolean }[];
 }) {
   return (
     <div className="rounded-lg overflow-hidden border">
@@ -190,14 +202,39 @@ function RankingCard({ title, accentColor, items }: {
               <span className="text-[10px] text-muted-foreground truncate">{item.team}</span>
             </div>
           </div>
-          <span className={cn(
-            'text-xs font-bold px-2 py-0.5 rounded',
-            item.isTop ? 'bg-[#ffd600] text-[#0d1b2a]' : 'bg-muted text-foreground'
-          )}>
-            {item.valueLabel}
-          </span>
+          {/* Stat badge */}
+          {item.yellowCards !== undefined ? (
+            <div className="flex items-center gap-1">
+              {item.yellowCards > 0 && (
+                <span className="flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded bg-yellow-400/20 text-yellow-700">
+                  <span className="inline-block w-2 h-3 rounded-[1px] bg-yellow-400" />
+                  {item.yellowCards}
+                </span>
+              )}
+              {(item.redCards ?? 0) > 0 && (
+                <span className="flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-700">
+                  <span className="inline-block w-2 h-3 rounded-[1px] bg-red-500" />
+                  {item.redCards}
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className={cn(
+              'text-xs font-bold px-2 py-0.5 rounded tabular-nums',
+              item.isTop ? 'bg-[#ffd600] text-[#0d1b2a]' : 'bg-muted text-foreground'
+            )}>
+              {item.stat}
+            </span>
+          )}
         </Link>
       ))}
+      {/* Ver mais link */}
+      <Link
+        href={`/campeonatos/${champId}`}
+        className="flex items-center justify-center gap-1 px-4 py-2 text-[11px] text-muted-foreground hover:text-[#1a237e] transition-colors border-t border-border/50 bg-white"
+      >
+        Ver todos no campeonato <ChevronRight className="h-3 w-3" />
+      </Link>
     </div>
   );
 }

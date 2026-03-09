@@ -1,9 +1,9 @@
 import { getOne, getMany } from '@/lib/db';
-import { getChampionshipStandings, getTopScorers } from '@/services/statsService';
+import { getChampionshipStandings } from '@/services/statsService';
 import { Championship, Standing } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/cn';
-import { Trophy, Swords, Target, Shield } from 'lucide-react';
+import { Trophy, Swords, Target, Shield, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 async function getActiveChampionship(): Promise<Championship | null> {
@@ -24,8 +24,7 @@ async function getTeamGoals(championshipId: string): Promise<any[]> {
       AND m.status = 'Finalizada'
     WHERE tc.championship_id = $1
     GROUP BY t.id, t.name, t.logo_url, t.short_name
-    ORDER BY goals_for DESC
-    LIMIT 5`,
+    ORDER BY goals_for DESC`,
     [championshipId]
   );
 }
@@ -44,14 +43,21 @@ export default async function TeamsDashboard() {
   const totalGoals = teamGoals.reduce((s, t) => s + t.goals_for, 0);
   const bestDefense = [...teamGoals].sort((a, b) => a.goals_against - b.goals_against)[0];
   const bestAttack = teamGoals[0];
+  const leader = standings[0];
 
   return (
     <div className="mb-8">
       {/* Stats cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard icon={<Trophy className="h-5 w-5 text-[#ffd600]" />} value={standings[0]?.team_name || '-'} label="Lider" isText />
-        <StatCard icon={<Target className="h-5 w-5 text-emerald-500" />} value={bestAttack?.team_name || '-'} label={`Melhor ataque (${bestAttack?.goals_for || 0} gols)`} isText />
-        <StatCard icon={<Shield className="h-5 w-5 text-blue-500" />} value={bestDefense?.team_name || '-'} label={`Melhor defesa (${bestDefense?.goals_against || 0} gols)`} isText />
+        <Link href={leader ? `/times/${leader.team_id}` : '#'}>
+          <StatCard icon={<Trophy className="h-5 w-5 text-[#ffd600]" />} value={leader?.team_name || '-'} label={`${leader?.points || 0} pontos`} isText />
+        </Link>
+        <Link href={bestAttack ? `/times/${bestAttack.team_id}` : '#'}>
+          <StatCard icon={<Target className="h-5 w-5 text-emerald-500" />} value={bestAttack?.team_name || '-'} label={`Melhor ataque - ${bestAttack?.goals_for || 0} gols`} isText />
+        </Link>
+        <Link href={bestDefense ? `/times/${bestDefense.team_id}` : '#'}>
+          <StatCard icon={<Shield className="h-5 w-5 text-blue-500" />} value={bestDefense?.team_name || '-'} label={`Melhor defesa - ${bestDefense?.goals_against || 0} sofridos`} isText />
+        </Link>
         <StatCard icon={<Swords className="h-5 w-5 text-[#1a237e]" />} value={totalGoals} label="Total de gols no campeonato" />
       </div>
 
@@ -64,53 +70,59 @@ export default async function TeamsDashboard() {
               Classificacao - {champ.name}
             </span>
           </div>
-          <Link href={`/campeonatos/${champ.id}`} className="text-[10px] text-white/50 hover:text-white/80 transition-colors">
-            Ver completa →
+          <Link href={`/campeonatos/${champ.id}`} className="flex items-center gap-0.5 text-[10px] text-white/50 hover:text-white/80 transition-colors">
+            Ver completa <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50 text-[11px] text-muted-foreground">
-              <th className="px-3 py-2 text-left font-medium w-8">#</th>
-              <th className="px-3 py-2 text-left font-medium">Time</th>
-              <th className="px-3 py-2 text-center font-medium">P</th>
-              <th className="px-3 py-2 text-center font-medium">J</th>
-              <th className="px-3 py-2 text-center font-medium">V</th>
-              <th className="px-3 py-2 text-center font-medium hidden sm:table-cell">E</th>
-              <th className="px-3 py-2 text-center font-medium hidden sm:table-cell">D</th>
-              <th className="px-3 py-2 text-center font-medium">SG</th>
-            </tr>
-          </thead>
-          <tbody>
-            {standings.map((s, i) => (
-              <tr key={s.team_id} className={cn('border-t border-border/50', i % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]')}>
-                <td className="px-3 py-2">
-                  <span className={cn(
-                    'inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold',
-                    i === 0 ? 'bg-[#ffd600] text-[#0d1b2a]' : i < 4 ? 'bg-[#2e7d32] text-white' : 'bg-gray-200 text-gray-600'
-                  )}>
-                    {i + 1}
-                  </span>
-                </td>
-                <td className="px-3 py-2">
-                  <Link href={`/times/${s.team_id}`} className="flex items-center gap-2 hover:underline">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={s.logo_url || ''} />
-                      <AvatarFallback className="text-[8px] font-bold">{s.short_name?.[0] || s.team_name[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-semibold text-[#0d1b2a] text-xs">{s.team_name}</span>
-                  </Link>
-                </td>
-                <td className="px-3 py-2 text-center font-extrabold text-[#1a237e] text-xs">{s.points}</td>
-                <td className="px-3 py-2 text-center text-xs text-muted-foreground">{s.matches_played}</td>
-                <td className="px-3 py-2 text-center text-xs text-muted-foreground">{s.wins}</td>
-                <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden sm:table-cell">{s.draws}</td>
-                <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden sm:table-cell">{s.losses}</td>
-                <td className="px-3 py-2 text-center text-xs text-muted-foreground">{s.goals_for - s.goals_against}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50 text-[11px] text-muted-foreground">
+                <th className="px-3 py-2 text-left font-medium w-8">#</th>
+                <th className="px-3 py-2 text-left font-medium">Time</th>
+                <th className="px-3 py-2 text-center font-medium">P</th>
+                <th className="px-3 py-2 text-center font-medium">J</th>
+                <th className="px-3 py-2 text-center font-medium">V</th>
+                <th className="px-3 py-2 text-center font-medium hidden sm:table-cell">E</th>
+                <th className="px-3 py-2 text-center font-medium hidden sm:table-cell">D</th>
+                <th className="px-3 py-2 text-center font-medium">GP</th>
+                <th className="px-3 py-2 text-center font-medium">GC</th>
+                <th className="px-3 py-2 text-center font-medium">SG</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {standings.map((s, i) => (
+                <tr key={s.team_id} className={cn('border-t border-border/50', i % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]')}>
+                  <td className="px-3 py-2">
+                    <span className={cn(
+                      'inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold',
+                      i === 0 ? 'bg-[#ffd600] text-[#0d1b2a]' : i < 4 ? 'bg-[#2e7d32] text-white' : 'bg-gray-200 text-gray-600'
+                    )}>
+                      {i + 1}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Link href={`/times/${s.team_id}`} className="flex items-center gap-2 hover:underline">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={s.logo_url || ''} />
+                        <AvatarFallback className="text-[8px] font-bold">{s.short_name?.[0] || s.team_name[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold text-[#0d1b2a] text-xs whitespace-nowrap">{s.team_name}</span>
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2 text-center font-extrabold text-[#1a237e] text-xs">{s.points}</td>
+                  <td className="px-3 py-2 text-center text-xs text-muted-foreground">{s.matches_played}</td>
+                  <td className="px-3 py-2 text-center text-xs text-muted-foreground">{s.wins}</td>
+                  <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden sm:table-cell">{s.draws}</td>
+                  <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden sm:table-cell">{s.losses}</td>
+                  <td className="px-3 py-2 text-center text-xs text-muted-foreground">{s.goals_for}</td>
+                  <td className="px-3 py-2 text-center text-xs text-muted-foreground">{s.goals_against}</td>
+                  <td className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">{s.goals_for - s.goals_against}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -118,7 +130,7 @@ export default async function TeamsDashboard() {
 
 function StatCard({ icon, value, label, isText }: { icon: React.ReactNode; value: string | number; label: string; isText?: boolean }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-white p-4">
+    <div className="flex items-center gap-3 rounded-lg border bg-white p-4 hover:shadow-sm transition-shadow h-full">
       {icon}
       <div className="min-w-0">
         <p className={cn('font-extrabold text-[#0d1b2a] leading-tight truncate', isText ? 'text-sm' : 'text-xl')}>{value}</p>
