@@ -6,7 +6,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -89,11 +89,22 @@ export default function EventosPartidaPage() {
               <Select value={form.player_id} onValueChange={(v) => setForm(prev => ({ ...prev, player_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {players.map((p: any) => (
-                    <SelectItem key={p.player_id} value={p.player_id}>
-                      {p.player_name} ({p.team_name === match.home_team_name ? 'CASA' : 'VISIT'})
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel className="text-xs font-bold text-primary">{match.home_team_name} (Casa)</SelectLabel>
+                    {players.filter((p: any) => p.team_id === match.home_team_id).map((p: any) => (
+                      <SelectItem key={p.player_id} value={p.player_id}>
+                        {p.shirt_number ? `${p.shirt_number} - ` : ''}{p.player_name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="text-xs font-bold text-destructive">{match.away_team_name} (Visitante)</SelectLabel>
+                    {players.filter((p: any) => p.team_id === match.away_team_id).map((p: any) => (
+                      <SelectItem key={p.player_id} value={p.player_id}>
+                        {p.shirt_number ? `${p.shirt_number} - ` : ''}{p.player_name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
