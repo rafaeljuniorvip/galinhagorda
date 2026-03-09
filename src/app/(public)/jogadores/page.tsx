@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import PlayersDashboard from '@/components/public/PlayersDashboard';
 import PlayersListClient from '@/components/public/PlayersListClient';
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function JogadoresPage() {
       <p className="text-sm text-muted-foreground mb-6">
         Consulte o perfil e estatisticas dos atletas inscritos
       </p>
+      <PlayersDashboard />
       <PlayersListClient />
     </div>
   );

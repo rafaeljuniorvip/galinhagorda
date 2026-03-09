@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getAllTeams } from '@/services/teamService';
+import TeamsDashboard from '@/components/public/TeamsDashboard';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -19,6 +20,7 @@ export default async function TimesPage() {
           <p className="text-sm text-muted-foreground">Times participantes dos campeonatos</p>
         </div>
       </div>
+      <TeamsDashboard />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {teams.map((team) => (
