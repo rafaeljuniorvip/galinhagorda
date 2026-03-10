@@ -58,7 +58,7 @@ export async function getPlayerStats(playerId: string, championshipId?: string):
       SELECT
         COUNT(DISTINCT ml.match_id) AS matches_played
       FROM match_lineups ml
-      JOIN matches m ON m.id = ml.match_id AND m.championship_id = pr.championship_id
+      JOIN matches m ON m.id = ml.match_id AND m.championship_id = pr.championship_id AND m.status = 'Finalizada'
       WHERE ml.player_id = pr.player_id
     ) lineup_stats ON true
     LEFT JOIN LATERAL (
@@ -197,7 +197,7 @@ export async function getPlayerCareerStats(playerId: string): Promise<{
 }> {
   const result = await getOne<any>(
     `SELECT
-      COALESCE((SELECT COUNT(DISTINCT ml.match_id) FROM match_lineups ml WHERE ml.player_id = $1), 0)::int AS total_matches,
+      COALESCE((SELECT COUNT(DISTINCT ml.match_id) FROM match_lineups ml JOIN matches m ON m.id = ml.match_id AND m.status = 'Finalizada' WHERE ml.player_id = $1), 0)::int AS total_matches,
       COALESCE(SUM(CASE WHEN me.event_type IN ('GOL', 'GOL_PENALTI') THEN 1 ELSE 0 END), 0)::int AS total_goals,
       COALESCE(SUM(CASE WHEN me.event_type = 'CARTAO_AMARELO' THEN 1 ELSE 0 END), 0)::int AS total_yellow_cards,
       COALESCE(SUM(CASE WHEN me.event_type IN ('CARTAO_VERMELHO', 'SEGUNDO_AMARELO') THEN 1 ELSE 0 END), 0)::int AS total_red_cards
