@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, Users2, Trophy, CircleDot, Gavel,
   Newspaper, Images, Vote, MessageSquare, ShieldCheck, Handshake,
-  Menu, ChevronLeft,
+  Smartphone, Menu, ChevronLeft,
 } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
@@ -83,6 +83,7 @@ export default function AdminSidebar() {
           <>
             <Separator className="my-2" />
             {renderItem({ text: 'Usuarios', icon: ShieldCheck, href: '/admin/usuarios' })}
+            {renderItem({ text: 'App Mobile', icon: Smartphone, href: '/admin/mobile' })}
           </>
         )}
       </nav>
