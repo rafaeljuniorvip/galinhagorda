@@ -8,6 +8,21 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 const TOKEN_EXPIRY = '7d';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+function jsonResponse(data: unknown, status = 200) {
+  return NextResponse.json(data, { status, headers: corsHeaders });
+}
+
+// OPTIONS /api/mobile/auth - CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 interface AdminUser {
   id: string;
   name: string;
@@ -33,10 +48,7 @@ export async function POST(request: NextRequest) {
     const { email, password } = body;
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email e senha são obrigatórios' },
-        { status: 400 }
-      );
+      return jsonResponse({ error: 'Email e senha são obrigatórios' }, 400);
     }
 
     const user = await getOne<AdminUser>(
@@ -45,26 +57,17 @@ export async function POST(request: NextRequest) {
     );
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Credenciais inválidas' },
-        { status: 401 }
-      );
+      return jsonResponse({ error: 'Credenciais inválidas' }, 401);
     }
 
     if (!user.active) {
-      return NextResponse.json(
-        { error: 'Usuário desativado' },
-        { status: 403 }
-      );
+      return jsonResponse({ error: 'Usuário desativado' }, 403);
     }
 
     const passwordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordValid) {
-      return NextResponse.json(
-        { error: 'Credenciais inválidas' },
-        { status: 401 }
-      );
+      return jsonResponse({ error: 'Credenciais inválidas' }, 401);
     }
 
     const token = await new SignJWT({
@@ -77,16 +80,10 @@ export async function POST(request: NextRequest) {
       .setExpirationTime(TOKEN_EXPIRY)
       .sign(JWT_SECRET);
 
-    return NextResponse.json({
-      token,
-      user: userResponse(user),
-    });
+    return jsonResponse({ token, user: userResponse(user) });
   } catch (error) {
     console.error('[Mobile Auth] Login error:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return jsonResponse({ error: 'Erro interno do servidor' }, 500);
   }
 }
 
@@ -96,10 +93,7 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
 
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Token não fornecido' },
-        { status: 401 }
-      );
+      return jsonResponse({ error: 'Token não fornecido' }, 401);
     }
 
     const token = authHeader.slice(7);
@@ -109,10 +103,7 @@ export async function GET(request: NextRequest) {
       const result = await jwtVerify(token, JWT_SECRET);
       payload = result.payload;
     } catch {
-      return NextResponse.json(
-        { error: 'Token inválido ou expirado' },
-        { status: 401 }
-      );
+      return jsonResponse({ error: 'Token inválido ou expirado' }, 401);
     }
 
     const user = await getOne<AdminUser>(
@@ -121,27 +112,16 @@ export async function GET(request: NextRequest) {
     );
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Usuário não encontrado' },
-        { status: 401 }
-      );
+      return jsonResponse({ error: 'Usuário não encontrado' }, 401);
     }
 
     if (!user.active) {
-      return NextResponse.json(
-        { error: 'Usuário desativado' },
-        { status: 403 }
-      );
+      return jsonResponse({ error: 'Usuário desativado' }, 403);
     }
 
-    return NextResponse.json({
-      user: userResponse(user),
-    });
+    return jsonResponse({ user: userResponse(user) });
   } catch (error) {
     console.error('[Mobile Auth] Token validation error:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return jsonResponse({ error: 'Erro interno do servidor' }, 500);
   }
 }
