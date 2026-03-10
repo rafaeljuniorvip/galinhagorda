@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Save, Trash2 } from 'lucide-react';
+import { Save, Trash2, UserPlus, Users, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -82,17 +81,41 @@ export default function EscalacaoPartidaPage() {
 
   useEffect(() => { if (user) loadData(); }, [user, loadData]);
 
-  const addPlayerToLineup = (playerId: string, side: 'home' | 'away') => {
-    const teamPlayers = side === 'home' ? players.filter(p => p.team_id === match?.home_team_id) : players.filter(p => p.team_id === match?.away_team_id);
-    const player = teamPlayers.find(p => p.player_id === playerId);
-    if (!player) return;
-    const entry: LineupEntry = { player_id: player.player_id, player_name: player.player_name, player_photo: player.player_photo, position: player.position, shirt_number: player.shirt_number, is_starter: true };
-    if (side === 'home') {
-      if (homeLineup.find(e => e.player_id === player.player_id)) return;
-      setHomeLineup(prev => [...prev, entry]);
+  const togglePlayer = (player: PlayerReg, side: 'home' | 'away') => {
+    const lineup = side === 'home' ? homeLineup : awayLineup;
+    const setLineup = side === 'home' ? setHomeLineup : setAwayLineup;
+    const exists = lineup.find(e => e.player_id === player.player_id);
+
+    if (exists) {
+      setLineup(prev => prev.filter(e => e.player_id !== player.player_id));
     } else {
-      if (awayLineup.find(e => e.player_id === player.player_id)) return;
-      setAwayLineup(prev => [...prev, entry]);
+      const entry: LineupEntry = {
+        player_id: player.player_id,
+        player_name: player.player_name,
+        player_photo: player.player_photo,
+        position: player.position,
+        shirt_number: player.shirt_number,
+        is_starter: true,
+      };
+      setLineup(prev => [...prev, entry]);
+    }
+  };
+
+  const selectAll = (teamPlayers: PlayerReg[], lineup: LineupEntry[], setLineup: React.Dispatch<React.SetStateAction<LineupEntry[]>>) => {
+    const notInLineup = teamPlayers.filter(p => !lineup.find(e => e.player_id === p.player_id));
+    if (notInLineup.length === 0) {
+      // All selected, deselect all
+      setLineup([]);
+    } else {
+      const newEntries = notInLineup.map(p => ({
+        player_id: p.player_id,
+        player_name: p.player_name,
+        player_photo: p.player_photo,
+        position: p.position,
+        shirt_number: p.shirt_number,
+        is_starter: true,
+      }));
+      setLineup(prev => [...prev, ...newEntries]);
     }
   };
 
@@ -127,92 +150,134 @@ export default function EscalacaoPartidaPage() {
 
   const renderTeamLineup = (teamName: string, teamPlayers: PlayerReg[], lineup: LineupEntry[], side: 'home' | 'away') => {
     const starterCount = lineup.filter(e => e.is_starter).length;
-    const availablePlayers = teamPlayers.filter(p => !lineup.find(e => e.player_id === p.player_id));
+    const setLineup = side === 'home' ? setHomeLineup : setAwayLineup;
+    const allSelected = teamPlayers.length > 0 && teamPlayers.every(p => lineup.find(e => e.player_id === p.player_id));
 
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-4">
             <div>
               <p className="font-semibold">{teamName}</p>
-              <p className="text-xs text-muted-foreground">Titulares: {starterCount}/11 | Total: {lineup.length}</p>
+              <p className="text-xs text-muted-foreground">
+                Titulares: {starterCount}/11 | Total: {lineup.length}/{teamPlayers.length}
+              </p>
             </div>
-            <Button size="sm" onClick={() => handleSave(side)} disabled={saving}><Save className="h-4 w-4 mr-1" />Salvar</Button>
+            <Button size="sm" onClick={() => handleSave(side)} disabled={saving}>
+              <Save className="h-4 w-4 mr-1" />Salvar
+            </Button>
           </div>
 
-          {availablePlayers.length > 0 && (
-            <div className="mb-3">
-              <Label>Adicionar jogador</Label>
-              <Select value="" onValueChange={(v) => addPlayerToLineup(v, side)}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {availablePlayers.map(p => (
-                    <SelectItem key={p.player_id} value={p.player_id}>
-                      {p.shirt_number ? `${p.shirt_number} - ` : ''}{p.player_name} ({p.position})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Player selection with checkboxes */}
+          <div className="mb-4 border rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between bg-muted/50 px-3 py-2 border-b">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Selecionar jogadores</span>
+              </div>
+              <button
+                onClick={() => selectAll(teamPlayers, lineup, setLineup)}
+                className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {allSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+              </button>
             </div>
-          )}
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60px]">Titular</TableHead>
-                <TableHead>Jogador</TableHead>
-                <TableHead>Posicao</TableHead>
-                <TableHead className="hidden md:table-cell">Camisa</TableHead>
-                <TableHead className="text-right">Acao</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lineup.map((entry) => (
-                <TableRow key={entry.player_id}>
-                  <TableCell>
+            <div className="max-h-[280px] overflow-y-auto divide-y divide-border/50">
+              {teamPlayers.map(player => {
+                const isSelected = !!lineup.find(e => e.player_id === player.player_id);
+                return (
+                  <label
+                    key={player.player_id}
+                    className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-accent/50 ${isSelected ? 'bg-primary/5' : ''}`}
+                  >
                     <Checkbox
-                      checked={entry.is_starter}
-                      onCheckedChange={(checked) => updateLineupEntry(entry.player_id, side, 'is_starter', !!checked)}
-                      disabled={!entry.is_starter && starterCount >= 11}
+                      checked={isSelected}
+                      onCheckedChange={() => togglePlayer(player, side)}
                     />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7 text-xs">
-                        <AvatarImage src={entry.player_photo || ''} />
-                        <AvatarFallback>{entry.player_name[0]}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{entry.player_name}</span>
-                      {entry.is_starter && <Badge variant="outline" className="hidden md:inline-flex text-xs">Titular</Badge>}
+                    <Avatar className="h-7 w-7 text-xs">
+                      <AvatarImage src={player.player_photo || ''} />
+                      <AvatarFallback>{player.player_name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{player.player_name}</span>
+                      <span className="text-xs text-muted-foreground ml-1.5">({player.position || '-'})</span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Select value={entry.position || 'none'} onValueChange={(v) => updateLineupEntry(entry.player_id, side, 'position', v === 'none' ? '' : v)}>
-                      <SelectTrigger className="h-8 min-w-[90px] md:min-w-[120px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">-</SelectItem>
-                        {POSITIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Input
-                      type="number"
-                      className="h-8 w-[55px] md:w-[70px]"
-                      value={entry.shirt_number ?? ''}
-                      onChange={(e) => updateLineupEntry(entry.player_id, side, 'shirt_number', e.target.value ? parseInt(e.target.value) : null)}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <button onClick={() => removeFromLineup(entry.player_id, side)} className="p-1.5 rounded hover:bg-accent text-destructive"><Trash2 className="h-4 w-4" /></button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {lineup.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Nenhum jogador na escalacao</TableCell></TableRow>
+                    {player.shirt_number && (
+                      <Badge variant="outline" className="text-[10px] tabular-nums">{player.shirt_number}</Badge>
+                    )}
+                    {isSelected && <Check className="h-4 w-4 text-primary" />}
+                  </label>
+                );
+              })}
+              {teamPlayers.length === 0 && (
+                <p className="text-center py-4 text-sm text-muted-foreground">Nenhum jogador inscrito</p>
               )}
-            </TableBody>
-          </Table>
+            </div>
+          </div>
+
+          {/* Selected lineup table */}
+          {lineup.length > 0 && (
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Escalacao ({lineup.length} jogadores)</span>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[60px]">Titular</TableHead>
+                    <TableHead>Jogador</TableHead>
+                    <TableHead>Posicao</TableHead>
+                    <TableHead className="hidden md:table-cell">Camisa</TableHead>
+                    <TableHead className="text-right">Acao</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lineup.map((entry) => (
+                    <TableRow key={entry.player_id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={entry.is_starter}
+                          onCheckedChange={(checked) => updateLineupEntry(entry.player_id, side, 'is_starter', !!checked)}
+                          disabled={!entry.is_starter && starterCount >= 11}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7 text-xs">
+                            <AvatarImage src={entry.player_photo || ''} />
+                            <AvatarFallback>{entry.player_name[0]}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">{entry.player_name}</span>
+                          {entry.is_starter && <Badge variant="outline" className="hidden md:inline-flex text-xs">Titular</Badge>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Select value={entry.position || 'none'} onValueChange={(v) => updateLineupEntry(entry.player_id, side, 'position', v === 'none' ? '' : v)}>
+                          <SelectTrigger className="h-8 min-w-[90px] md:min-w-[120px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">-</SelectItem>
+                            {POSITIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Input
+                          type="number"
+                          className="h-8 w-[55px] md:w-[70px]"
+                          value={entry.shirt_number ?? ''}
+                          onChange={(e) => updateLineupEntry(entry.player_id, side, 'shirt_number', e.target.value ? parseInt(e.target.value) : null)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <button onClick={() => removeFromLineup(entry.player_id, side)} className="p-1.5 rounded hover:bg-accent text-destructive"><Trash2 className="h-4 w-4" /></button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          )}
         </CardContent>
       </Card>
     );

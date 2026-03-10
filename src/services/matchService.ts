@@ -69,7 +69,7 @@ export async function listMatches(filters: MatchFilters = {}): Promise<Paginated
   const total = parseInt(countResult.rows[0].count);
 
   const data = await getMany<Match>(
-    `SELECT ${MATCH_SELECT} ${MATCH_JOINS} ${where} ORDER BY m.match_date DESC NULLS LAST LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+    `SELECT ${MATCH_SELECT} ${MATCH_JOINS} ${where} ORDER BY m.match_date ASC NULLS LAST LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
     [...params, safeLimit, offset]
   );
 
