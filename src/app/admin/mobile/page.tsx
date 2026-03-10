@@ -3,13 +3,23 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Smartphone, Copy, Check, ExternalLink, QrCode } from 'lucide-react';
+import { Smartphone, Copy, Check, QrCode as QrCodeIcon } from 'lucide-react';
+import QRCode from 'qrcode';
 
 const EXPO_URL = 'exp://grwaweq-anonymous-8081.exp.direct:443';
 const EXPO_HTTPS = 'https://grwaweq-anonymous-8081.exp.direct';
 
 export default function MobilePage() {
   const [copied, setCopied] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    QRCode.toDataURL(EXPO_URL, {
+      width: 280,
+      margin: 2,
+      color: { dark: '#1a237e', light: '#ffffff' },
+    }).then(setQrDataUrl);
+  }, []);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -38,16 +48,27 @@ export default function MobilePage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Connection Info */}
+        {/* QR Code + Connection Info */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <QrCode className="h-5 w-5" />
-              Endereco do App
+              <QrCodeIcon className="h-5 w-5" />
+              QR Code - Expo Go
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
+            {qrDataUrl && (
+              <div className="flex justify-center">
+                <div className="bg-white p-3 rounded-lg shadow-sm border">
+                  <img src={qrDataUrl} alt="QR Code Expo Go" className="w-[280px] h-[280px]" />
+                </div>
+              </div>
+            )}
+            <p className="text-center text-sm text-muted-foreground">
+              Escaneie com o <strong>Expo Go</strong> ou com a camera do celular
+            </p>
+
+            <div className="pt-2 border-t">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL Expo Go</label>
               <div className="flex items-center gap-2 mt-1">
                 <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono break-all">
@@ -65,12 +86,6 @@ export default function MobilePage() {
                 </code>
                 <CopyButton text={EXPO_HTTPS} label="https" />
               </div>
-            </div>
-
-            <div className="pt-2 border-t">
-              <p className="text-sm text-muted-foreground">
-                Abra o <strong>Expo Go</strong> no celular e insira a URL acima, ou escaneie o QR Code que aparece no terminal do servidor.
-              </p>
             </div>
           </CardContent>
         </Card>
