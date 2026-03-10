@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Smartphone, Copy, Check, QrCode as QrCodeIcon } from 'lucide-react';
 import QRCode from 'qrcode';
 
-const EXPO_URL = 'exp://159.69.144.81:8081';
-const EXPO_HTTPS = 'http://159.69.144.81:8081';
+const EXPO_URL = 'exp://galinhagorda.vip:8081';
+const EXPO_HTTPS = 'http://galinhagorda.vip:8081';
 
 export default function MobilePage() {
   const [copied, setCopied] = useState<string | null>(null);
