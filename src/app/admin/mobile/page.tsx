@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Smartphone, Copy, Check, QrCode as QrCodeIcon } from 'lucide-react';
 import QRCode from 'qrcode';
 
-const EXPO_URL = 'exp://grwaweq-anonymous-8081.exp.direct:443';
-const EXPO_HTTPS = 'https://grwaweq-anonymous-8081.exp.direct';
+const EXPO_URL = 'exp://159.69.144.81:8081';
+const EXPO_HTTPS = 'http://159.69.144.81:8081';
 
 export default function MobilePage() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -65,7 +65,8 @@ export default function MobilePage() {
               </div>
             )}
             <p className="text-center text-sm text-muted-foreground">
-              Escaneie com o <strong>Expo Go</strong> ou com a camera do celular
+              Escaneie com o <strong>Expo Go</strong> ou com a camera do celular.
+              Funciona de qualquer rede (IP publico do servidor).
             </p>
 
             <div className="pt-2 border-t">
