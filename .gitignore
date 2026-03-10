@@ -40,3 +40,4 @@ next-env.d.ts
 /uploads/teams/*
 !/uploads/players/.gitkeep
 !/uploads/teams/.gitkeep
+ecosystem.config.js
