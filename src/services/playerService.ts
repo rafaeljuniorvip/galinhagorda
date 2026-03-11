@@ -43,7 +43,40 @@ export async function listPlayers(filters: PlayerFilters = {}): Promise<Paginate
   const total = parseInt(countResult.rows[0].count);
 
   const data = await getMany<Player>(
-    `SELECT * FROM players ${where} ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+    `SELECT p.*,
+      COALESCE((
+        SELECT t.name FROM player_registrations pr
+        JOIN teams t ON t.id = pr.team_id
+        JOIN championships c ON c.id = pr.championship_id
+        WHERE pr.player_id = p.id
+        ORDER BY c.year DESC, c.created_at DESC LIMIT 1
+      ), NULL) AS team_name,
+      COALESCE((
+        SELECT t.logo_url FROM player_registrations pr
+        JOIN teams t ON t.id = pr.team_id
+        JOIN championships c ON c.id = pr.championship_id
+        WHERE pr.player_id = p.id
+        ORDER BY c.year DESC, c.created_at DESC LIMIT 1
+      ), NULL) AS team_logo,
+      COALESCE((
+        SELECT COUNT(DISTINCT ml.match_id)::int
+        FROM match_lineups ml
+        JOIN matches m ON m.id = ml.match_id AND m.status = 'Finalizada'
+        WHERE ml.player_id = p.id
+      ), 0)::int AS total_matches,
+      COALESCE((
+        SELECT COUNT(*)::int FROM match_events me
+        WHERE me.player_id = p.id AND me.event_type IN ('GOL', 'GOL_PENALTI')
+      ), 0)::int AS total_goals,
+      COALESCE((
+        SELECT COUNT(*)::int FROM match_events me
+        WHERE me.player_id = p.id AND me.event_type = 'CARTAO_AMARELO'
+      ), 0)::int AS total_yellow_cards,
+      COALESCE((
+        SELECT COUNT(*)::int FROM match_events me
+        WHERE me.player_id = p.id AND me.event_type IN ('CARTAO_VERMELHO', 'SEGUNDO_AMARELO')
+      ), 0)::int AS total_red_cards
+    FROM players p ${where.replace(/\b(name|full_name|nickname|position|active)\b/g, 'p.$1')} ORDER BY p.name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
     [...params, safeLimit, offset]
   );
 
