@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
-import { getOne, query } from '@/lib/db';
+import { getOne } from '@/lib/db';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me'
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if email exists in users table with admin role
-    let user = await getOne<UserRow>(
+    const user = await getOne<UserRow>(
       `SELECT id, name, email, role, is_active
        FROM users WHERE email = $1`,
       [email.toLowerCase().trim()]
