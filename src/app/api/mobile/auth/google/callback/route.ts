@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
-import { getOne } from '@/lib/db';
+import { getOne, query } from '@/lib/db';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me'
@@ -8,12 +8,12 @@ const JWT_SECRET = new TextEncoder().encode(
 const TOKEN_EXPIRY = '7d';
 const MOBILE_SCHEME = 'galinhagorda';
 
-interface AdminUser {
+interface UserRow {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'superadmin';
-  active: boolean;
+  role: string;
+  is_active: boolean;
 }
 
 // GET /api/mobile/auth/google/callback - Google OAuth callback for mobile
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     }
 
     const googleUser = await userInfoRes.json();
-    const { email, name } = googleUser;
+    const { email, name, picture } = googleUser;
 
     if (!email) {
       return NextResponse.redirect(
@@ -76,9 +76,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if email exists in admin_users
-    const user = await getOne<AdminUser>(
-      'SELECT id, name, email, role, active FROM admin_users WHERE email = $1',
+    // Check if email exists in users table with admin role
+    let user = await getOne<UserRow>(
+      `SELECT id, name, email, role, is_active
+       FROM users WHERE email = $1`,
       [email.toLowerCase().trim()]
     );
 
@@ -88,7 +89,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!user.active) {
+    if (user.role !== 'admin' && user.role !== 'superadmin') {
+      return NextResponse.redirect(
+        `${MOBILE_SCHEME}://auth?error=${encodeURIComponent('Acesso restrito a administradores.')}`
+      );
+    }
+
+    if (!user.is_active) {
       return NextResponse.redirect(
         `${MOBILE_SCHEME}://auth?error=${encodeURIComponent('Usuário desativado')}`
       );

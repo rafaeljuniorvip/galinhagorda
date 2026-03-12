@@ -26,12 +26,12 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
     const token = authHeader.slice(7);
     try {
       const { payload } = await jwtVerify(token, JWT_SECRET);
-      const user = await getOne<{ id: string; name: string; email: string; role: string; active: boolean }>(
-        'SELECT id, name, email, role, active FROM admin_users WHERE id = $1',
+      const user = await getOne<{ id: string; name: string; email: string; role: string; is_active: boolean; avatar_url: string | null }>(
+        'SELECT id, name, email, role, is_active, avatar_url FROM users WHERE id = $1',
         [payload.sub]
       );
-      if (user && user.active && (user.role === 'admin' || user.role === 'superadmin')) {
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
+      if (user && user.is_active && (user.role === 'admin' || user.role === 'superadmin')) {
+        return { id: user.id, name: user.name, email: user.email, role: user.role, avatar_url: user.avatar_url || undefined };
       }
     } catch {
       // Token invalid, fall through to NextAuth session
