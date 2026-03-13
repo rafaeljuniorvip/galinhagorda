@@ -42,6 +42,10 @@ function randomInt(min: number, max: number): number {
  * Returns the championship ID.
  */
 export async function generateDemoData(): Promise<string> {
+  // Check if demo data already exists
+  const existing = await getOne<{ id: string }>('SELECT id FROM championships WHERE is_demo = true LIMIT 1');
+  if (existing) return existing.id;
+
   // 1. Create championship
   const champResult = await query(
     `INSERT INTO championships (id, name, short_name, year, season, category, format, start_date, end_date, status, location, description, is_demo)
