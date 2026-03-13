@@ -127,6 +127,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (!user) {
+      return NextResponse.redirect(
+        `${MOBILE_SCHEME}://auth?error=${encodeURIComponent('Falha ao criar conta de usuário')}`
+      );
+    }
+
     // Generate JWT
     const token = await new SignJWT({
       sub: user.id,
