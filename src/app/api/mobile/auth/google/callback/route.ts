@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
-import { getOne } from '@/lib/db';
+import { getOne, query } from '@/lib/db';
+import { generateDemoData } from '@/services/demoDataService';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me'
@@ -76,29 +77,54 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if email exists in users table with admin role
-    const user = await getOne<UserRow>(
-      `SELECT id, name, email, role, is_active
-       FROM users WHERE email = $1`,
-      [email.toLowerCase().trim()]
+    const emailLower = email.toLowerCase().trim();
+
+    // Check if user exists
+    let user = await getOne<UserRow>(
+      `SELECT id, name, email, role, is_active FROM users WHERE email = $1`,
+      [emailLower]
     );
 
-    if (!user) {
-      return NextResponse.redirect(
-        `${MOBILE_SCHEME}://auth?error=${encodeURIComponent('Acesso negado. Este email não está cadastrado como administrador.')}`
-      );
-    }
-
-    if (user.role !== 'admin' && user.role !== 'superadmin') {
-      return NextResponse.redirect(
-        `${MOBILE_SCHEME}://auth?error=${encodeURIComponent('Acesso restrito a administradores.')}`
-      );
-    }
-
-    if (!user.is_active) {
+    if (user && !user.is_active) {
       return NextResponse.redirect(
         `${MOBILE_SCHEME}://auth?error=${encodeURIComponent('Usuário desativado')}`
       );
+    }
+
+    // If user doesn't exist or is not admin, create/promote and generate demo data
+    if (!user) {
+      // Create new user as admin
+      const result = await query(
+        `INSERT INTO users (id, email, name, avatar_url, provider, role, is_active)
+         VALUES (gen_random_uuid(), $1, $2, $3, 'google', 'admin', true)
+         RETURNING id, name, email, role, is_active`,
+        [emailLower, name || emailLower.split('@')[0], picture || null]
+      );
+      user = result.rows[0];
+
+      // Generate demo championship for new user
+      try {
+        await generateDemoData();
+        console.log(`[Mobile Google Callback] Demo data generated for new user: ${emailLower}`);
+      } catch (demoErr) {
+        console.error('[Mobile Google Callback] Failed to generate demo data:', demoErr);
+        // Continue login even if demo data fails
+      }
+    } else if (user.role !== 'admin' && user.role !== 'superadmin') {
+      // Promote existing non-admin user to admin
+      await query(
+        `UPDATE users SET role = 'admin' WHERE id = $1`,
+        [user.id]
+      );
+      user = { ...user, role: 'admin' };
+
+      // Generate demo championship
+      try {
+        await generateDemoData();
+        console.log(`[Mobile Google Callback] Demo data generated for promoted user: ${emailLower}`);
+      } catch (demoErr) {
+        console.error('[Mobile Google Callback] Failed to generate demo data:', demoErr);
+      }
     }
 
     // Generate JWT
