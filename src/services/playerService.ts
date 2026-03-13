@@ -7,6 +7,7 @@ interface PlayerFilters {
   search?: string;
   position?: string;
   active?: boolean;
+  demoOnly?: boolean;
   page?: number;
   limit?: number;
 }
@@ -35,6 +36,10 @@ export async function listPlayers(filters: PlayerFilters = {}): Promise<Paginate
     conditions.push(`active = $${paramIndex}`);
     params.push(filters.active);
     paramIndex++;
+  }
+
+  if (filters.demoOnly) {
+    conditions.push(`is_demo = true`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -89,8 +94,9 @@ export async function listPlayers(filters: PlayerFilters = {}): Promise<Paginate
   };
 }
 
-export async function getAllPlayers(): Promise<Player[]> {
-  return getMany<Player>('SELECT * FROM players ORDER BY name ASC', []);
+export async function getAllPlayers(demoOnly = false): Promise<Player[]> {
+  const demoFilter = demoOnly ? ' WHERE is_demo = true' : '';
+  return getMany<Player>(`SELECT * FROM players${demoFilter} ORDER BY name ASC`, []);
 }
 
 export async function getPlayerById(id: string): Promise<Player | null> {

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listChampionships, getAllChampionships, createChampionship } from '@/services/championshipService';
-import { getAuthUser } from '@/lib/auth';
+import { getAuthUser, isDemoOnly } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const demoOnly = await isDemoOnly(request);
 
     if (searchParams.get('all') === 'true') {
-      const championships = await getAllChampionships();
+      const championships = await getAllChampionships(demoOnly);
       return NextResponse.json(championships);
     }
 
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
       year: searchParams.get('year') ? parseInt(searchParams.get('year')!) : undefined,
       status: searchParams.get('status') || undefined,
       active: searchParams.has('active') ? searchParams.get('active') === 'true' : undefined,
+      demoOnly,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '20'),
     });

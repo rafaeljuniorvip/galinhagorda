@@ -44,8 +44,8 @@ function randomInt(min: number, max: number): number {
 export async function generateDemoData(): Promise<string> {
   // 1. Create championship
   const champResult = await query(
-    `INSERT INTO championships (id, name, short_name, year, season, category, format, start_date, end_date, status, location, description)
-     VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `INSERT INTO championships (id, name, short_name, year, season, category, format, start_date, end_date, status, location, description, is_demo)
+     VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)
      RETURNING id`,
     [
       'Copa Demo 2026',
@@ -67,8 +67,8 @@ export async function generateDemoData(): Promise<string> {
   const teamIds: string[] = [];
   for (const team of DEMO_TEAMS) {
     const result = await query(
-      `INSERT INTO teams (id, name, short_name, primary_color, secondary_color, city, state, active)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, 'Itapecerica', 'MG', true)
+      `INSERT INTO teams (id, name, short_name, primary_color, secondary_color, city, state, active, is_demo)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, 'Itapecerica', 'MG', true, true)
        RETURNING id`,
       [team.name, team.short_name, team.primary_color, team.secondary_color]
     );
@@ -101,8 +101,8 @@ export async function generateDemoData(): Promise<string> {
       const position = POSITIONS[p];
 
       const playerResult = await query(
-        `INSERT INTO players (id, full_name, name, position, dominant_foot, city, state, active)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, 'Itapecerica', 'MG', true)
+        `INSERT INTO players (id, full_name, name, position, dominant_foot, city, state, active, is_demo)
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, 'Itapecerica', 'MG', true, true)
          RETURNING id`,
         [fullName, firstName, position, randomItem(['Direito', 'Esquerdo', 'Ambidestro'])]
       );

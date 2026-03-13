@@ -7,6 +7,7 @@ interface MatchFilters {
   team_id?: string;
   status?: string;
   match_round?: string;
+  demoOnly?: boolean;
   page?: number;
   limit?: number;
 }
@@ -61,6 +62,10 @@ export async function listMatches(filters: MatchFilters = {}): Promise<Paginated
     conditions.push(`m.match_round = $${paramIndex}`);
     params.push(filters.match_round);
     paramIndex++;
+  }
+
+  if (filters.demoOnly) {
+    conditions.push(`c.is_demo = true`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

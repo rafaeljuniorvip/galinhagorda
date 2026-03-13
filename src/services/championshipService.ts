@@ -7,6 +7,7 @@ interface ChampionshipFilters {
   year?: number;
   status?: string;
   active?: boolean;
+  demoOnly?: boolean;
   page?: number;
   limit?: number;
 }
@@ -43,6 +44,10 @@ export async function listChampionships(filters: ChampionshipFilters = {}): Prom
     paramIndex++;
   }
 
+  if (filters.demoOnly) {
+    conditions.push(`is_demo = true`);
+  }
+
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const countResult = await query(`SELECT COUNT(*) FROM championships ${where}`, params);
@@ -56,8 +61,9 @@ export async function listChampionships(filters: ChampionshipFilters = {}): Prom
   return { data, total, page, limit: safeLimit, totalPages: Math.ceil(total / safeLimit) };
 }
 
-export async function getAllChampionships(): Promise<Championship[]> {
-  return getMany<Championship>('SELECT * FROM championships WHERE active = true ORDER BY year DESC, name ASC');
+export async function getAllChampionships(demoOnly = false): Promise<Championship[]> {
+  const demoFilter = demoOnly ? ' AND is_demo = true' : '';
+  return getMany<Championship>(`SELECT * FROM championships WHERE active = true${demoFilter} ORDER BY year DESC, name ASC`);
 }
 
 export async function getChampionshipById(id: string): Promise<Championship | null> {

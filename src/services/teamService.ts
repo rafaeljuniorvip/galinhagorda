@@ -5,6 +5,7 @@ import { buildPaginationQuery } from '@/lib/utils';
 interface TeamFilters {
   search?: string;
   active?: boolean;
+  demoOnly?: boolean;
   page?: number;
   limit?: number;
 }
@@ -29,6 +30,10 @@ export async function listTeams(filters: TeamFilters = {}): Promise<PaginatedRes
     paramIndex++;
   }
 
+  if (filters.demoOnly) {
+    conditions.push(`is_demo = true`);
+  }
+
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const countResult = await query(`SELECT COUNT(*) FROM teams ${where}`, params);
@@ -42,8 +47,9 @@ export async function listTeams(filters: TeamFilters = {}): Promise<PaginatedRes
   return { data, total, page, limit: safeLimit, totalPages: Math.ceil(total / safeLimit) };
 }
 
-export async function getAllTeams(): Promise<Team[]> {
-  return getMany<Team>('SELECT * FROM teams WHERE active = true ORDER BY name ASC');
+export async function getAllTeams(demoOnly = false): Promise<Team[]> {
+  const demoFilter = demoOnly ? ' AND is_demo = true' : '';
+  return getMany<Team>(`SELECT * FROM teams WHERE active = true${demoFilter} ORDER BY name ASC`);
 }
 
 export async function getTeamById(id: string): Promise<Team | null> {

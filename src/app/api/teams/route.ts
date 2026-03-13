@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listTeams, getAllTeams, createTeam } from '@/services/teamService';
-import { getAuthUser } from '@/lib/auth';
+import { getAuthUser, isDemoOnly } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const demoOnly = await isDemoOnly(request);
 
     if (searchParams.get('all') === 'true') {
-      const teams = await getAllTeams();
+      const teams = await getAllTeams(demoOnly);
       return NextResponse.json(teams);
     }
 
     const result = await listTeams({
       search: searchParams.get('search') || undefined,
       active: searchParams.has('active') ? searchParams.get('active') === 'true' : undefined,
+      demoOnly,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '20'),
     });

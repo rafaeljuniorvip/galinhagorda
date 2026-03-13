@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listPlayers, createPlayer, getAllPlayers } from '@/services/playerService';
-import { getAuthUser } from '@/lib/auth';
+import { getAuthUser, isDemoOnly } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const demoOnly = await isDemoOnly(request);
 
     // Return all players without pagination (for selects/dropdowns)
     if (searchParams.get('all') === 'true') {
-      const players = await getAllPlayers();
+      const players = await getAllPlayers(demoOnly);
       return NextResponse.json({ data: players, total: players.length });
     }
 
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') || undefined,
       position: searchParams.get('position') || undefined,
       active: searchParams.has('active') ? searchParams.get('active') === 'true' : undefined,
+      demoOnly,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '20'),
     });

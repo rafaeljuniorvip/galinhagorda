@@ -60,6 +60,26 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
  * Get authenticated admin user from NextAuth session (server components).
  * Returns null if not authenticated or not admin/superadmin.
  */
+/**
+ * Check if request is from a mobile non-superadmin user (should only see demo data).
+ */
+export async function isDemoOnly(request: NextRequest): Promise<boolean> {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) return false; // Web users see everything
+
+  try {
+    const token = authHeader.slice(7);
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const user = await getOne<{ role: string }>(
+      'SELECT role FROM users WHERE id = $1',
+      [payload.sub]
+    );
+    return !!user && user.role !== 'superadmin';
+  } catch {
+    return false;
+  }
+}
+
 export async function getSessionUser(): Promise<AuthUser | null> {
   const session = await auth();
   if (!session?.user?.email) return null;

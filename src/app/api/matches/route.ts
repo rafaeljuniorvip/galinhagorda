@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listMatches, createMatch } from '@/services/matchService';
-import { getAuthUser } from '@/lib/auth';
+import { getAuthUser, isDemoOnly } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const demoOnly = await isDemoOnly(request);
     const result = await listMatches({
       championship_id: searchParams.get('championship_id') || undefined,
       team_id: searchParams.get('team_id') || undefined,
       status: searchParams.get('status') || undefined,
       match_round: searchParams.get('match_round') || undefined,
+      demoOnly,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '20'),
     });
