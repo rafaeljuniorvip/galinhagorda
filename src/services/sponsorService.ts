@@ -13,7 +13,7 @@ export interface Sponsor {
 }
 
 export async function getActiveSponsors(demoOnly = false): Promise<Sponsor[]> {
-  const demoFilter = demoOnly ? ' AND is_demo = true' : '';
+  const demoFilter = demoOnly ? ' AND is_demo = true' : ' AND (is_demo IS NOT TRUE)';
   const result = await query(
     `SELECT * FROM sponsors WHERE active = true${demoFilter} ORDER BY sort_order ASC, name ASC`
   );
@@ -21,7 +21,7 @@ export async function getActiveSponsors(demoOnly = false): Promise<Sponsor[]> {
 }
 
 export async function getAllSponsors(demoOnly = false): Promise<Sponsor[]> {
-  const demoFilter = demoOnly ? ' WHERE is_demo = true' : '';
+  const demoFilter = demoOnly ? ' WHERE is_demo = true' : ' WHERE (is_demo IS NOT TRUE)';
   const result = await query(`SELECT * FROM sponsors${demoFilter} ORDER BY sort_order ASC, name ASC`);
   return result.rows;
 }

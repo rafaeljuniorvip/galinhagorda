@@ -40,6 +40,8 @@ export async function listPlayers(filters: PlayerFilters = {}): Promise<Paginate
 
   if (filters.demoOnly) {
     conditions.push(`is_demo = true`);
+  } else {
+    conditions.push(`(is_demo IS NOT TRUE)`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -95,7 +97,7 @@ export async function listPlayers(filters: PlayerFilters = {}): Promise<Paginate
 }
 
 export async function getAllPlayers(demoOnly = false): Promise<Player[]> {
-  const demoFilter = demoOnly ? ' WHERE is_demo = true' : '';
+  const demoFilter = demoOnly ? ' WHERE is_demo = true' : ' WHERE (is_demo IS NOT TRUE)';
   return getMany<Player>(`SELECT * FROM players${demoFilter} ORDER BY name ASC`, []);
 }
 

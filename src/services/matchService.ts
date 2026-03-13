@@ -66,6 +66,8 @@ export async function listMatches(filters: MatchFilters = {}): Promise<Paginated
 
   if (filters.demoOnly) {
     conditions.push(`c.is_demo = true`);
+  } else {
+    conditions.push(`(c.is_demo IS NOT TRUE)`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

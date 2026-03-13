@@ -46,6 +46,8 @@ export async function listNews(filters: NewsFilters = {}): Promise<PaginatedResp
 
   if (filters.demoOnly) {
     conditions.push(`n.is_demo = true`);
+  } else {
+    conditions.push(`(n.is_demo IS NOT TRUE)`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

@@ -32,6 +32,8 @@ export async function listTeams(filters: TeamFilters = {}): Promise<PaginatedRes
 
   if (filters.demoOnly) {
     conditions.push(`is_demo = true`);
+  } else {
+    conditions.push(`(is_demo IS NOT TRUE)`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -48,7 +50,7 @@ export async function listTeams(filters: TeamFilters = {}): Promise<PaginatedRes
 }
 
 export async function getAllTeams(demoOnly = false): Promise<Team[]> {
-  const demoFilter = demoOnly ? ' AND is_demo = true' : '';
+  const demoFilter = demoOnly ? ' AND is_demo = true' : ' AND (is_demo IS NOT TRUE)';
   return getMany<Team>(`SELECT * FROM teams WHERE active = true${demoFilter} ORDER BY name ASC`);
 }
 

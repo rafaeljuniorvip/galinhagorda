@@ -46,6 +46,8 @@ export async function listChampionships(filters: ChampionshipFilters = {}): Prom
 
   if (filters.demoOnly) {
     conditions.push(`is_demo = true`);
+  } else {
+    conditions.push(`(is_demo IS NOT TRUE)`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -62,7 +64,7 @@ export async function listChampionships(filters: ChampionshipFilters = {}): Prom
 }
 
 export async function getAllChampionships(demoOnly = false): Promise<Championship[]> {
-  const demoFilter = demoOnly ? ' AND is_demo = true' : '';
+  const demoFilter = demoOnly ? ' AND is_demo = true' : ' AND (is_demo IS NOT TRUE)';
   return getMany<Championship>(`SELECT * FROM championships WHERE active = true${demoFilter} ORDER BY year DESC, name ASC`);
 }
 
