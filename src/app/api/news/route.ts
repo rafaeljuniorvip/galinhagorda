@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listNews, createNews } from '@/services/newsService';
-import { getAuthUser } from '@/lib/auth';
+import { getAuthUser, isDemoOnly } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const demoOnly = await isDemoOnly(request);
     const result = await listNews({
       search: searchParams.get('search') || undefined,
       championshipId: searchParams.get('championship_id') || undefined,
       published: searchParams.has('published') ? searchParams.get('published') === 'true' : undefined,
       featured: searchParams.has('featured') ? searchParams.get('featured') === 'true' : undefined,
+      demoOnly,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '20'),
     });

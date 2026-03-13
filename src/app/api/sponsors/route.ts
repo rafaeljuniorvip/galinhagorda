@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/auth';
+import { getAuthUser, isDemoOnly } from '@/lib/auth';
 import { getActiveSponsors, getAllSponsors, createSponsor } from '@/services/sponsorService';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const all = searchParams.get('all');
+    const demoOnly = await isDemoOnly(request);
 
     // Public: only active sponsors; admin with all=true: everything
-    const sponsors = all === 'true' ? await getAllSponsors() : await getActiveSponsors();
+    const sponsors = all === 'true' ? await getAllSponsors(demoOnly) : await getActiveSponsors(demoOnly);
     return NextResponse.json(sponsors);
   } catch (error) {
     console.error('[API] Sponsors GET error:', error);

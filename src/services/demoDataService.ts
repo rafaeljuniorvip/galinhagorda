@@ -208,5 +208,51 @@ export async function generateDemoData(): Promise<string> {
     }
   }
 
+  // 6. Create demo news
+  const demoNews = [
+    {
+      title: 'Copa Demo 2026 começa com grandes emoções',
+      slug: 'copa-demo-2026-comeca',
+      summary: 'Primeira rodada do campeonato demonstrativo surpreende com goleadas e jogos disputados.',
+      content: '<p>A Copa Demo 2026 teve início neste fim de semana com partidas emocionantes. Os torcedores lotaram o Campo Municipal de Itapecerica para acompanhar os primeiros jogos do campeonato.</p><p>Destaque para a atuação do Estrela Vermelha FC, que mostrou um futebol ofensivo e empolgante na primeira rodada.</p>',
+    },
+    {
+      title: 'Artilheiro da Copa Demo já balança as redes',
+      slug: 'artilheiro-copa-demo-2026',
+      summary: 'Jogadores mostram faro de gol nas primeiras rodadas do campeonato demonstrativo.',
+      content: '<p>Com o campeonato em andamento, a disputa pela artilharia já está acirrada. Vários jogadores marcaram mais de um gol nas primeiras rodadas.</p><p>A média de gols por partida está acima de 3, mostrando que o campeonato promete muita emoção até o final.</p>',
+    },
+    {
+      title: 'Classificação apertada na Copa Demo 2026',
+      slug: 'classificacao-apertada-copa-demo',
+      summary: 'Qualquer time pode ser campeão nesta edição do torneio demonstrativo.',
+      content: '<p>A tabela de classificação da Copa Demo 2026 mostra um equilíbrio impressionante entre as equipes. A diferença entre o primeiro e o último colocado é mínima.</p><p>Os próximos jogos serão decisivos para definir os favoritos ao título.</p>',
+    },
+  ];
+
+  for (const news of demoNews) {
+    await query(
+      `INSERT INTO news (id, title, slug, summary, content, is_published, is_featured, published_at, championship_id, is_demo)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, true, false, NOW(), $5, true)`,
+      [news.title, news.slug, news.summary, news.content, championshipId]
+    );
+  }
+
+  // 7. Create demo sponsors
+  const demoSponsors = [
+    { name: 'Padaria Pão Dourado', tier: 'ouro', sort_order: 1 },
+    { name: 'Materiais Construção Silva', tier: 'prata', sort_order: 2 },
+    { name: 'Auto Peças Central', tier: 'apoiador', sort_order: 3 },
+    { name: 'Mercado Bom Preço', tier: 'apoiador', sort_order: 4 },
+  ];
+
+  for (const sponsor of demoSponsors) {
+    await query(
+      `INSERT INTO sponsors (id, name, tier, sort_order, active, is_demo)
+       VALUES (gen_random_uuid(), $1, $2, $3, true, true)`,
+      [sponsor.name, sponsor.tier, sponsor.sort_order]
+    );
+  }
+
   return championshipId;
 }

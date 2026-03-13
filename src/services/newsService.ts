@@ -7,6 +7,7 @@ interface NewsFilters {
   championshipId?: string;
   published?: boolean;
   featured?: boolean;
+  demoOnly?: boolean;
   page?: number;
   limit?: number;
 }
@@ -41,6 +42,10 @@ export async function listNews(filters: NewsFilters = {}): Promise<PaginatedResp
     conditions.push(`n.is_featured = $${paramIndex}`);
     params.push(filters.featured);
     paramIndex++;
+  }
+
+  if (filters.demoOnly) {
+    conditions.push(`n.is_demo = true`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

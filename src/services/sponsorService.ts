@@ -12,15 +12,17 @@ export interface Sponsor {
   updated_at: string;
 }
 
-export async function getActiveSponsors(): Promise<Sponsor[]> {
+export async function getActiveSponsors(demoOnly = false): Promise<Sponsor[]> {
+  const demoFilter = demoOnly ? ' AND is_demo = true' : '';
   const result = await query(
-    'SELECT * FROM sponsors WHERE active = true ORDER BY sort_order ASC, name ASC'
+    `SELECT * FROM sponsors WHERE active = true${demoFilter} ORDER BY sort_order ASC, name ASC`
   );
   return result.rows;
 }
 
-export async function getAllSponsors(): Promise<Sponsor[]> {
-  const result = await query('SELECT * FROM sponsors ORDER BY sort_order ASC, name ASC');
+export async function getAllSponsors(demoOnly = false): Promise<Sponsor[]> {
+  const demoFilter = demoOnly ? ' WHERE is_demo = true' : '';
+  const result = await query(`SELECT * FROM sponsors${demoFilter} ORDER BY sort_order ASC, name ASC`);
   return result.rows;
 }
 
