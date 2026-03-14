@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 async function getActiveChampionship(): Promise<Championship | null> {
   return getOne<Championship>(
-    `SELECT * FROM championships WHERE active = true AND status IN ('Em Andamento', 'Inscricoes Abertas') ORDER BY CASE WHEN status = 'Em Andamento' THEN 0 ELSE 1 END, year DESC LIMIT 1`
+    `SELECT * FROM championships WHERE active = true AND (is_demo IS NOT TRUE) AND status IN ('Em Andamento', 'Inscricoes Abertas') ORDER BY CASE WHEN status = 'Em Andamento' THEN 0 ELSE 1 END, year DESC LIMIT 1`
   );
 }
 
@@ -42,7 +42,7 @@ async function getUpcomingMatches(champId: string): Promise<Match[]> {
 
 async function getFeaturedMatchesData(): Promise<Match[]> {
   return getMany<Match>(
-    `SELECT m.*, ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short, at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short, c.name AS championship_name FROM matches m JOIN teams ht ON ht.id = m.home_team_id JOIN teams at ON at.id = m.away_team_id JOIN championships c ON c.id = m.championship_id WHERE m.is_featured = true OR m.status = 'Em Andamento' OR (m.status = 'Finalizada' AND m.match_date >= NOW() - INTERVAL '7 days') ORDER BY CASE WHEN m.status = 'Em Andamento' THEN 0 WHEN m.is_featured = true THEN 1 ELSE 2 END, m.match_date DESC NULLS LAST LIMIT 10`
+    `SELECT m.*, ht.name AS home_team_name, ht.logo_url AS home_team_logo, ht.short_name AS home_team_short, at.name AS away_team_name, at.logo_url AS away_team_logo, at.short_name AS away_team_short, c.name AS championship_name FROM matches m JOIN teams ht ON ht.id = m.home_team_id JOIN teams at ON at.id = m.away_team_id JOIN championships c ON c.id = m.championship_id WHERE (c.is_demo IS NOT TRUE) AND (m.is_featured = true OR m.status = 'Em Andamento' OR (m.status = 'Finalizada' AND m.match_date >= NOW() - INTERVAL '7 days')) ORDER BY CASE WHEN m.status = 'Em Andamento' THEN 0 WHEN m.is_featured = true THEN 1 ELSE 2 END, m.match_date DESC NULLS LAST LIMIT 10`
   );
 }
 

@@ -9,7 +9,7 @@ export async function getPublishedNews(
 ): Promise<{ news: NewsArticle[]; total: number }> {
   const { offset, limit: safeLimit } = buildPaginationQuery(page, limit);
 
-  const conditions = ['n.is_published = true'];
+  const conditions = ['n.is_published = true', '(n.is_demo IS NOT TRUE)'];
   const params: any[] = [];
   let paramIndex = 1;
 
@@ -51,7 +51,7 @@ export async function getFeaturedNews(limit: number = 4): Promise<NewsArticle[]>
      FROM news n
      LEFT JOIN users u ON u.id = n.author_id
      LEFT JOIN championships c ON c.id = n.championship_id
-     WHERE n.is_published = true AND n.is_featured = true
+     WHERE n.is_published = true AND n.is_featured = true AND (n.is_demo IS NOT TRUE)
      ORDER BY n.published_at DESC
      LIMIT $1`,
     [limit]
@@ -61,7 +61,7 @@ export async function getFeaturedNews(limit: number = 4): Promise<NewsArticle[]>
 export async function getNewsBySlug(slug: string): Promise<NewsArticle | null> {
   // Increment views count
   await query(
-    `UPDATE news SET views_count = views_count + 1 WHERE slug = $1 AND is_published = true`,
+    `UPDATE news SET views_count = views_count + 1 WHERE slug = $1 AND is_published = true AND (is_demo IS NOT TRUE)`,
     [slug]
   );
 
@@ -72,7 +72,7 @@ export async function getNewsBySlug(slug: string): Promise<NewsArticle | null> {
      FROM news n
      LEFT JOIN users u ON u.id = n.author_id
      LEFT JOIN championships c ON c.id = n.championship_id
-     WHERE n.slug = $1 AND n.is_published = true`,
+     WHERE n.slug = $1 AND n.is_published = true AND (n.is_demo IS NOT TRUE)`,
     [slug]
   );
 }
@@ -93,7 +93,7 @@ export async function getRelatedNews(newsId: string, limit: number = 3): Promise
        FROM news n
        LEFT JOIN users u ON u.id = n.author_id
        LEFT JOIN championships c ON c.id = n.championship_id
-       WHERE n.is_published = true AND n.id != $1 AND n.championship_id = $2
+       WHERE n.is_published = true AND (n.is_demo IS NOT TRUE) AND n.id != $1 AND n.championship_id = $2
        ORDER BY n.published_at DESC
        LIMIT $3`,
       [newsId, current.championship_id, limit]
@@ -113,7 +113,7 @@ export async function getRelatedNews(newsId: string, limit: number = 3): Promise
        FROM news n
        LEFT JOIN users u ON u.id = n.author_id
        LEFT JOIN championships c ON c.id = n.championship_id
-       WHERE n.is_published = true AND n.id != ALL($1::uuid[])
+       WHERE n.is_published = true AND (n.is_demo IS NOT TRUE) AND n.id != ALL($1::uuid[])
        ORDER BY n.published_at DESC
        LIMIT $2`,
       [excludeIds, remaining]
@@ -130,7 +130,7 @@ export async function getRelatedNews(newsId: string, limit: number = 3): Promise
      FROM news n
      LEFT JOIN users u ON u.id = n.author_id
      LEFT JOIN championships c ON c.id = n.championship_id
-     WHERE n.is_published = true AND n.id != $1
+     WHERE n.is_published = true AND (n.is_demo IS NOT TRUE) AND n.id != $1
      ORDER BY n.published_at DESC
      LIMIT $2`,
     [newsId, limit]
@@ -145,7 +145,7 @@ export async function getNewsByChampionship(championshipId: string, limit: numbe
      FROM news n
      LEFT JOIN users u ON u.id = n.author_id
      LEFT JOIN championships c ON c.id = n.championship_id
-     WHERE n.is_published = true AND n.championship_id = $1
+     WHERE n.is_published = true AND (n.is_demo IS NOT TRUE) AND n.championship_id = $1
      ORDER BY n.published_at DESC
      LIMIT $2`,
     [championshipId, limit]
