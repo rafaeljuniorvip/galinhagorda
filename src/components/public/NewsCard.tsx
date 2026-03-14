@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/cn';
 import { NewsArticle } from '@/types';
 import { formatDate } from '@/lib/utils';
+import { imageUrl } from '@/lib/image';
 
 interface Props {
   article: NewsArticle;
@@ -35,7 +36,7 @@ export default function NewsCard({ article, featured = false }: Props) {
             className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-300 group-hover:scale-105"
             style={{
               backgroundImage: article.cover_image
-                ? `url(${article.cover_image})`
+                ? `url(${imageUrl(article.cover_image, featured ? 'medium' : 'thumb')})`
                 : undefined,
               background: !article.cover_image
                 ? 'linear-gradient(135deg, #1a237e 0%, #1565c0 50%, #0d47a1 100%)'

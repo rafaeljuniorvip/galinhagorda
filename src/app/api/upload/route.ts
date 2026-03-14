@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { processImage } from '@/services/imageService';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
@@ -11,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const type = formData.get('type') as string; // 'players' or 'teams'
+    const type = formData.get('type') as string;
 
     if (!file) {
       return NextResponse.json({ error: 'Arquivo é obrigatório' }, { status: 400 });
@@ -27,24 +26,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo de arquivo não permitido. Use JPG, PNG ou WebP' }, { status: 400 });
     }
 
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 10 * 1024 * 1024; // 10MB (increased since we compress)
     if (file.size > maxSize) {
-      return NextResponse.json({ error: 'Arquivo muito grande. Máximo 5MB' }, { status: 400 });
+      return NextResponse.json({ error: 'Arquivo muito grande. Máximo 10MB' }, { status: 400 });
     }
-
-    const ext = file.name.split('.').pop() || 'jpg';
-    const filename = `${uuidv4()}.${ext}`;
-    const uploadDir = path.join(process.cwd(), 'uploads', type);
-
-    await mkdir(uploadDir, { recursive: true });
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, buffer);
+    const baseFilename = uuidv4();
 
-    const url = `/uploads/${type}/${filename}`;
-    return NextResponse.json({ url, filename });
+    const variants = await processImage(buffer, type, baseFilename);
+
+    // Return main URL (medium for backwards compatibility) + all variants
+    return NextResponse.json({
+      url: variants.medium,
+      filename: `${baseFilename}.webp`,
+      variants,
+    });
   } catch (error) {
     console.error('[API] Upload error:', error);
     return NextResponse.json({ error: 'Erro ao fazer upload' }, { status: 500 });

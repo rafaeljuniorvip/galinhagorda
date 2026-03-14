@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import NewsCard from '@/components/public/NewsCard';
+import { imageUrl } from '@/lib/image';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +49,7 @@ export default async function NewsDetailPage({ params }: Props) {
         className="w-full h-[250px] md:h-[400px] flex items-end"
         style={{
           background: article.cover_image
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%), url(${article.cover_image}) center/cover no-repeat`
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%), url(${imageUrl(article.cover_image, 'full')}) center/cover no-repeat`
             : 'linear-gradient(135deg, #1a237e 0%, #1565c0 100%)',
         }}
       >

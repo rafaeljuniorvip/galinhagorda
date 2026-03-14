@@ -1,4 +1,5 @@
 import { getActiveSponsors, Sponsor } from '@/services/sponsorService';
+import { imageUrl } from '@/lib/image';
 
 export default async function SponsorsBar() {
   let sponsors: Sponsor[] = [];
@@ -67,7 +68,7 @@ function SponsorLogo({ sponsor, size }: { sponsor: Sponsor; size: 'lg' | 'md' })
 
   const content = sponsor.logo_url ? (
     <img
-      src={sponsor.logo_url}
+      src={imageUrl(sponsor.logo_url, 'thumb')}
       alt={sponsor.name}
       className={`${imgClass} object-contain transition-transform duration-300 group-hover:scale-110`}
       loading="lazy"
