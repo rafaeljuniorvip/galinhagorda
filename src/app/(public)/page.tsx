@@ -206,7 +206,7 @@ export default async function HomePage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {standings.slice(0, 5).map((s, i) => (
+                        {standings.slice(0, 6).map((s, i) => (
                           <tr key={s.team_id} className={cn('border-b border-border/50', i % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]')}>
                             <td className="px-3 py-2.5">
                               <span className={cn(

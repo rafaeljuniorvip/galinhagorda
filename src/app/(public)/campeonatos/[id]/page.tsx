@@ -19,6 +19,7 @@ import ChampionshipMatchesClient from '@/components/public/ChampionshipMatchesCl
 import NewsCard from '@/components/public/NewsCard';
 import PhotoGallery from '@/components/public/PhotoGallery';
 import FanWall from '@/components/public/FanWall';
+import { cn } from '@/lib/cn';
 
 export const dynamic = 'force-dynamic';
 
@@ -141,48 +142,55 @@ export default async function ChampionshipDetailPage({ params }: Props) {
         {standings.length > 0 && (
           <div className="mb-6">
             <h2 className="text-xl font-bold mb-3 text-[#1a237e]">CLASSIFICACAO</h2>
-            <div className="border rounded-lg overflow-hidden">
+            <div className="rounded-lg overflow-hidden border border-border">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-muted/50 border-b">
-                    <th className="text-left px-3 py-2 font-semibold w-10">#</th>
-                    <th className="text-left px-3 py-2 font-semibold">Time</th>
-                    <th className="text-center px-2 py-2 font-semibold">P</th>
-                    <th className="text-center px-2 py-2 font-semibold">J</th>
-                    <th className="text-center px-2 py-2 font-semibold">V</th>
-                    <th className="text-center px-2 py-2 font-semibold">E</th>
-                    <th className="text-center px-2 py-2 font-semibold">D</th>
-                    <th className="text-center px-2 py-2 font-semibold">GP</th>
-                    <th className="text-center px-2 py-2 font-semibold">GC</th>
-                    <th className="text-center px-2 py-2 font-semibold">SG</th>
+                  <tr className="bg-[#0d1b2a] text-white text-xs">
+                    <th className="px-3 py-2.5 text-left font-semibold w-10">#</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">Time</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">P</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">J</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">V</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">E</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">D</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">GP</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">GC</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">SG</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {standings.map((s, i) => {
-                    const borderColor = i < 4 ? 'border-l-green-600' : (i >= standings.length - 2 ? 'border-l-red-600' : 'border-l-transparent');
-                    return (
-                      <tr key={s.team_id} className={`border-b border-l-4 ${borderColor} hover:bg-muted/30 transition-colors`}>
-                        <td className="px-3 py-2 font-bold">{i + 1}</td>
-                        <td className="px-3 py-2">
-                          <div className="flex items-center gap-1.5">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={s.logo_url || ''} />
-                              <AvatarFallback className="text-[10px]">{s.short_name?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-semibold">{s.team_name}</span>
-                          </div>
-                        </td>
-                        <td className="text-center px-2 py-2 font-bold">{s.points}</td>
-                        <td className="text-center px-2 py-2">{s.matches_played}</td>
-                        <td className="text-center px-2 py-2">{s.wins}</td>
-                        <td className="text-center px-2 py-2">{s.draws}</td>
-                        <td className="text-center px-2 py-2">{s.losses}</td>
-                        <td className="text-center px-2 py-2">{s.goals_for}</td>
-                        <td className="text-center px-2 py-2">{s.goals_against}</td>
-                        <td className="text-center px-2 py-2">{s.goals_for - s.goals_against}</td>
-                      </tr>
-                    );
-                  })}
+                  {standings.map((s, i) => (
+                    <tr key={s.team_id} className={cn(
+                      'border-b border-border/50 hover:bg-muted/30 transition-colors',
+                      i % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'
+                    )}>
+                      <td className="px-3 py-2.5">
+                        <span className={cn(
+                          'inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold',
+                          i < 4 ? 'bg-[#2e7d32] text-white' : i >= standings.length - 2 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600'
+                        )}>
+                          {i + 1}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={s.logo_url || ''} />
+                            <AvatarFallback className="text-[9px] font-bold">{s.short_name?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-semibold text-[#0d1b2a]">{s.team_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-extrabold text-[#1a237e]">{s.points}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.matches_played}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.wins}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.draws}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.losses}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_for}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_against}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_for - s.goals_against}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
