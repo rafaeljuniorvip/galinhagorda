@@ -63,6 +63,10 @@ export interface Championship {
   prize: string | null;
   location: string | null;
   sponsor: string | null;
+  yellow_card_suspension_limit: number;
+  yellow_card_suspension_matches: number;
+  red_card_suspension_matches: number;
+  second_yellow_is_red: boolean;
   created_at: string;
   updated_at: string;
 }

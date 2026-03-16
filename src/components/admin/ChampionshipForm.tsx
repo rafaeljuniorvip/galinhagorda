@@ -38,6 +38,10 @@ export default function ChampionshipForm({ championship }: Props) {
     prize: championship?.prize || '',
     location: championship?.location || '',
     sponsor: championship?.sponsor || '',
+    yellow_card_suspension_limit: championship?.yellow_card_suspension_limit?.toString() || '3',
+    yellow_card_suspension_matches: championship?.yellow_card_suspension_matches?.toString() || '1',
+    red_card_suspension_matches: championship?.red_card_suspension_matches?.toString() || '1',
+    second_yellow_is_red: championship?.second_yellow_is_red !== false,
   });
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -48,7 +52,7 @@ export default function ChampionshipForm({ championship }: Props) {
     e.preventDefault();
     setError(''); setSaving(true);
     try {
-      const body = { ...form, year: parseInt(form.year), short_name: form.short_name || null, description: form.description || null, start_date: form.start_date || null, end_date: form.end_date || null, banner_url: form.banner_url || null, prize: form.prize || null, location: form.location || null, sponsor: form.sponsor || null };
+      const body = { ...form, year: parseInt(form.year), short_name: form.short_name || null, description: form.description || null, start_date: form.start_date || null, end_date: form.end_date || null, banner_url: form.banner_url || null, prize: form.prize || null, location: form.location || null, sponsor: form.sponsor || null, yellow_card_suspension_limit: parseInt(form.yellow_card_suspension_limit) || 3, yellow_card_suspension_matches: parseInt(form.yellow_card_suspension_matches) || 1, red_card_suspension_matches: parseInt(form.red_card_suspension_matches) || 1, second_yellow_is_red: form.second_yellow_is_red };
       const url = isEditing ? `/api/championships/${championship.id}` : '/api/championships';
       const method = isEditing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -112,6 +116,39 @@ export default function ChampionshipForm({ championship }: Props) {
             <div className="md:col-span-6"><Label>Premiacao</Label><Input value={form.prize} onChange={handleChange('prize')} placeholder="Ex: R$ 5.000,00" /></div>
             <div className="md:col-span-6"><Label>URL do Banner</Label><Input value={form.banner_url} onChange={handleChange('banner_url')} placeholder="https://..." /></div>
             <div className="md:col-span-12"><Label>Descricao</Label><Textarea rows={3} value={form.description} onChange={handleChange('description')} /></div>
+
+            {/* Regras de Cartões */}
+            <div className="md:col-span-12 border-t pt-4 mt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Regras de Cartoes</h3>
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div className="md:col-span-3">
+                  <Label>Amarelos p/ suspensao</Label>
+                  <Input type="number" min="1" max="10" value={form.yellow_card_suspension_limit} onChange={handleChange('yellow_card_suspension_limit')} />
+                  <p className="text-[11px] text-muted-foreground mt-1">Acumulados para suspensao (ex: 3)</p>
+                </div>
+                <div className="md:col-span-3">
+                  <Label>Jogos suspenso (amarelo)</Label>
+                  <Input type="number" min="1" max="5" value={form.yellow_card_suspension_matches} onChange={handleChange('yellow_card_suspension_matches')} />
+                  <p className="text-[11px] text-muted-foreground mt-1">Jogos fora ao atingir limite</p>
+                </div>
+                <div className="md:col-span-3">
+                  <Label>Jogos suspenso (vermelho)</Label>
+                  <Input type="number" min="1" max="10" value={form.red_card_suspension_matches} onChange={handleChange('red_card_suspension_matches')} />
+                  <p className="text-[11px] text-muted-foreground mt-1">Jogos fora por cartao vermelho</p>
+                </div>
+                <div className="md:col-span-3 flex items-center gap-2 pt-5">
+                  <input
+                    type="checkbox"
+                    id="second_yellow_is_red"
+                    checked={form.second_yellow_is_red}
+                    onChange={(e) => setForm(prev => ({ ...prev, second_yellow_is_red: e.target.checked }))}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="second_yellow_is_red" className="cursor-pointer">2 amarelos = vermelho</Label>
+                </div>
+              </div>
+            </div>
+
             <div className="md:col-span-12 flex justify-end gap-2">
               <Link href="/admin/campeonatos"><Button variant="outline" type="button">Cancelar</Button></Link>
               <Button type="submit" disabled={saving}><Save className="h-4 w-4 mr-2" />{saving ? 'Salvando...' : 'Salvar'}</Button>

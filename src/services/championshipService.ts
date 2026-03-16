@@ -74,8 +74,8 @@ export async function getChampionshipById(id: string): Promise<Championship | nu
 
 export async function createChampionship(data: Partial<Championship>): Promise<Championship> {
   const result = await getOne<Championship>(
-    `INSERT INTO championships (name, short_name, year, season, category, format, description, rules, start_date, end_date, status, logo_url, banner_url, prize, location, sponsor)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    `INSERT INTO championships (name, short_name, year, season, category, format, description, rules, start_date, end_date, status, logo_url, banner_url, prize, location, sponsor, yellow_card_suspension_limit, yellow_card_suspension_matches, red_card_suspension_matches, second_yellow_is_red)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
      RETURNING *`,
     [
       data.name, data.short_name || null, data.year, data.season || '1',
@@ -85,6 +85,10 @@ export async function createChampionship(data: Partial<Championship>): Promise<C
       data.status || 'Planejado', data.logo_url || null,
       data.banner_url || null, data.prize || null,
       data.location || null, data.sponsor || null,
+      data.yellow_card_suspension_limit ?? 3,
+      data.yellow_card_suspension_matches ?? 1,
+      data.red_card_suspension_matches ?? 1,
+      data.second_yellow_is_red ?? true,
     ]
   );
   return result!;
@@ -109,7 +113,11 @@ export async function updateChampionship(id: string, data: Partial<Championship>
       banner_url = $15,
       prize = $16,
       location = $17,
-      sponsor = $18
+      sponsor = $18,
+      yellow_card_suspension_limit = COALESCE($19, yellow_card_suspension_limit),
+      yellow_card_suspension_matches = COALESCE($20, yellow_card_suspension_matches),
+      red_card_suspension_matches = COALESCE($21, red_card_suspension_matches),
+      second_yellow_is_red = COALESCE($22, second_yellow_is_red)
      WHERE id = $1 RETURNING *`,
     [
       id, data.name, data.short_name ?? null, data.year,
@@ -119,6 +127,10 @@ export async function updateChampionship(id: string, data: Partial<Championship>
       data.status, data.logo_url, data.active,
       data.banner_url ?? null, data.prize ?? null,
       data.location ?? null, data.sponsor ?? null,
+      data.yellow_card_suspension_limit ?? null,
+      data.yellow_card_suspension_matches ?? null,
+      data.red_card_suspension_matches ?? null,
+      data.second_yellow_is_red ?? null,
     ]
   );
 }
