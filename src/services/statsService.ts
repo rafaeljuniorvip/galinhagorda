@@ -117,7 +117,8 @@ export async function getChampionshipStandings(championshipId: string): Promise<
         ELSE 0
       END), 0)::int AS points,
       COALESCE(cards.red_cards, 0)::int AS red_cards,
-      COALESCE(cards.yellow_cards, 0)::int AS yellow_cards
+      COALESCE(cards.yellow_cards, 0)::int AS yellow_cards,
+      NULL AS tiebreaker
     FROM team_championships tc
     JOIN teams t ON t.id = tc.team_id
     LEFT JOIN matches m ON m.championship_id = tc.championship_id
@@ -195,43 +196,122 @@ async function applyHeadToHeadTiebreaker(
   standings: Standing[],
   championshipId: string
 ): Promise<Standing[]> {
-  const goalDiff = (s: Standing) => s.goals_for - s.goals_against;
+  const gd = (s: Standing) => s.goals_for - s.goals_against;
 
-  const isTied = (a: Standing, b: Standing) =>
-    a.points === b.points &&
-    a.wins === b.wins &&
-    goalDiff(a) === goalDiff(b) &&
-    a.goals_for === b.goals_for;
-
-  // Group consecutive tied teams
+  // Find groups of teams with same points
   const result: Standing[] = [];
   let i = 0;
 
   while (i < standings.length) {
     let j = i + 1;
-    while (j < standings.length && isTied(standings[i], standings[j])) {
+    while (j < standings.length && standings[j].points === standings[i].points) {
       j++;
     }
 
     const group = standings.slice(i, j);
 
-    if (group.length === 2) {
-      // Head-to-head only applies when exactly 2 teams are tied
+    if (group.length === 1) {
+      // No tie - no tiebreaker needed
+      group[0].tiebreaker = null;
+      result.push(group[0]);
+    } else {
+      // Multiple teams with same points - determine tiebreaker for each pair
+      // Check criteria sequentially for each team in the group
+      for (let k = 0; k < group.length; k++) {
+        const team = group[k];
+        const prev = k > 0 ? group[k - 1] : null;
+        const next = k < group.length - 1 ? group[k + 1] : null;
+
+        // Determine what separates this team from its neighbors
+        if (prev && next) {
+          // Middle of group - use what separates from previous
+          team.tiebreaker = findCriterion(prev, team);
+        } else if (prev) {
+          // Last in group
+          team.tiebreaker = findCriterion(prev, team);
+        } else if (next) {
+          // First in group - use what separates from next
+          team.tiebreaker = findCriterion(team, next);
+        }
+      }
+
+      // Apply head-to-head for pairs tied on all stat criteria
+      const resolved = await resolveH2H(group, championshipId);
+      result.push(...resolved);
+    }
+
+    i = j;
+  }
+
+  return result;
+}
+
+function findCriterion(higher: Standing, lower: Standing): string {
+  const gd = (s: Standing) => s.goals_for - s.goals_against;
+  if (higher.wins !== lower.wins) return 'Nº de vitorias';
+  if (gd(higher) !== gd(lower)) return 'Saldo de gols';
+  if (higher.goals_for !== lower.goals_for) return 'Gols pro';
+  if (higher.red_cards !== lower.red_cards) return 'Cartoes vermelhos';
+  if (higher.yellow_cards !== lower.yellow_cards) return 'Cartoes amarelos';
+  return 'Empate total';
+}
+
+async function resolveH2H(
+  group: Standing[],
+  championshipId: string
+): Promise<Standing[]> {
+  const gd = (s: Standing) => s.goals_for - s.goals_against;
+
+  // Find sub-groups fully tied on wins, goal_diff, goals_for
+  const result: Standing[] = [];
+  let i = 0;
+
+  while (i < group.length) {
+    let j = i + 1;
+    while (
+      j < group.length &&
+      group[j].wins === group[i].wins &&
+      gd(group[j]) === gd(group[i]) &&
+      group[j].goals_for === group[i].goals_for
+    ) {
+      j++;
+    }
+
+    const sub = group.slice(i, j);
+
+    if (sub.length === 2) {
       const h2h = await getHeadToHeadPoints(
         championshipId,
-        group[0].team_id,
-        group[1].team_id
+        sub[0].team_id,
+        sub[1].team_id
       );
 
-      if (h2h.teamAPoints < h2h.teamBPoints) {
-        result.push(group[1], group[0]);
+      if (h2h.teamAPoints !== h2h.teamBPoints) {
+        // H2H resolved
+        if (h2h.teamAPoints > h2h.teamBPoints) {
+          sub[0].tiebreaker = 'Confronto direto';
+          sub[1].tiebreaker = 'Confronto direto';
+          result.push(sub[0], sub[1]);
+        } else {
+          sub[1].tiebreaker = 'Confronto direto';
+          sub[0].tiebreaker = 'Confronto direto';
+          result.push(sub[1], sub[0]);
+        }
       } else {
-        // If equal or A wins, keep original order (A already ahead by cards criteria)
-        result.push(...group);
+        // H2H equal - keep SQL order (cards)
+        for (const t of sub) {
+          if (sub[0].red_cards !== sub[1].red_cards) {
+            t.tiebreaker = 'Cartoes vermelhos';
+          } else if (sub[0].yellow_cards !== sub[1].yellow_cards) {
+            t.tiebreaker = 'Cartoes amarelos';
+          } else {
+            t.tiebreaker = 'Empate total';
+          }
+        }
+        result.push(...sub);
       }
     } else {
-      // 1 team or 3+ tied: keep SQL order (cards tiebreaker already applied)
-      result.push(...group);
+      result.push(...sub);
     }
 
     i = j;

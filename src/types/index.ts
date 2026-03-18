@@ -193,6 +193,7 @@ export interface Standing {
   points: number;
   red_cards: number;
   yellow_cards: number;
+  tiebreaker: string | null;
 }
 
 export interface PaginatedResponse<T> {

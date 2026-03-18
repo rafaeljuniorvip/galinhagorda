@@ -8,6 +8,7 @@ import { getPublicPhotos } from '@/services/photoPublicService';
 import {
   Trophy, MapPin, Gift, Building2, FileText,
   Layers, CircleDot, Newspaper, ArrowRight, ExternalLink, MessageSquare,
+  Info, Scale,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -159,40 +160,105 @@ export default async function ChampionshipDetailPage({ params }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {standings.map((s, i) => (
-                    <tr key={s.team_id} className={cn(
-                      'border-b border-border/50 hover:bg-muted/30 transition-colors',
-                      i % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'
-                    )}>
-                      <td className="px-3 py-2.5">
-                        <span className={cn(
-                          'inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold',
-                          i < 4 ? 'bg-[#2e7d32] text-white' : i >= standings.length - 2 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600'
-                        )}>
-                          {i + 1}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={s.logo_url || ''} />
-                            <AvatarFallback className="text-[9px] font-bold">{s.short_name?.[0]}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-semibold text-[#0d1b2a]">{s.team_name}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2.5 text-center font-extrabold text-[#1a237e]">{s.points}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.matches_played}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.wins}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.draws}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.losses}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_for}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_against}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_for - s.goals_against}</td>
-                    </tr>
-                  ))}
+                  {standings.map((s, i) => {
+                    const hasTie = s.tiebreaker !== null;
+                    return (
+                      <tr key={s.team_id} className={cn(
+                        'border-b border-border/50 hover:bg-muted/30 transition-colors',
+                        i % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'
+                      )}>
+                        <td className="px-3 py-2.5">
+                          <span className={cn(
+                            'inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold',
+                            i < 4 ? 'bg-[#2e7d32] text-white' : i >= standings.length - 2 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600'
+                          )}>
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={s.logo_url || ''} />
+                              <AvatarFallback className="text-[9px] font-bold">{s.short_name?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold text-[#0d1b2a]">{s.team_name}</span>
+                            {hasTie && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium whitespace-nowrap" title={`Desempate: ${s.tiebreaker}`}>
+                                {s.tiebreaker}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-center font-extrabold text-[#1a237e]">{s.points}</td>
+                        <td className="px-3 py-2.5 text-center text-muted-foreground">{s.matches_played}</td>
+                        <td className="px-3 py-2.5 text-center text-muted-foreground">{s.wins}</td>
+                        <td className="px-3 py-2.5 text-center text-muted-foreground">{s.draws}</td>
+                        <td className="px-3 py-2.5 text-center text-muted-foreground">{s.losses}</td>
+                        <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_for}</td>
+                        <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_against}</td>
+                        <td className="px-3 py-2.5 text-center text-muted-foreground">{s.goals_for - s.goals_against}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Criterios de Desempate */}
+            <div className="mt-3 p-4 rounded-lg bg-[#f8f9fb] border border-border/60">
+              <div className="flex items-center gap-2 mb-2">
+                <Scale className="h-4 w-4 text-[#1a237e]" />
+                <h3 className="text-sm font-bold text-[#1a237e]">Criterios de Desempate</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                Quando dois ou mais times possuem a mesma pontuacao, a classificacao e definida pelos seguintes criterios, nesta ordem:
+              </p>
+              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                <li><span className="font-semibold text-foreground">Maior numero de vitorias</span></li>
+                <li><span className="font-semibold text-foreground">Maior saldo de gols</span> (gols marcados - gols sofridos)</li>
+                <li><span className="font-semibold text-foreground">Maior numero de gols pro</span> (total de gols marcados)</li>
+                <li><span className="font-semibold text-foreground">Confronto direto</span> (pontos nos jogos entre os times empatados — so entre 2 clubes)</li>
+                <li><span className="font-semibold text-foreground">Menor numero de cartoes vermelhos</span></li>
+                <li><span className="font-semibold text-foreground">Menor numero de cartoes amarelos</span></li>
+                <li><span className="font-semibold text-foreground">Sorteio</span></li>
+              </ol>
+              {standings.some(s => s.tiebreaker) && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Info className="h-3.5 w-3.5 text-amber-600" />
+                    <span className="text-xs font-semibold text-amber-700">Desempates aplicados nesta classificacao:</span>
+                  </div>
+                  <div className="space-y-1">
+                    {(() => {
+                      const tieGroups: { teams: string[]; reason: string }[] = [];
+                      let i = 0;
+                      while (i < standings.length) {
+                        if (standings[i].tiebreaker) {
+                          const pts = standings[i].points;
+                          const group: string[] = [];
+                          const reason = standings[i].tiebreaker!;
+                          while (i < standings.length && standings[i].points === pts && standings[i].tiebreaker) {
+                            group.push(standings[i].team_name);
+                            i++;
+                          }
+                          if (group.length >= 2) {
+                            tieGroups.push({ teams: group, reason });
+                          }
+                        } else {
+                          i++;
+                        }
+                      }
+                      return tieGroups.map((g, idx) => (
+                        <p key={idx} className="text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">{g.teams.join(', ')}</span>
+                          {' '}({g.teams.length} times com mesma pontuacao)
+                          {' '}<span className="text-amber-700">→ {g.reason}</span>
+                        </p>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
