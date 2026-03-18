@@ -191,6 +191,8 @@ export interface Standing {
   goals_for: number;
   goals_against: number;
   points: number;
+  red_cards: number;
+  yellow_cards: number;
 }
 
 export interface PaginatedResponse<T> {
