@@ -40,7 +40,7 @@ interface CardEvent {
 }
 
 type ViewMode = 'by-round' | 'by-match' | 'by-player';
-type CardFilter = 'all' | 'yellow' | 'red';
+type CardFilter = 'all' | 'yellow' | 'red' | 'second-yellow';
 
 const cardTypeLabel: Record<string, string> = {
   CARTAO_AMARELO: 'Amarelo',
@@ -56,13 +56,20 @@ function formatMatchLabel(c: CardEvent) {
   return `${c.home_short_name || c.home_team_name} ${c.home_score}x${c.away_score} ${c.away_short_name || c.away_team_name}`;
 }
 
-const CardBadge = ({ type }: { type: string }) => (
-  type === 'CARTAO_AMARELO' ? (
-    <span className="inline-block w-4 h-5 rounded-[2px] bg-yellow-400 border border-yellow-500" title="Amarelo" />
-  ) : (
-    <span className="inline-block w-4 h-5 rounded-[2px] bg-red-600 border border-red-700" title={type === 'SEGUNDO_AMARELO' ? '2o Amarelo' : 'Vermelho'} />
-  )
-);
+function CardBadge({ type }: { type: string }) {
+  if (type === 'CARTAO_AMARELO') {
+    return <span className="inline-block w-4 h-5 rounded-[2px] bg-yellow-400 border border-yellow-500" title="Amarelo" />;
+  }
+  if (type === 'SEGUNDO_AMARELO') {
+    return (
+      <span className="inline-flex w-4 h-5 rounded-[2px] overflow-hidden border border-orange-500" title="2o Amarelo (= Vermelho)">
+        <span className="w-1/2 bg-yellow-400" />
+        <span className="w-1/2 bg-red-600" />
+      </span>
+    );
+  }
+  return <span className="inline-block w-4 h-5 rounded-[2px] bg-red-600 border border-red-700" title="Vermelho direto" />;
+}
 
 export default function AdminCartoesPage() {
   const params = useParams();
@@ -86,7 +93,9 @@ export default function AdminCartoesPage() {
     if (cardFilter === 'yellow') {
       result = result.filter(c => c.event_type === 'CARTAO_AMARELO');
     } else if (cardFilter === 'red') {
-      result = result.filter(c => c.event_type === 'CARTAO_VERMELHO' || c.event_type === 'SEGUNDO_AMARELO');
+      result = result.filter(c => c.event_type === 'CARTAO_VERMELHO');
+    } else if (cardFilter === 'second-yellow') {
+      result = result.filter(c => c.event_type === 'SEGUNDO_AMARELO');
     }
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
@@ -100,7 +109,8 @@ export default function AdminCartoesPage() {
   }, [cards, cardFilter, searchTerm]);
 
   const totalYellow = cards.filter(c => c.event_type === 'CARTAO_AMARELO').length;
-  const totalRed = cards.filter(c => c.event_type === 'CARTAO_VERMELHO' || c.event_type === 'SEGUNDO_AMARELO').length;
+  const totalSecondYellow = cards.filter(c => c.event_type === 'SEGUNDO_AMARELO').length;
+  const totalRedDirect = cards.filter(c => c.event_type === 'CARTAO_VERMELHO').length;
 
   const byRound = useMemo(() => {
     const map = new Map<string, CardEvent[]>();
@@ -236,11 +246,42 @@ export default function AdminCartoesPage() {
         </div>
       </div>
 
+      {/* Legenda explicativa */}
+      <div className="mb-6 p-4 rounded-lg bg-[#f8f9fb] border border-border/60">
+        <h3 className="text-sm font-bold text-[#1a237e] mb-2">Como funciona</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-muted-foreground">
+          <div className="flex items-start gap-2">
+            <span className="inline-block w-4 h-5 rounded-[2px] bg-yellow-400 border border-yellow-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-foreground">Cartao Amarelo</p>
+              <p>Advertencia. Vale 1 ponto disciplinar. Acumulando o limite definido no campeonato, o jogador e suspenso automaticamente.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="inline-flex w-4 h-5 rounded-[2px] overflow-hidden border border-orange-500 shrink-0 mt-0.5">
+              <span className="w-1/2 bg-yellow-400" />
+              <span className="w-1/2 bg-red-600" />
+            </span>
+            <div>
+              <p className="font-semibold text-foreground">2o Amarelo (= Vermelho)</p>
+              <p>Segundo amarelo na mesma partida. O jogador e expulso e recebe suspensao equivalente a um cartao vermelho. Vale 3 pontos disciplinares.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="inline-block w-4 h-5 rounded-[2px] bg-red-600 border border-red-700 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-foreground">Cartao Vermelho Direto</p>
+              <p>Expulsao direta por falta grave. Vale 3 pontos disciplinares. O jogador e suspenso conforme regras do campeonato.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Total de Cartoes</p>
+            <p className="text-xs text-muted-foreground mb-1">Total</p>
             <p className="text-2xl font-extrabold text-[#1a237e]">{cards.length}</p>
           </CardContent>
         </Card>
@@ -256,10 +297,22 @@ export default function AdminCartoesPage() {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
+              <span className="inline-flex w-3 h-4 rounded-[1px] overflow-hidden border border-orange-500">
+                <span className="w-1/2 bg-yellow-400" />
+                <span className="w-1/2 bg-red-600" />
+              </span>
+              <p className="text-xs text-muted-foreground">2o Amarelo</p>
+            </div>
+            <p className="text-2xl font-extrabold text-orange-600">{totalSecondYellow}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
               <span className="inline-block w-3 h-4 rounded-[2px] bg-red-600 border border-red-700" />
               <p className="text-xs text-muted-foreground">Vermelhos</p>
             </div>
-            <p className="text-2xl font-extrabold text-red-600">{totalRed}</p>
+            <p className="text-2xl font-extrabold text-red-600">{totalRedDirect}</p>
           </CardContent>
         </Card>
         <Card>
@@ -287,7 +340,7 @@ export default function AdminCartoesPage() {
         </div>
 
         <div className="flex rounded-lg border border-border overflow-hidden">
-          {([['all', 'Todos'], ['yellow', 'Amarelos'], ['red', 'Vermelhos']] as const).map(([f, label]) => (
+          {([['all', 'Todos'], ['yellow', 'Amarelos'], ['second-yellow', '2o Amarelo'], ['red', 'Vermelhos']] as const).map(([f, label]) => (
             <button
               key={f}
               onClick={() => setCardFilter(f)}
