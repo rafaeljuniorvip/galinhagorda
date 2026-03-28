@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import {
   FileSpreadsheet, ArrowLeft, CreditCard,
-  AlertTriangle, ChevronDown, ChevronUp, Search,
+  AlertTriangle, ChevronDown, ChevronUp, Search, Ban, ShieldAlert,
 } from 'lucide-react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
@@ -75,6 +75,7 @@ export default function AdminCartoesPage() {
   const params = useParams();
   const championshipId = params.id as string;
   const [cards, setCards] = useState<CardEvent[]>([]);
+  const [rules, setRules] = useState({ yellow_card_suspension_limit: 3, yellow_card_suspension_matches: 1, red_card_suspension_matches: 1, second_yellow_is_red: true });
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('by-round');
   const [cardFilter, setCardFilter] = useState<CardFilter>('all');
@@ -84,7 +85,7 @@ export default function AdminCartoesPage() {
   useEffect(() => {
     fetch(`/api/championships/${championshipId}/cards`)
       .then(r => r.json())
-      .then(data => { setCards(data); setLoading(false); })
+      .then(data => { setCards(data.cards); setRules(data.rules); setLoading(false); })
       .catch(() => setLoading(false));
   }, [championshipId]);
 
@@ -130,6 +131,35 @@ export default function AdminCartoesPage() {
     }
     return Array.from(map.entries());
   }, [filtered]);
+
+  // Suspension map computed from ALL cards (not filtered)
+  const suspensionMap = useMemo(() => {
+    const map = new Map<string, { yellows: number; reds: number; suspended: boolean; reason: string }>();
+    for (const c of cards) {
+      if (!map.has(c.player_id)) {
+        map.set(c.player_id, { yellows: 0, reds: 0, suspended: false, reason: '' });
+      }
+      const entry = map.get(c.player_id)!;
+      if (c.event_type === 'CARTAO_AMARELO') entry.yellows++;
+      else entry.reds++;
+    }
+    map.forEach((entry) => {
+      if (entry.reds > 0) {
+        entry.suspended = true;
+        entry.reason = `Cartao vermelho (${rules.red_card_suspension_matches} jogo(s) de suspensao)`;
+      }
+      if (entry.yellows >= rules.yellow_card_suspension_limit) {
+        entry.suspended = true;
+        const suspensions = Math.floor(entry.yellows / rules.yellow_card_suspension_limit);
+        entry.reason = `${entry.yellows} amarelos (${suspensions}x suspensao de ${rules.yellow_card_suspension_matches} jogo(s))`;
+      }
+    });
+    return map;
+  }, [cards, rules]);
+
+  const totalSuspended = useMemo(() =>
+    Array.from(suspensionMap.values()).filter(s => s.suspended).length
+  , [suspensionMap]);
 
   const byPlayer = useMemo(() => {
     const map = new Map<string, { player: CardEvent; yellows: number; reds: number; cards: CardEvent[] }>();
@@ -179,19 +209,24 @@ export default function AdminCartoesPage() {
     }
 
     if (mode === 'all' || mode === 'by-player') {
-      const rows = byPlayer.map(p => ({
-        'Jogador': p.player.player_name,
-        'Nº Camisa': p.player.shirt_number ?? '-',
-        'Time': p.player.team_name,
-        'Amarelos': p.yellows,
-        'Vermelhos': p.reds,
-        'Total Cartoes': p.yellows + p.reds,
-        'Pts Disciplinar': p.yellows + p.reds * 3,
-      }));
+      const rows = byPlayer.map(p => {
+        const susp = suspensionMap.get(p.player.player_id);
+        return {
+          'Jogador': p.player.player_name,
+          'Nº Camisa': p.player.shirt_number ?? '-',
+          'Time': p.player.team_name,
+          'Amarelos': p.yellows,
+          'Vermelhos': p.reds,
+          'Total Cartoes': p.yellows + p.reds,
+          'Pts Disciplinar': p.yellows + p.reds * 3,
+          'Status': susp?.suspended ? 'SUSPENSO' : 'Regular',
+          'Motivo': susp?.reason || '',
+        };
+      });
       const ws = XLSX.utils.json_to_sheet(rows);
       ws['!cols'] = [
         { wch: 25 }, { wch: 10 }, { wch: 20 }, { wch: 10 },
-        { wch: 10 }, { wch: 14 }, { wch: 14 },
+        { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 30 },
       ];
       XLSX.utils.book_append_sheet(wb, ws, 'Resumo por Jogador');
     }
@@ -275,10 +310,22 @@ export default function AdminCartoesPage() {
             </div>
           </div>
         </div>
+        <div className="mt-3 pt-3 border-t border-border/40">
+          <div className="flex items-start gap-2">
+            <Ban className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-foreground text-xs">Regra de Suspensao deste Campeonato</p>
+              <p className="text-xs text-muted-foreground">
+                Acumular <strong>{rules.yellow_card_suspension_limit} amarelos</strong> = suspensao de {rules.yellow_card_suspension_matches} jogo(s).
+                Vermelho direto ou 2o amarelo = suspensao de {rules.red_card_suspension_matches} jogo(s).
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-6">
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">Total</p>
@@ -317,8 +364,17 @@ export default function AdminCartoesPage() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Jogos com Cartao</p>
+            <p className="text-xs text-muted-foreground mb-1">Jogos c/ Cartao</p>
             <p className="text-2xl font-extrabold text-muted-foreground">{new Set(cards.map(c => c.match_id)).size}</p>
+          </CardContent>
+        </Card>
+        <Card className={totalSuspended > 0 ? 'border-red-200 bg-red-50' : ''}>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Ban className="h-3.5 w-3.5 text-red-600" />
+              <p className="text-xs text-muted-foreground">Suspensos</p>
+            </div>
+            <p className="text-2xl font-extrabold text-red-700">{totalSuspended}</p>
           </CardContent>
         </Card>
       </div>
@@ -562,10 +618,12 @@ export default function AdminCartoesPage() {
             <tbody>
               {byPlayer.map((p, idx) => {
                 const isOpen = expandedGroups.has(p.player.player_id);
+                const susp = suspensionMap.get(p.player.player_id);
+                const isSuspended = susp?.suspended ?? false;
                 return (
                   <Fragment key={p.player.player_id}>
                     <tr
-                      className="border-t border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                      className={`border-t border-border/50 hover:bg-muted/30 transition-colors cursor-pointer ${isSuspended ? 'bg-red-50' : ''}`}
                       onClick={() => toggleGroup(p.player.player_id)}
                     >
                       <td className="px-3 py-2.5 text-muted-foreground font-medium">{idx + 1}</td>
@@ -576,6 +634,11 @@ export default function AdminCartoesPage() {
                             <AvatarFallback className="text-[9px]">{p.player.player_name[0]}</AvatarFallback>
                           </Avatar>
                           <span className="font-semibold text-[#0d1b2a]">{p.player.player_name}</span>
+                          {isSuspended && (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold whitespace-nowrap" title={susp?.reason}>
+                              <Ban className="h-3 w-3" /> SUSPENSO
+                            </span>
+                          )}
                           {isOpen ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
                         </div>
                       </td>
@@ -605,16 +668,30 @@ export default function AdminCartoesPage() {
                     {isOpen && (
                       <tr>
                         <td colSpan={8} className="bg-muted/20 px-6 py-2">
+                          {isSuspended && (
+                            <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded bg-red-100 text-red-700">
+                              <ShieldAlert className="h-4 w-4 shrink-0" />
+                              <span className="text-xs font-semibold">{susp?.reason}</span>
+                            </div>
+                          )}
                           <div className="text-xs space-y-1">
-                            {p.cards.map(c => (
-                              <div key={c.event_id} className="flex items-center gap-3 py-0.5">
-                                <CardBadge type={c.event_type} />
-                                <span className="text-muted-foreground w-20">{c.match_round || '-'}</span>
-                                <span className="font-medium w-48">{formatMatchLabel(c)}</span>
-                                <span className="text-muted-foreground">{formatDate(c.match_date)}</span>
-                                <span className="text-muted-foreground">{c.minute ? `${c.minute}' ${c.half || ''}` : '-'}</span>
-                              </div>
-                            ))}
+                            {p.cards.map((c, ci) => {
+                              const isLimitCard = c.event_type === 'CARTAO_AMARELO' &&
+                                (ci + 1) % rules.yellow_card_suspension_limit === 0 &&
+                                p.cards.filter((x, xi) => xi <= ci && x.event_type === 'CARTAO_AMARELO').length % rules.yellow_card_suspension_limit === 0;
+                              return (
+                                <div key={c.event_id} className={`flex items-center gap-3 py-0.5 ${isLimitCard ? 'bg-red-50 rounded px-1 -mx-1' : ''}`}>
+                                  <CardBadge type={c.event_type} />
+                                  <span className="text-muted-foreground w-20">{c.match_round || '-'}</span>
+                                  <span className="font-medium w-48">{formatMatchLabel(c)}</span>
+                                  <span className="text-muted-foreground">{formatDate(c.match_date)}</span>
+                                  <span className="text-muted-foreground">{c.minute ? `${c.minute}' ${c.half || ''}` : '-'}</span>
+                                  {isLimitCard && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-600 text-white font-bold">SUSPENSAO</span>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </td>
                       </tr>
