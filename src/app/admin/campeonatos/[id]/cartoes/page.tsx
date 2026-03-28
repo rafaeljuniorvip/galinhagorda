@@ -172,7 +172,7 @@ export default function AdminCartoesPage() {
       const sorted = [...pCards].sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime());
 
       let accumYellows = 0;
-      let suspendedRounds: string[] = [];
+      const suspendedRounds: string[] = [];
       const history: SuspensionEvent[] = [];
 
       for (const c of sorted) {
