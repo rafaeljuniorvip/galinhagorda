@@ -42,6 +42,23 @@ interface CardEvent {
 type ViewMode = 'by-round' | 'by-match' | 'by-player';
 type CardFilter = 'all' | 'yellow' | 'red' | 'second-yellow';
 
+interface SuspensionEvent {
+  type: 'yellow_accumulation' | 'red_card';
+  round: string;
+  count?: number;
+  suspendedIn: string[];
+}
+
+interface PlayerSuspension {
+  accumYellows: number;
+  totalSuspensions: number;
+  suspendedRounds: string[];
+  history: SuspensionEvent[];
+  isSuspendedNow: boolean;
+  nextSuspendedRound: string | null;
+  status: string;
+}
+
 const cardTypeLabel: Record<string, string> = {
   CARTAO_AMARELO: 'Amarelo',
   CARTAO_VERMELHO: 'Vermelho',
@@ -75,6 +92,7 @@ export default function AdminCartoesPage() {
   const params = useParams();
   const championshipId = params.id as string;
   const [cards, setCards] = useState<CardEvent[]>([]);
+  const [rounds, setRounds] = useState<string[]>([]);
   const [rules, setRules] = useState({ yellow_card_suspension_limit: 3, yellow_card_suspension_matches: 1, red_card_suspension_matches: 1, second_yellow_is_red: true });
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('by-round');
@@ -85,7 +103,7 @@ export default function AdminCartoesPage() {
   useEffect(() => {
     fetch(`/api/championships/${championshipId}/cards`)
       .then(r => r.json())
-      .then(data => { setCards(data.cards); setRules(data.rules); setLoading(false); })
+      .then(data => { setCards(data.cards); setRounds(data.rounds || []); setRules(data.rules); setLoading(false); })
       .catch(() => setLoading(false));
   }, [championshipId]);
 
@@ -132,34 +150,94 @@ export default function AdminCartoesPage() {
     return Array.from(map.entries());
   }, [filtered]);
 
-  // Suspension map computed from ALL cards (not filtered)
-  const suspensionMap = useMemo(() => {
-    const map = new Map<string, { yellows: number; reds: number; suspended: boolean; reason: string }>();
-    for (const c of cards) {
-      if (!map.has(c.player_id)) {
-        map.set(c.player_id, { yellows: 0, reds: 0, suspended: false, reason: '' });
-      }
-      const entry = map.get(c.player_id)!;
-      if (c.event_type === 'CARTAO_AMARELO') entry.yellows++;
-      else entry.reds++;
-    }
-    map.forEach((entry) => {
-      if (entry.reds > 0) {
-        entry.suspended = true;
-        entry.reason = `Cartao vermelho (${rules.red_card_suspension_matches} jogo(s) de suspensao)`;
-      }
-      if (entry.yellows >= rules.yellow_card_suspension_limit) {
-        entry.suspended = true;
-        const suspensions = Math.floor(entry.yellows / rules.yellow_card_suspension_limit);
-        entry.reason = `${entry.yellows} amarelos (${suspensions}x suspensao de ${rules.yellow_card_suspension_matches} jogo(s))`;
-      }
-    });
-    return map;
-  }, [cards, rules]);
+  // Suspension tracking per player per round
+  const suspensionData = useMemo(() => {
+    if (rounds.length === 0) return { map: new Map<string, PlayerSuspension>(), byRound: new Map<string, string[]>() };
 
-  const totalSuspended = useMemo(() =>
-    Array.from(suspensionMap.values()).filter(s => s.suspended).length
-  , [suspensionMap]);
+    const roundIndex = new Map<string, number>();
+    rounds.forEach((r, i) => roundIndex.set(r, i));
+
+    // Group cards per player, ordered by round
+    const playerCards = new Map<string, CardEvent[]>();
+    for (const c of cards) {
+      if (!playerCards.has(c.player_id)) playerCards.set(c.player_id, []);
+      playerCards.get(c.player_id)!.push(c);
+    }
+
+    const map = new Map<string, PlayerSuspension>();
+    const suspendedByRound = new Map<string, string[]>(); // round -> player_ids
+
+    playerCards.forEach((pCards, playerId) => {
+      // Sort by match date
+      const sorted = [...pCards].sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime());
+
+      let accumYellows = 0;
+      let suspendedRounds: string[] = [];
+      const history: SuspensionEvent[] = [];
+
+      for (const c of sorted) {
+        const cardRoundIdx = roundIndex.get(c.match_round || '') ?? -1;
+
+        if (c.event_type === 'CARTAO_AMARELO') {
+          accumYellows++;
+          if (accumYellows >= rules.yellow_card_suspension_limit) {
+            // Suspended for next N rounds
+            for (let i = 1; i <= rules.yellow_card_suspension_matches; i++) {
+              const suspRoundIdx = cardRoundIdx + i;
+              if (suspRoundIdx < rounds.length) {
+                suspendedRounds.push(rounds[suspRoundIdx]);
+                const arr = suspendedByRound.get(rounds[suspRoundIdx]) || [];
+                arr.push(playerId);
+                suspendedByRound.set(rounds[suspRoundIdx], arr);
+              }
+            }
+            history.push({ type: 'yellow_accumulation', round: c.match_round || '', count: accumYellows, suspendedIn: suspendedRounds.slice(-rules.yellow_card_suspension_matches) });
+            accumYellows = 0; // Reset after suspension
+          }
+        } else {
+          // Red or second yellow
+          for (let i = 1; i <= rules.red_card_suspension_matches; i++) {
+            const suspRoundIdx = cardRoundIdx + i;
+            if (suspRoundIdx < rounds.length) {
+              suspendedRounds.push(rounds[suspRoundIdx]);
+              const arr = suspendedByRound.get(rounds[suspRoundIdx]) || [];
+              arr.push(playerId);
+              suspendedByRound.set(rounds[suspRoundIdx], arr);
+            }
+          }
+          history.push({ type: 'red_card', round: c.match_round || '', suspendedIn: suspendedRounds.slice(-rules.red_card_suspension_matches) });
+        }
+      }
+
+      // Current status: check if suspended in the last round played or upcoming
+      const lastRoundIdx = rounds.length - 1;
+      const lastRound = rounds[lastRoundIdx];
+      const isSuspendedNow = suspendedRounds.includes(lastRound) || suspendedRounds.some(r => (roundIndex.get(r) ?? -1) >= lastRoundIdx);
+      const nextSuspendedRound = suspendedRounds.find(r => (roundIndex.get(r) ?? -1) >= lastRoundIdx);
+
+      map.set(playerId, {
+        accumYellows,
+        totalSuspensions: history.length,
+        suspendedRounds,
+        history,
+        isSuspendedNow,
+        nextSuspendedRound: nextSuspendedRound || null,
+        status: isSuspendedNow
+          ? `Suspenso (${nextSuspendedRound})`
+          : accumYellows > 0
+            ? `${accumYellows}/${rules.yellow_card_suspension_limit} amarelos`
+            : 'Regular',
+      });
+    });
+
+    return { map, byRound: suspendedByRound };
+  }, [cards, rounds, rules]);
+
+  const totalSuspended = useMemo(() => {
+    let count = 0;
+    suspensionData.map.forEach(s => { if (s.isSuspendedNow) count++; });
+    return count;
+  }, [suspensionData]);
 
   const byPlayer = useMemo(() => {
     const map = new Map<string, { player: CardEvent; yellows: number; reds: number; cards: CardEvent[] }>();
@@ -210,7 +288,7 @@ export default function AdminCartoesPage() {
 
     if (mode === 'all' || mode === 'by-player') {
       const rows = byPlayer.map(p => {
-        const susp = suspensionMap.get(p.player.player_id);
+        const susp = suspensionData.map.get(p.player.player_id);
         return {
           'Jogador': p.player.player_name,
           'Nº Camisa': p.player.shirt_number ?? '-',
@@ -219,8 +297,9 @@ export default function AdminCartoesPage() {
           'Vermelhos': p.reds,
           'Total Cartoes': p.yellows + p.reds,
           'Pts Disciplinar': p.yellows + p.reds * 3,
-          'Status': susp?.suspended ? 'SUSPENSO' : 'Regular',
-          'Motivo': susp?.reason || '',
+          'Status': susp?.isSuspendedNow ? 'SUSPENSO' : 'Regular',
+          'Amarelos Acum.': susp?.accumYellows ?? 0,
+          'Suspenso em': susp?.suspendedRounds.join(', ') || '',
         };
       });
       const ws = XLSX.utils.json_to_sheet(rows);
@@ -445,13 +524,18 @@ export default function AdminCartoesPage() {
             const isOpen = expandedGroups.has(round) || byRound.length <= 3;
             const yellows = events.filter(c => c.event_type === 'CARTAO_AMARELO').length;
             const reds = events.length - yellows;
+            const suspendedInRound = suspensionData.byRound.get(round) || [];
+            const suspendedNames = suspendedInRound.map(pid => {
+              const c = cards.find(x => x.player_id === pid);
+              return c ? `${c.player_name} (${c.team_short_name || c.team_name})` : pid;
+            });
             return (
               <Card key={round}>
                 <button
                   onClick={() => toggleGroup(round)}
                   className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-sm font-bold text-[#1a237e]">{round}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-[10px] gap-1">
@@ -460,12 +544,29 @@ export default function AdminCartoesPage() {
                       <Badge variant="outline" className="text-[10px] gap-1">
                         <span className="w-2.5 h-3 rounded-[1px] bg-red-600 inline-block" /> {reds}
                       </Badge>
+                      {suspendedNames.length > 0 && (
+                        <Badge variant="outline" className="text-[10px] gap-1 border-red-300 text-red-600">
+                          <Ban className="h-3 w-3" /> {suspendedNames.length} suspenso(s)
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </button>
                 {isOpen && (
                   <CardContent className="pt-0 pb-3 px-3">
+                    {suspendedNames.length > 0 && (
+                      <div className="mb-2 p-2 rounded bg-red-50 border border-red-200">
+                        <p className="text-xs font-semibold text-red-700 flex items-center gap-1.5 mb-1">
+                          <Ban className="h-3.5 w-3.5" /> Suspensos nesta rodada:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {suspendedNames.map((name, ni) => (
+                            <span key={ni} className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">{name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="rounded-lg overflow-hidden border border-border">
                       <table className="w-full text-sm">
                         <thead>
@@ -618,8 +719,8 @@ export default function AdminCartoesPage() {
             <tbody>
               {byPlayer.map((p, idx) => {
                 const isOpen = expandedGroups.has(p.player.player_id);
-                const susp = suspensionMap.get(p.player.player_id);
-                const isSuspended = susp?.suspended ?? false;
+                const susp = suspensionData.map.get(p.player.player_id);
+                const isSuspended = susp?.isSuspendedNow ?? false;
                 return (
                   <Fragment key={p.player.player_id}>
                     <tr
@@ -634,11 +735,15 @@ export default function AdminCartoesPage() {
                             <AvatarFallback className="text-[9px]">{p.player.player_name[0]}</AvatarFallback>
                           </Avatar>
                           <span className="font-semibold text-[#0d1b2a]">{p.player.player_name}</span>
-                          {isSuspended && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold whitespace-nowrap" title={susp?.reason}>
-                              <Ban className="h-3 w-3" /> SUSPENSO
+                          {isSuspended ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold whitespace-nowrap" title={susp?.status}>
+                              <Ban className="h-3 w-3" /> {susp?.status}
                             </span>
-                          )}
+                          ) : susp && susp.accumYellows > 0 ? (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium whitespace-nowrap">
+                              {susp.accumYellows}/{rules.yellow_card_suspension_limit}
+                            </span>
+                          ) : null}
                           {isOpen ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
                         </div>
                       </td>
@@ -668,10 +773,18 @@ export default function AdminCartoesPage() {
                     {isOpen && (
                       <tr>
                         <td colSpan={8} className="bg-muted/20 px-6 py-2">
-                          {isSuspended && (
-                            <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded bg-red-100 text-red-700">
-                              <ShieldAlert className="h-4 w-4 shrink-0" />
-                              <span className="text-xs font-semibold">{susp?.reason}</span>
+                          {susp && (susp.isSuspendedNow || susp.suspendedRounds.length > 0 || susp.accumYellows > 0) && (
+                            <div className={`flex items-start gap-2 mb-2 px-2 py-1.5 rounded ${susp.isSuspendedNow ? 'bg-red-100 text-red-700' : susp.accumYellows > 0 ? 'bg-amber-50 text-amber-700' : 'bg-muted text-muted-foreground'}`}>
+                              <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                              <div className="text-xs">
+                                <p className="font-semibold">{susp.status}</p>
+                                {susp.suspendedRounds.length > 0 && (
+                                  <p>Suspenso em: {susp.suspendedRounds.join(', ')}</p>
+                                )}
+                                {susp.accumYellows > 0 && !susp.isSuspendedNow && (
+                                  <p>Falta(m) {rules.yellow_card_suspension_limit - susp.accumYellows} amarelo(s) para suspensao</p>
+                                )}
+                              </div>
                             </div>
                           )}
                           <div className="text-xs space-y-1">

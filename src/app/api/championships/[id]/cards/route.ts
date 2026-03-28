@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const championshipId = params.id;
 
-  const [cards, rules] = await Promise.all([
+  const [cards, rules, rounds] = await Promise.all([
     getMany(
       `SELECT
         me.id AS event_id,
@@ -50,10 +50,19 @@ export async function GET(
        FROM championships WHERE id = $1`,
       [championshipId]
     ),
+    getMany(
+      `SELECT DISTINCT match_round, MIN(match_date) as first_date
+       FROM matches
+       WHERE championship_id = $1 AND match_round IS NOT NULL
+       GROUP BY match_round
+       ORDER BY MIN(match_date) ASC`,
+      [championshipId]
+    ),
   ]);
 
   return NextResponse.json({
     cards,
+    rounds: rounds.map((r: any) => r.match_round),
     rules: rules || {
       yellow_card_suspension_limit: 3,
       yellow_card_suspension_matches: 1,
