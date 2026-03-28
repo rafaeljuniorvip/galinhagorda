@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Pencil, Trash2, Search, Users, BarChart3 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Users, BarChart3, CreditCard } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
@@ -72,6 +72,7 @@ export default function AdminCampeonatosPage() {
                 <TableCell className="text-right">
                   <MobileActionsMenu actions={[
                     { label: 'Inscricoes', icon: <Users className="h-4 w-4" />, href: `/admin/campeonatos/${c.id}/inscricoes` },
+                    { label: 'Cartoes', icon: <CreditCard className="h-4 w-4" />, href: `/admin/campeonatos/${c.id}/cartoes` },
                     { label: 'Relatorios', icon: <BarChart3 className="h-4 w-4" />, href: `/admin/campeonatos/${c.id}/relatorios` },
                     { label: 'Editar', icon: <Pencil className="h-4 w-4" />, href: `/admin/campeonatos/${c.id}/editar` },
                     { label: 'Excluir', icon: <Trash2 className="h-4 w-4" />, color: 'error', onClick: () => handleDelete(c.id, c.name) },
