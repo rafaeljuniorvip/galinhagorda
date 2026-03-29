@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEventsByMatch, createEvent, deleteEvent } from '@/services/matchEventService';
+import { getEventsByMatch, createEvent, deleteEvent, recalculateScore, isGoalEvent } from '@/services/matchEventService';
 import { getAuthUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -23,14 +23,21 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const event = await createEvent({ ...body, match_id: params.id });
-    return NextResponse.json(event, { status: 201 });
+
+    // Auto-recalculate score when a goal event is added
+    let score;
+    if (isGoalEvent(body.event_type)) {
+      score = await recalculateScore(params.id);
+    }
+
+    return NextResponse.json({ ...event, score }, { status: 201 });
   } catch (error) {
     console.error('[API] Create event error:', error);
     return NextResponse.json({ error: 'Erro ao criar evento' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const user = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -39,8 +46,20 @@ export async function DELETE(request: NextRequest) {
     const eventId = searchParams.get('event_id');
     if (!eventId) return NextResponse.json({ error: 'ID do evento é obrigatório' }, { status: 400 });
 
+    // Check if it's a goal event before deleting
+    const { getOne } = await import('@/lib/db');
+    const event = await getOne<{ event_type: string }>('SELECT event_type FROM match_events WHERE id = $1', [eventId]);
+    const wasGoal = event ? isGoalEvent(event.event_type) : false;
+
     await deleteEvent(eventId);
-    return NextResponse.json({ ok: true });
+
+    // Recalculate score if a goal was removed
+    let score;
+    if (wasGoal) {
+      score = await recalculateScore(params.id);
+    }
+
+    return NextResponse.json({ ok: true, score });
   } catch (error) {
     console.error('[API] Delete event error:', error);
     return NextResponse.json({ error: 'Erro ao excluir evento' }, { status: 500 });

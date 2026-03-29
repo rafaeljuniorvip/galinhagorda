@@ -116,8 +116,16 @@ export default function MatchForm({ match }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-1"><Label>Gols</Label><Input type="number" value={form.home_score} onChange={handleChange('home_score')} /></div>
-            <div className="md:col-span-1"><Label>Gols</Label><Input type="number" value={form.away_score} onChange={handleChange('away_score')} /></div>
+            <div className="md:col-span-1">
+              <Label>Gols</Label>
+              <Input type="number" value={form.home_score} disabled className="bg-muted cursor-not-allowed" />
+              <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">Auto (eventos)</span>
+            </div>
+            <div className="md:col-span-1">
+              <Label>Gols</Label>
+              <Input type="number" value={form.away_score} disabled className="bg-muted cursor-not-allowed" />
+              <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">Auto (eventos)</span>
+            </div>
             <div className="md:col-span-5">
               <Label>Time Visitante *</Label>
               <Select value={form.away_team_id} onValueChange={(v) => setForm(prev => ({ ...prev, away_team_id: v }))}>
