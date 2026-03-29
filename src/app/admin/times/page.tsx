@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
@@ -34,8 +35,14 @@ export default function AdminTimesPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Excluir time "${name}"?`)) return;
-    await fetch(`/api/teams/${id}`, { method: 'DELETE' });
-    loadTeams();
+    const res = await fetch(`/api/teams/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      toast.success('Time excluido');
+      loadTeams();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || 'Erro ao excluir time');
+    }
   };
 
   if (loading || !isAdmin) return null;

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Pencil, Trash2, Search, Users, BarChart3, CreditCard } from 'lucide-react';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
@@ -34,8 +35,14 @@ export default function AdminCampeonatosPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Excluir campeonato "${name}"?`)) return;
-    await fetch(`/api/championships/${id}`, { method: 'DELETE' });
-    loadData();
+    const res = await fetch(`/api/championships/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      toast.success('Campeonato excluido');
+      loadData();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || 'Erro ao excluir campeonato');
+    }
   };
 
   if (loading || !isAdmin) return null;

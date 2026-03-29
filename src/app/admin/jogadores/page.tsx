@@ -40,8 +40,14 @@ export default function AdminJogadoresPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Excluir jogador "${name}"?`)) return;
-    await fetch(`/api/players/${id}`, { method: 'DELETE' });
-    loadPlayers();
+    const res = await fetch(`/api/players/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      toast.success('Jogador excluido');
+      loadPlayers();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || 'Erro ao excluir jogador');
+    }
   };
 
   const handleGenerateLink = async (id: string, name: string) => {

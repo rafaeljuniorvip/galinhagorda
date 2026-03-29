@@ -152,9 +152,27 @@ export async function updatePlayer(id: string, data: Partial<Player>): Promise<P
   );
 }
 
-export async function deletePlayer(id: string): Promise<boolean> {
+export async function deletePlayer(id: string): Promise<{ ok: boolean; error?: string }> {
+  // Check for match events (goals, cards, etc.)
+  const events = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM match_events WHERE player_id = $1', [id]);
+  if (events && events.count > 0) {
+    return { ok: false, error: `Jogador possui ${events.count} evento(s) em partidas (gols, cartoes, etc). Remova os eventos antes de excluir.` };
+  }
+
+  // Check for match lineups
+  const lineups = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM match_lineups WHERE player_id = $1', [id]);
+  if (lineups && lineups.count > 0) {
+    return { ok: false, error: `Jogador esta escalado em ${lineups.count} partida(s). Remova das escalacoes antes de excluir.` };
+  }
+
+  // Check for match votes
+  const votes = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM match_votes WHERE player_id = $1', [id]);
+  if (votes && votes.count > 0) {
+    return { ok: false, error: `Jogador possui ${votes.count} voto(s) de craque da partida. Remova os votos antes de excluir.` };
+  }
+
   const result = await query('DELETE FROM players WHERE id = $1', [id]);
-  return (result.rowCount ?? 0) > 0;
+  return { ok: (result.rowCount ?? 0) > 0 };
 }
 
 // ============================================================

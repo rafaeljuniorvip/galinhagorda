@@ -33,8 +33,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const user = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
 
-    const deleted = await deletePlayer(params.id);
-    if (!deleted) return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+    const result = await deletePlayer(params.id);
+    if (!result.ok) return NextResponse.json({ error: result.error || 'Jogador não encontrado' }, { status: 409 });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[API] Delete player error:', error);

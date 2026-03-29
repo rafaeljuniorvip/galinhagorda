@@ -104,7 +104,25 @@ export async function updateTeam(id: string, data: Partial<Team>): Promise<Team 
   );
 }
 
-export async function deleteTeam(id: string): Promise<boolean> {
+export async function deleteTeam(id: string): Promise<{ ok: boolean; error?: string }> {
+  // Check for matches
+  const matches = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM matches WHERE home_team_id = $1 OR away_team_id = $1', [id]);
+  if (matches && matches.count > 0) {
+    return { ok: false, error: `Time possui ${matches.count} partida(s) registrada(s). Remova as partidas antes de excluir.` };
+  }
+
+  // Check for match events
+  const events = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM match_events WHERE team_id = $1', [id]);
+  if (events && events.count > 0) {
+    return { ok: false, error: `Time possui ${events.count} evento(s) em partidas. Remova os eventos antes de excluir.` };
+  }
+
+  // Check for championships enrolled
+  const champs = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM team_championships WHERE team_id = $1', [id]);
+  if (champs && champs.count > 0) {
+    return { ok: false, error: `Time esta inscrito em ${champs.count} campeonato(s). Remova as inscricoes antes de excluir.` };
+  }
+
   const result = await query('DELETE FROM teams WHERE id = $1', [id]);
-  return (result.rowCount ?? 0) > 0;
+  return { ok: (result.rowCount ?? 0) > 0 };
 }

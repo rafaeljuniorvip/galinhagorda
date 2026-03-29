@@ -135,7 +135,25 @@ export async function updateChampionship(id: string, data: Partial<Championship>
   );
 }
 
-export async function deleteChampionship(id: string): Promise<boolean> {
+export async function deleteChampionship(id: string): Promise<{ ok: boolean; error?: string }> {
+  // Check for matches
+  const matches = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM matches WHERE championship_id = $1', [id]);
+  if (matches && matches.count > 0) {
+    return { ok: false, error: `Campeonato possui ${matches.count} partida(s). Remova as partidas antes de excluir.` };
+  }
+
+  // Check for teams enrolled
+  const teams = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM team_championships WHERE championship_id = $1', [id]);
+  if (teams && teams.count > 0) {
+    return { ok: false, error: `Campeonato possui ${teams.count} time(s) inscrito(s). Remova as inscricoes antes de excluir.` };
+  }
+
+  // Check for news
+  const news = await getOne<{ count: number }>('SELECT COUNT(*)::int AS count FROM news WHERE championship_id = $1', [id]);
+  if (news && news.count > 0) {
+    return { ok: false, error: `Campeonato possui ${news.count} noticia(s) vinculada(s). Desvincule as noticias antes de excluir.` };
+  }
+
   const result = await query('DELETE FROM championships WHERE id = $1', [id]);
-  return (result.rowCount ?? 0) > 0;
+  return { ok: (result.rowCount ?? 0) > 0 };
 }
