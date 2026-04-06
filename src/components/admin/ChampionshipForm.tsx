@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Save } from 'lucide-react';
+import { Save, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,46 @@ export default function ChampionshipForm({ championship }: Props) {
   });
 
   const showLeagueConfig = form.format !== 'Mata-Mata';
-  const showKnockoutConfig = form.format !== 'Pontos Corridos';
+  const showKnockoutConfig = form.format !== 'Pontos Corridos' && form.format !== 'Triangular' && form.format !== 'Quadrangular';
+
+  const formatDescriptions: Record<string, { title: string; desc: string; phases: string; example: string }> = {
+    'Pontos Corridos': {
+      title: 'Pontos Corridos (Liga)',
+      desc: 'Todos os times jogam contra todos. O campeao e definido pela classificacao final. Nao ha eliminacao.',
+      phases: 'Fase unica: todos x todos (turno unico ou turno e returno).',
+      example: 'Ex: 6 times, turno unico = 5 rodadas. Turno e returno = 10 rodadas.',
+    },
+    'Pontos Corridos + Mata-Mata': {
+      title: 'Pontos Corridos + Mata-Mata (Misto)',
+      desc: 'Primeira fase em pontos corridos para classificar os melhores. Depois, fase eliminatoria (mata-mata) entre os classificados ate definir o campeao.',
+      phases: '1a fase: todos x todos → 2a fase: semifinais e final (ida e volta ou jogo unico).',
+      example: 'Ex: 6 times jogam todos x todos, top 4 vao para semifinal cruzada (1o x 4o, 2o x 3o), depois final.',
+    },
+    'Mata-Mata': {
+      title: 'Mata-Mata (Eliminacao Direta)',
+      desc: 'Todos os jogos sao eliminatorios. Perdeu, esta fora. O chaveamento pode ser por sorteio ou ranking.',
+      phases: 'Fase unica: eliminatorias diretas (oitavas, quartas, semi, final).',
+      example: 'Ex: 8 times, quartas de final → semi → final. Pode ser jogo unico ou ida e volta.',
+    },
+    'Grupos + Mata-Mata': {
+      title: 'Grupos + Mata-Mata',
+      desc: 'Os times sao divididos em grupos. Dentro de cada grupo, jogam todos x todos. Os melhores de cada grupo avancam para a fase eliminatoria.',
+      phases: '1a fase: fase de grupos → 2a fase: mata-mata entre classificados dos grupos.',
+      example: 'Ex: 12 times em 3 grupos de 4. Top 2 de cada grupo + 2 melhores 3os vao para quartas.',
+    },
+    'Triangular': {
+      title: 'Triangular',
+      desc: 'Disputa entre 3 times em turno unico (todos jogam contra todos uma vez). O de mais pontos e o campeao.',
+      phases: 'Fase unica: 3 jogos no total (A x B, A x C, B x C).',
+      example: 'Ex: Final em formato triangular entre os 3 primeiros colocados.',
+    },
+    'Quadrangular': {
+      title: 'Quadrangular',
+      desc: 'Disputa entre 4 times em turno unico. Todos jogam contra todos. O de mais pontos e o campeao.',
+      phases: 'Fase unica: 6 jogos no total.',
+      example: 'Ex: Fase final com os 4 classificados jogando entre si.',
+    },
+  };
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
@@ -120,6 +159,21 @@ export default function ChampionshipForm({ championship }: Props) {
                 </SelectContent>
               </Select>
             </div>
+            {/* Format explanation */}
+            {formatDescriptions[form.format] && (
+              <div className="md:col-span-12 rounded-lg border border-blue-200 bg-blue-50/60 p-3">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-1">
+                    <p className="font-bold text-blue-800">{formatDescriptions[form.format].title}</p>
+                    <p className="text-blue-700">{formatDescriptions[form.format].desc}</p>
+                    <p className="text-blue-600"><strong>Fases:</strong> {formatDescriptions[form.format].phases}</p>
+                    <p className="text-blue-500 italic">{formatDescriptions[form.format].example}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="md:col-span-3">
               <Label>Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm(prev => ({ ...prev, status: v }))}>
@@ -196,6 +250,11 @@ export default function ChampionshipForm({ championship }: Props) {
                           <SelectItem value="turno_returno">Turno e returno (ida e volta)</SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        {form.league_rounds === 'turno'
+                          ? 'Cada time enfrenta os demais uma unica vez. Menos jogos, campeonato mais rapido.'
+                          : 'Cada time joga 2x contra cada adversario (casa e fora). Mais jogos, mais justo.'}
+                      </p>
                     </div>
                     <div className="md:col-span-4">
                       <Label>Numero de grupos</Label>
@@ -208,6 +267,11 @@ export default function ChampionshipForm({ championship }: Props) {
                           <SelectItem value="4">4 grupos</SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        {form.num_groups === '1'
+                          ? 'Todos os times em um unico grupo disputando entre si.'
+                          : `Times divididos em ${form.num_groups} grupos. Os melhores de cada avancam.`}
+                      </p>
                     </div>
                     {showKnockoutConfig && (
                       <div className="md:col-span-4">
@@ -240,6 +304,11 @@ export default function ChampionshipForm({ championship }: Props) {
                           <SelectItem value="jogo_unico">Jogo unico</SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        {form.knockout_format === 'ida_volta'
+                          ? 'Cada confronto tem 2 jogos (mando alternado). Vence quem fizer mais gols no agregado.'
+                          : 'Cada confronto em jogo unico. Empate vai para penaltis.'}
+                      </p>
                     </div>
                     <div className="md:col-span-3">
                       <Label>Cruzamento</Label>
@@ -250,6 +319,11 @@ export default function ChampionshipForm({ championship }: Props) {
                           <SelectItem value="chave_fixa">Chave fixa (sorteio)</SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        {form.knockout_seeding === 'cruzado'
+                          ? 'O melhor classificado enfrenta o pior (1o x 4o, 2o x 3o). Melhor colocado tem mando no jogo de volta.'
+                          : 'Chaveamento definido por sorteio ou manualmente.'}
+                      </p>
                     </div>
                     <div className="md:col-span-3">
                       <Label>Fases</Label>
