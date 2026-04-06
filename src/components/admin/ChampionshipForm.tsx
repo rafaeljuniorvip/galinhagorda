@@ -42,7 +42,18 @@ export default function ChampionshipForm({ championship }: Props) {
     yellow_card_suspension_matches: championship?.yellow_card_suspension_matches?.toString() || '1',
     red_card_suspension_matches: championship?.red_card_suspension_matches?.toString() || '1',
     second_yellow_is_red: championship?.second_yellow_is_red !== false,
+    league_rounds: championship?.league_rounds || 'turno',
+    num_groups: championship?.num_groups?.toString() || '1',
+    knockout_qualified: championship?.knockout_qualified?.toString() || '4',
+    knockout_format: championship?.knockout_format || 'ida_volta',
+    knockout_away_goals: championship?.knockout_away_goals !== false,
+    knockout_seeding: championship?.knockout_seeding || 'cruzado',
+    has_third_place: championship?.has_third_place === true,
+    knockout_phases: championship?.knockout_phases || 'semi,final',
   });
+
+  const showLeagueConfig = form.format !== 'Mata-Mata';
+  const showKnockoutConfig = form.format !== 'Pontos Corridos';
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
@@ -52,7 +63,26 @@ export default function ChampionshipForm({ championship }: Props) {
     e.preventDefault();
     setError(''); setSaving(true);
     try {
-      const body = { ...form, year: parseInt(form.year), short_name: form.short_name || null, description: form.description || null, start_date: form.start_date || null, end_date: form.end_date || null, banner_url: form.banner_url || null, prize: form.prize || null, location: form.location || null, sponsor: form.sponsor || null, yellow_card_suspension_limit: parseInt(form.yellow_card_suspension_limit) || 3, yellow_card_suspension_matches: parseInt(form.yellow_card_suspension_matches) || 1, red_card_suspension_matches: parseInt(form.red_card_suspension_matches) || 1, second_yellow_is_red: form.second_yellow_is_red };
+      const body = {
+        ...form,
+        year: parseInt(form.year),
+        short_name: form.short_name || null,
+        description: form.description || null,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+        banner_url: form.banner_url || null,
+        prize: form.prize || null,
+        location: form.location || null,
+        sponsor: form.sponsor || null,
+        yellow_card_suspension_limit: parseInt(form.yellow_card_suspension_limit) || 3,
+        yellow_card_suspension_matches: parseInt(form.yellow_card_suspension_matches) || 1,
+        red_card_suspension_matches: parseInt(form.red_card_suspension_matches) || 1,
+        second_yellow_is_red: form.second_yellow_is_red,
+        num_groups: parseInt(form.num_groups) || 1,
+        knockout_qualified: parseInt(form.knockout_qualified) || 4,
+        knockout_away_goals: form.knockout_away_goals,
+        has_third_place: form.has_third_place,
+      };
       const url = isEditing ? `/api/championships/${championship.id}` : '/api/championships';
       const method = isEditing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -86,7 +116,7 @@ export default function ChampionshipForm({ championship }: Props) {
               <Select value={form.format} onValueChange={(v) => setForm(prev => ({ ...prev, format: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {['Pontos Corridos', 'Mata-Mata', 'Grupos + Mata-Mata'].map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  {['Pontos Corridos', 'Pontos Corridos + Mata-Mata', 'Mata-Mata', 'Grupos + Mata-Mata', 'Triangular', 'Quadrangular'].map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -147,6 +177,111 @@ export default function ChampionshipForm({ championship }: Props) {
                   <Label htmlFor="second_yellow_is_red" className="cursor-pointer">2 amarelos = vermelho</Label>
                 </div>
               </div>
+            </div>
+
+            {/* Configuracao do Formato */}
+            <div className="md:col-span-12 border-t pt-4 mt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Configuracao do Formato</h3>
+
+              {showLeagueConfig && (
+                <div className="mb-4">
+                  <p className="text-xs font-semibold mb-2 text-[#1a237e]">Fase Classificatoria</p>
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div className="md:col-span-4">
+                      <Label>Rodadas</Label>
+                      <Select value={form.league_rounds} onValueChange={(v) => setForm(prev => ({ ...prev, league_rounds: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="turno">Turno unico (todos x todos 1 vez)</SelectItem>
+                          <SelectItem value="turno_returno">Turno e returno (ida e volta)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-4">
+                      <Label>Numero de grupos</Label>
+                      <Select value={form.num_groups} onValueChange={(v) => setForm(prev => ({ ...prev, num_groups: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Grupo unico (todos juntos)</SelectItem>
+                          <SelectItem value="2">2 grupos</SelectItem>
+                          <SelectItem value="3">3 grupos</SelectItem>
+                          <SelectItem value="4">4 grupos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {showKnockoutConfig && (
+                      <div className="md:col-span-4">
+                        <Label>Classificados p/ mata-mata</Label>
+                        <Select value={form.knockout_qualified} onValueChange={(v) => setForm(prev => ({ ...prev, knockout_qualified: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="2">Top 2</SelectItem>
+                            <SelectItem value="4">Top 4</SelectItem>
+                            <SelectItem value="8">Top 8</SelectItem>
+                            <SelectItem value="16">Top 16</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {showKnockoutConfig && (
+                <div>
+                  <p className="text-xs font-semibold mb-2 text-[#1a237e]">Fase Mata-Mata</p>
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div className="md:col-span-3">
+                      <Label>Formato dos jogos</Label>
+                      <Select value={form.knockout_format} onValueChange={(v) => setForm(prev => ({ ...prev, knockout_format: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ida_volta">Ida e volta</SelectItem>
+                          <SelectItem value="jogo_unico">Jogo unico</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-3">
+                      <Label>Cruzamento</Label>
+                      <Select value={form.knockout_seeding} onValueChange={(v) => setForm(prev => ({ ...prev, knockout_seeding: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cruzado">Cruzado (1o x ultimo)</SelectItem>
+                          <SelectItem value="chave_fixa">Chave fixa (sorteio)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-3">
+                      <Label>Fases</Label>
+                      <Select value={form.knockout_phases} onValueChange={(v) => setForm(prev => ({ ...prev, knockout_phases: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="final">Apenas final</SelectItem>
+                          <SelectItem value="semi,final">Semifinal + Final</SelectItem>
+                          <SelectItem value="quartas,semi,final">Quartas + Semi + Final</SelectItem>
+                          <SelectItem value="oitavas,quartas,semi,final">Oitavas + Quartas + Semi + Final</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-3 space-y-2 pt-5">
+                      {form.knockout_format === 'ida_volta' && (
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" id="knockout_away_goals" checked={form.knockout_away_goals}
+                            onChange={(e) => setForm(prev => ({ ...prev, knockout_away_goals: e.target.checked }))}
+                            className="h-4 w-4 rounded border-gray-300" />
+                          <Label htmlFor="knockout_away_goals" className="cursor-pointer text-xs">Gol fora de casa</Label>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" id="has_third_place" checked={form.has_third_place}
+                          onChange={(e) => setForm(prev => ({ ...prev, has_third_place: e.target.checked }))}
+                          className="h-4 w-4 rounded border-gray-300" />
+                        <Label htmlFor="has_third_place" className="cursor-pointer text-xs">Disputa de 3o lugar</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-12 flex justify-end gap-2">

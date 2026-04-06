@@ -67,6 +67,14 @@ export interface Championship {
   yellow_card_suspension_matches: number;
   red_card_suspension_matches: number;
   second_yellow_is_red: boolean;
+  league_rounds: string;
+  num_groups: number;
+  knockout_qualified: number;
+  knockout_format: string;
+  knockout_away_goals: boolean;
+  knockout_seeding: string;
+  has_third_place: boolean;
+  knockout_phases: string;
   created_at: string;
   updated_at: string;
 }

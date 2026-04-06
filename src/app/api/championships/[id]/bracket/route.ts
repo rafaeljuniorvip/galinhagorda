@@ -60,6 +60,15 @@ export async function GET(
 ) {
   const championshipId = params.id;
 
+  // Get championship config
+  const config = await getOne<{
+    knockout_qualified: number; knockout_format: string; knockout_away_goals: boolean;
+    knockout_seeding: string; has_third_place: boolean; knockout_phases: string; format: string;
+  }>(
+    `SELECT knockout_qualified, knockout_format, knockout_away_goals, knockout_seeding, has_third_place, knockout_phases, format FROM championships WHERE id = $1`,
+    [championshipId]
+  );
+
   // Get all bracket matches (Semifinal and Final)
   const matches = await getMany<BracketMatch>(
     `SELECT m.id, m.home_team_id, m.away_team_id,
@@ -123,8 +132,11 @@ export async function GET(
   const finalVolta = matches.find(m => m.match_round === 'Final - Volta');
   const champion = computeAggregateWinner(finalIda, finalVolta);
 
+  const numQualified = config?.knockout_qualified ?? 4;
+
   return NextResponse.json({
-    standings: standings.slice(0, 4),
+    config: config || { knockout_qualified: 4, knockout_format: 'ida_volta', knockout_away_goals: true, knockout_seeding: 'cruzado', has_third_place: false, knockout_phases: 'semi,final', format: 'Pontos Corridos + Mata-Mata' },
+    standings: standings.slice(0, numQualified),
     semifinals: {
       match1: { ida: semi1Ida || null, volta: semi1Volta || null, winner: semi1Winner },
       match2: { ida: semi2Ida || null, volta: semi2Volta || null, winner: semi2Winner },

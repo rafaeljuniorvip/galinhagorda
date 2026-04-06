@@ -74,8 +74,8 @@ export async function getChampionshipById(id: string): Promise<Championship | nu
 
 export async function createChampionship(data: Partial<Championship>): Promise<Championship> {
   const result = await getOne<Championship>(
-    `INSERT INTO championships (name, short_name, year, season, category, format, description, rules, start_date, end_date, status, logo_url, banner_url, prize, location, sponsor, yellow_card_suspension_limit, yellow_card_suspension_matches, red_card_suspension_matches, second_yellow_is_red)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+    `INSERT INTO championships (name, short_name, year, season, category, format, description, rules, start_date, end_date, status, logo_url, banner_url, prize, location, sponsor, yellow_card_suspension_limit, yellow_card_suspension_matches, red_card_suspension_matches, second_yellow_is_red, league_rounds, num_groups, knockout_qualified, knockout_format, knockout_away_goals, knockout_seeding, has_third_place, knockout_phases)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
      RETURNING *`,
     [
       data.name, data.short_name || null, data.year, data.season || '1',
@@ -89,6 +89,14 @@ export async function createChampionship(data: Partial<Championship>): Promise<C
       data.yellow_card_suspension_matches ?? 1,
       data.red_card_suspension_matches ?? 1,
       data.second_yellow_is_red ?? true,
+      data.league_rounds || 'turno',
+      data.num_groups ?? 1,
+      data.knockout_qualified ?? 4,
+      data.knockout_format || 'ida_volta',
+      data.knockout_away_goals ?? true,
+      data.knockout_seeding || 'cruzado',
+      data.has_third_place ?? false,
+      data.knockout_phases || 'semi,final',
     ]
   );
   return result!;
@@ -117,7 +125,15 @@ export async function updateChampionship(id: string, data: Partial<Championship>
       yellow_card_suspension_limit = COALESCE($19, yellow_card_suspension_limit),
       yellow_card_suspension_matches = COALESCE($20, yellow_card_suspension_matches),
       red_card_suspension_matches = COALESCE($21, red_card_suspension_matches),
-      second_yellow_is_red = COALESCE($22, second_yellow_is_red)
+      second_yellow_is_red = COALESCE($22, second_yellow_is_red),
+      league_rounds = COALESCE($23, league_rounds),
+      num_groups = COALESCE($24, num_groups),
+      knockout_qualified = COALESCE($25, knockout_qualified),
+      knockout_format = COALESCE($26, knockout_format),
+      knockout_away_goals = COALESCE($27, knockout_away_goals),
+      knockout_seeding = COALESCE($28, knockout_seeding),
+      has_third_place = COALESCE($29, has_third_place),
+      knockout_phases = COALESCE($30, knockout_phases)
      WHERE id = $1 RETURNING *`,
     [
       id, data.name, data.short_name ?? null, data.year,
@@ -131,6 +147,14 @@ export async function updateChampionship(id: string, data: Partial<Championship>
       data.yellow_card_suspension_matches ?? null,
       data.red_card_suspension_matches ?? null,
       data.second_yellow_is_red ?? null,
+      data.league_rounds ?? null,
+      data.num_groups ?? null,
+      data.knockout_qualified ?? null,
+      data.knockout_format ?? null,
+      data.knockout_away_goals ?? null,
+      data.knockout_seeding ?? null,
+      data.has_third_place ?? null,
+      data.knockout_phases ?? null,
     ]
   );
 }
